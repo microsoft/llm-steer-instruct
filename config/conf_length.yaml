@@ -1,0 +1,37 @@
+device: 'cuda'
+project_dir: '/home/t-astolfo/t-astolfo/length_constraints'
+data_path: '../data/input_data_single_instr.jsonl'
+dry_run: False
+output_path: 'out/'
+path_to_hf_token: '../hf_token.txt'
+
+
+model_name: 'gpt2'
+max_generation_length: 1024
+
+include_instructions: False
+n_sent_max: 10
+length_constraint_rep_min: 0
+length_constraint_rep_max: 1
+constraint_type: at_most
+n_examples: 50
+steering_weights: [1]
+length_rep_file: high_level_50examples_hs.h5
+
+
+steering: 'none'
+source_layer_idx: 12
+apply_to_all_layers: False
+representations_folder: './representations'
+
+
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
