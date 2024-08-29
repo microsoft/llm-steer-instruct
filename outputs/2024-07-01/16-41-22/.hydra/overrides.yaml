@@ -1,0 +1,2 @@
+- model_name=phi-3
+- data_path=../data/ifeval_wo_instructions.jsonl

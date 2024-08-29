@@ -1,0 +1,33 @@
+device: 'cuda'
+project_dir: '/home/t-astolfo/t-astolfo/composition'
+data_path: '../data/ifeval_multiple_instr_casing_exclude.jsonl'
+dry_run: False
+output_path: 'casing_and_exclude_out/'
+path_to_hf_token: '../hf_token.txt'
+nonparametric_only: False
+
+model_name: 'phi-3'
+max_generation_length: 1024
+
+specific_instruction: 'forbidden'
+include_instructions: True
+
+steering: 'none'
+source_layer_idx: 24
+steering_weight: 0.0
+n_examples: 20
+representations_folder: '../keywords/representations'
+representations_folder_instr: 'single_instr_all_base_x_all_instr'
+
+
+
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

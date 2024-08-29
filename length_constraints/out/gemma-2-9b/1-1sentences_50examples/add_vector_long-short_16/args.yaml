@@ -1,0 +1,25 @@
+device: 2
+project_dir: /home/t-astolfo/t-astolfo/length_constraints
+data_path: ../data/input_data_single_instr.jsonl
+dry_run: false
+output_path: out/
+path_to_hf_token: ../hf_token.txt
+model_name: gemma-2-9b
+max_generation_length: 1024
+include_instructions: false
+n_sent_max: 1
+length_constraint_rep_min: 0
+length_constraint_rep_max: 1
+constraint_type: at_most
+n_examples: 50
+steering_weights:
+- 200
+- 150
+- 100
+- 50
+- 0
+length_rep_file: high_level_50examples_hs.h5
+steering: add_vector_long-short
+source_layer_idx: 16
+apply_to_all_layers: false
+representations_folder: ./representations
