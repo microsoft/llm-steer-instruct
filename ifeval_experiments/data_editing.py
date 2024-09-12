@@ -381,7 +381,7 @@ with open('./data/ifeval_keywords_include.txt', 'w') as f:
     for k in keywords:
         f.write(k + '\n')
 # %%
-phrasings_exclude = [' Include the word {}.', ' Make sure to include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' Make sure that the word "{}" is included in the output.', ' The output must include the word "{}".']
+phrasings_include = [' Include the word {}.', ' Make sure to include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' Make sure that the word "{}" is included in the output.', ' The output must include the word "{}".']
 new_rows = []
 for i, r in data_df.iterrows():
     instr = r.instruction_id_list[0]
@@ -392,7 +392,7 @@ for i, r in data_df.iterrows():
     for word in word_list:
         new_row = dict(r)
         new_row['kwargs'] = [{'keywords': [word]}]
-        phrasing = random.choice(phrasings_exclude)
+        phrasing = random.choice(phrasings_include)
         new_prompt = r.prompt_without_instruction + phrasing.format(word)
         new_row['old_prompt'] = r.prompt
         new_row['prompt'] = new_prompt
