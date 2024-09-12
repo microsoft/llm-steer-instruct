@@ -7,9 +7,5 @@ length_constraints/representations/
 keywords/representations/
 .vscode/
 stored_hs
-<<<<<<< HEAD
-.DS_Store
-=======
 .DS_Store
 *.download
->>>>>>> 4c7db5b (plots for paper)
