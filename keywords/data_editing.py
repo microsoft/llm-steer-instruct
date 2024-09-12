@@ -16,9 +16,9 @@ new_rows = []
 for i, r in data_df.iterrows():
     for word in r['unlikely_words']:
         new_row = r.copy()
-        new_row['prompt'] = new_row['question']     
-        new_row["instruction_id_list"]: ["keywords:existence"]
-        new_row["instruction_id_list_for_eval"]: ["keywords:existence"]
+        new_row['prompt'] = r['question']     
+        new_row["instruction_id_list"] = ["keywords:existence"]
+        new_row["instruction_id_list_for_eval"] = ["keywords:existence"]
         new_row['kwargs'] = [{"keywords": [word]}]
         new_rows.append(new_row)
 

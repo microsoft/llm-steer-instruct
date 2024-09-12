@@ -6,7 +6,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly
 
-os.chdir('/home/t-astolfo/t-astolfo')
+if 'Users' in os.getcwd():
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
+elif 'home' in os.getcwd():
+    os.chdir('/home/t-astolfo/t-astolfo')
+    print('We\'re on a sandbox machine')
 # %%
 dir = 'keywords/layer_search_out/'
 model_name = 'phi-3'
