@@ -254,8 +254,8 @@ def run_experiment(args: DictConfig):
         folder += '/standard'
     os.makedirs(folder, exist_ok=True)
     out_path = f'{folder}/out'
+    out_path += ('_gen_data' if 'keyword_test' in args.data_path else '')
     out_path += ('_test' if args.dry_run else '')
-    out_path += ('_gen_data' if 'keyword_test' in args.data_path)
     out_path +=  '.jsonl'
 
     print(f'Storing at: {out_path}')

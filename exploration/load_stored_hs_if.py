@@ -4,8 +4,8 @@ if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
     print('We\'re on the local machine')
     print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
     print('We\'re on a remote machine')
 # %%
 import pandas as pd
