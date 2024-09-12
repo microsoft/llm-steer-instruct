@@ -9,7 +9,7 @@ elif 'home' in os.getcwd():
     print('We\'re on the sandbox machine')
 
 import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
+sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
 
 import numpy as np
 import torch
@@ -89,6 +89,13 @@ def compute_representations(args: DictConfig):
         with open('data/ifeval_keywords_include.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
+    elif args.word_list.__len__() == 1 and args.word_list[0] == 'test_include':
+        # load ifeval keywords
+        with open('data/keyword_test.jsonl') as f:
+            data = f.readlines()
+            data = [json.loads(d) for d in data]
+            df = pd.DataFrame(data)
+            word_list = [w for l in df['unlikely_words'] for w in l]
     else:
         word_list = args.word_list
 
