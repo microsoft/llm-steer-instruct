@@ -1,16 +1,15 @@
 # %%
 import os
+import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
 elif 'home' in os.getcwd():
     os.chdir('/home/t-astolfo/t-astolfo')
     print('We\'re on a sandbox machine')
 
-import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
-sys.path.append('/home/t-astolfo/t-astolfo/ifeval_experiments')
 
 import numpy as np
 import torch
@@ -136,7 +135,10 @@ def run_experiment(args: DictConfig):
         if args.specific_instruction == 'forbidden':
             file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
+            if 'keywords_test' in args.data_path:
+                file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs_text.h5'
+            else:    
+                file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
         else:
             raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
         results_df = pd.read_hdf(file)

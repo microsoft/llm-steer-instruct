@@ -275,10 +275,10 @@ df_forbidden = pd.DataFrame({
 dfs = all_dfs['existence']
 df_existence = pd.DataFrame({
     'Model': model_names,
-    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
-    'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference': [0 for model_name in model_names],
+    'Steering': [0 for model_name in model_names],
+    'w/ Instr.': [0 for model_name in model_names],
+    'w/ Instr. + Steering': [0 for model_name in model_names],
     'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
     'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
 })
@@ -287,11 +287,11 @@ df_existence = pd.DataFrame({
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Exclusion', 'Inclusion'))
 
 # Specify a list of colors for each 'Setting'
-index = 1
+index = 4
 color = px.colors.qualitative.Plotly[index]
 
-# settings = ['Std. Inference', 'Steering']
-settings = ['w/ Instr.', 'w/ Instr. + Steering']
+settings = ['Std. Inference', 'Steering']
+# settings = ['w/ Instr.', 'w/ Instr. + Steering']
 
 # Add traces for df_forbidden
 for i, setting in enumerate(settings):
@@ -305,7 +305,7 @@ for i, setting in enumerate(settings):
         showlegend=False
     ), row=1, col=1)
 
-index = 4
+index = 9
 color = px.colors.qualitative.Plotly[index]
 
 # Add traces for df_existence
@@ -348,7 +348,6 @@ fig.add_trace(go.Bar(
 ), row=1, col=2)
 
 # Update layout
-fig.update_layout(title_text='Accuracy <b>without</b> Text Instruction')
 fig.update_layout(width=350, height=250)
 fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
 
@@ -371,6 +370,15 @@ fig.update_layout(legend=dict(
     xanchor='right',
     x=0.8
 ))
+
+# store plot as pdf
+if 'Steering' in settings:
+    fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
+    fig.write_image('plots_for_paper/keywords/no_instruction.pdf')
+else:
+    fig.update_layout(title_text='(b) Accuracy <b>With</b> Text Instructions')
+    fig.write_image('plots_for_paper/keywords/with_instruction.pdf')
+# fig.write_image('plots/keyword_exclusion_without_instruction.pdf')
 
 fig.show()
 
