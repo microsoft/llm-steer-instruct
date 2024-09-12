@@ -9,7 +9,7 @@ import plotly
 import plotly.figure_factory as ff
 import numpy as np
 
-os.chdir('/home/t-astolfo/t-astolfo/length_constraints')
+os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/length_constraints')
 
 
 # %%
@@ -257,6 +257,93 @@ fig.update_layout(width=600, height=350)
 fig.show()
 
 # %%
+# =============================================================================
+# TODO make plot for paper
+# =============================================================================
+
+
+# Define custom colors
+no_steering_color = plotly.colors.qualitative.Plotly[5]  # Custom color for No Steering
+steering_color = plotly.colors.qualitative.Plotly[0]  # Custom color for Steering
+
+# Make bar chart with accuracy per length constraint, one column for no steering and one for steering
+fig = go.Figure()
+first = True
+for length_constraint in results_df_no_steering['length_constraint'].unique():
+    # No steering
+    lengths_no_steering = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct']
+    acc_no_steering = lengths_no_steering.mean()
+    fig.add_trace(go.Bar(
+        x=[f'# of Sents. = {length_constraint+1}'], 
+        y=[acc_no_steering], 
+        name='Std. Inference', 
+        marker_color=no_steering_color,
+        width=0.47,
+        showlegend=first,
+    ))
+    
+
+    fig.add_trace(go.Bar(
+        x=[f'# of Sents. = {length_constraint+1}'], 
+        y=[0], 
+        name='yyy', 
+        marker_color=steering_color,
+        width=0.5,
+        showlegend=False,
+    ))
+
+    # Steering
+    lengths_steering = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['correct']
+    acc_steering = lengths_steering.mean()
+    fig.add_trace(go.Bar(
+        x=[f'# of Sents. = {length_constraint+1}'], 
+        y=[acc_steering],
+        name='Steering', 
+        marker_color=steering_color,
+        width=0.25,
+        showlegend=first,
+    ))
+
+    first = False
+
+# Group the pairs of columns by length constraint
+fig.update_layout(barmode='group')
+
+# incline x-axis labels
+fig.update_layout(xaxis_tickangle=45)
+
+# Add title
+fig.update_layout(title_text='(b) Accuracy Per Length Constraint')
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=-1,
+    xanchor="right",
+    x=0.9
+))
+
+
+# cahnge title font size
+fig.update_layout(title_font_size=16)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+# modefiy ymin
+fig.update_layout(yaxis=dict(range=[0.5, 1]))
+
+# reshape figure
+fig.update_layout(width=350, height=250)
+
+
+# save theplot as pdf
+fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
+
+fig.show()
+
+# %%
 # %%
 length_constraint = 2
 # make bar plot of length of responses with and without steering
@@ -369,6 +456,106 @@ fig.update_layout(margin=dict(l=50, r=0, t=50, b=30))
 # fig.write_image(f'../plots/length_distribution_constraint_{length_constraint}.pdf')
 
 fig.show()
+
+# %%
+# =============================================================================
+# TODO plot for paper
+# =============================================================================
+
+
+
+length_constraint = 4
+
+# Sample data: replace these with your actual data arrays
+lengths1 = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['length']
+lengths2 = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['length']
+
+color1 = plotly.colors.qualitative.Plotly[5]
+color2 = plotly.colors.qualitative.Plotly[0]
+
+# Creating the KDE plot
+kde_fig = ff.create_distplot([lengths1, lengths2], 
+                             group_labels=['Std. Inference', 'Steering'], 
+                             show_hist=False, 
+                             show_rug=False,
+                                colors=[color1, color2])
+# Make lines thicker
+for trace in kde_fig.data:
+    trace.update(line=dict(width=4))  
+
+
+# Creating the histogram traces
+hist_trace1 = go.Histogram(x=lengths1, name='Std. Inference', nbinsx=50, opacity=0.5, marker_color=color1, histnorm='probability', showlegend=False)
+hist_trace2 = go.Histogram(x=lengths2, name='Steering', nbinsx=50, opacity=0.6, marker_color=color2, histnorm='probability', showlegend=False)
+
+# Extracting KDE traces
+kde_trace1 = kde_fig.data[0]
+kde_trace2 = kde_fig.data[1]
+
+# Creating the combined figure
+fig = go.Figure(data=[hist_trace1, hist_trace2, kde_trace1, kde_trace2])
+
+# Updating layout for better visualization
+fig.update_layout(title=f'(c) Output Length: Pre- vs Post-Steering',
+                  xaxis_title='Length',
+                  yaxis_title='Density',
+                  barmode='overlay',
+                  legend_title='')
+
+# add vertical line for the length constraint
+fig.add_shape(
+    dict(
+        type="line",
+        x0=length_constraint+1.5,
+        y0=0,
+        x1=length_constraint+1.5,
+        y1=0.63,
+        line=dict(
+            color="black",
+            width=2,
+            dash="dash",
+        ),
+    )
+)
+# Add horizontal label to the vertical line
+fig.update_layout(
+    annotations=[
+        dict(
+            x=length_constraint + 1.6,
+            y=0.55,
+            xref="x",
+            yref="y",
+            text=f'Length constraint: {length_constraint + 1}',
+            showarrow=False,
+            xanchor='left',
+            yanchor='bottom',
+            textangle=0,
+        )
+    ]
+)
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=-.5,
+    xanchor="right",
+    x=0.83
+))
+
+# reshape figure
+fig.update_layout(width=350, height=250)
+
+# change title font size
+fig.update_layout(title_font_size=16)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+# store the plot as pdf
+fig.write_image(f'../plots_for_paper/length/length_distribution_constraint_{length_constraint}.pdf')
+
+fig.show()
+
 
 # %%
 # =============================================================================

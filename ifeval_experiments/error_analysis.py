@@ -1,9 +1,8 @@
 # %%
 import os
 if 'Users' in os.getcwd():
-    os.chdir('C:\\Users\\t-astolfo\\workspace\\t-astolfo')
-
-    print('We\'re on a Windows machine')
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
 elif 'home' in os.getcwd():
     os.chdir('/home/t-astolfo/t-astolfo')
     print('We\'re on a sandbox machine')
@@ -13,9 +12,10 @@ import json
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+from collections import Counter
 # %%
 
-model_name = 'Llama-2-7b-chat'
+# model_name = 'Llama-2-7b-chat'
 model_name = 'phi-3'
 # model_name = 'meta-llama/Meta-Llama-3-8B-Instruct'
 # model_name = 'mistral-7b-instruct'
@@ -40,17 +40,17 @@ results_df = pd.DataFrame(results)
 # results_df_steering = pd.DataFrame(results)
 
 
-mode = 'adjust_rs_20'
+mode = 'adjust_rs_-1'
 path_to_results = f'./ifeval_experiments/out/phi-3/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
 with open(path_to_results) as f:
     results = f.readlines()
     results = [json.loads(r) for r in results]
 results_df_steering = pd.DataFrame(results)
 
-model_name = 'Llama-2-7b-chat'
+# model_name = 'Llama-2-7b-chat'
 
 
-mode = 'standard_no_hf'
+mode = 'standard'
 path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
 with open(path_to_results) as f:
     results = f.readlines()
@@ -112,7 +112,7 @@ all_categories = [i.split(':')[0] for i in all_instruct]
 
 # join the results_df_standard with the steering results on column 'key'
 analysis_df = results_df_standard.join(results_df_instr_plus_steering.set_index('key'), on='key', rsuffix='_steering')
-#analysis_df = results_df.join(results_df_steering.set_index('key'), on='key', rsuffix='_steering')
+analysis_df = results_df.join(results_df_steering.set_index('key'), on='key', rsuffix='_steering')
 
 analysis_df.follow_all_instructions.sum(), analysis_df.follow_all_instructions_steering.sum()
 # %%
@@ -164,11 +164,6 @@ fig.update_traces(marker=dict(colors=custom_colors), textinfo='percent+label')
 w2r_color = plotly.colors.qualitative.Set1[2]  # Custom color for Wrong -> Correct
 r2w_color = plotly.colors.qualitative.Set1[0]  # Custom color for Correct -> Wrong
 
-from collections import Counter
-
-from collections import Counter
-import plotly.graph_objects as go
-
 # Filter and count categories
 filtered_df_w2r = analysis_df[analysis_df['w2r'] == 1]
 w2r_categories = [i[0] for i in filtered_df_w2r.instruction_id_list]
@@ -177,6 +172,13 @@ w2r_counts = Counter(w2r_categories)
 filtered_df_r2w = analysis_df[analysis_df['r2w'] == 1]
 r2w_categories = [i[0] for i in filtered_df_r2w.instruction_id_list]
 r2w_counts = Counter(r2w_categories)
+
+all_instrucitons = analysis_df.instruction_id_list.apply(lambda x: x[0])
+for i in all_instrucitons:
+    if i not in w2r_counts:
+        w2r_counts[i] = 0
+    if i not in r2w_counts:
+        r2w_counts[i] = 0
 
 # Sort categories by counts
 sorted_w2r = sorted(w2r_counts.items(), key=lambda x: x[1], reverse=True)
@@ -194,6 +196,70 @@ fig.update_layout(barmode='group')
 fig.update_layout(title='W->C and C->W Changes for Different Instrucitons')
 # Incline the x-axis labels
 fig.update_layout(xaxis_tickangle=45)
+
+fig.show()
+
+# %%
+import numpy as np
+
+# =============================================================================
+# Make histogram with delta in accuracy per instruction
+# =============================================================================
+instruction_counter = Counter(analysis_df.instruction_id_list.apply(lambda x: x[0]))
+
+r2w_diff = { k: w2r_counts.get(k, 0) - r2w_counts[k] for k in r2w_counts }
+r2w_diff = { k: v/ instruction_counter[k] for k, v in r2w_diff.items() }
+r2w_diff = { k: 0.01 if v == 0 else v for k, v in r2w_diff.items() }
+
+# Sort categories by counts
+sorted_r2w_diff = sorted(r2w_diff.items(), key=lambda x: x[1], reverse=True)
+
+# Extract sorted categories and counts
+sorted_r2w_diff_categories, sorted_r2w_diff_values = zip(*sorted_r2w_diff)
+
+# rename categories
+new_names = { i: i.split(':')[1].replace('_', ' ').title() for i in sorted_r2w_diff_categories }
+new_names['detectable_format:number_highlighted_sections'] = 'Highlight Text'
+new_names['change_case:english_lowercase'] = 'Lowercase'
+new_names['detectable_format:json_format'] = 'JSON Format'
+
+sorted_r2w_diff_categories = [new_names[i] for i in sorted_r2w_diff_categories]
+
+# Normalize the values for the color scale
+norm_values = np.array(sorted_r2w_diff_values)
+norm_values = (norm_values - norm_values.min()) / (norm_values.max() - norm_values.min())
+
+# Make a bar chart of the sorted categories
+fig = go.Figure()
+fig.add_trace(go.Bar(
+    x=sorted_r2w_diff_categories, 
+    y=sorted_r2w_diff_values, 
+    name='Delta in Accuracy', 
+    marker=dict(
+        color=norm_values,
+        colorscale='RdYlGn',
+        colorbar=dict(title='Delta in Accuracy'),
+        showscale=False,
+        cmin=-0.45,
+        cmax=0.75,
+
+    )
+))
+fig.update_layout(title='(c) Post-steering Rel. Accuracy Change')
+# Incline the x-axis labels
+fig.update_layout(xaxis_tickangle=45)
+
+# change title font size
+fig.update_layout(title_font_size=16)
+
+# reshape the figure
+fig.update_layout(width=350, height=250)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+
+# save the figure as a pdf
+fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}.pdf')
 
 fig.show()
 # %%

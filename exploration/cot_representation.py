@@ -11,7 +11,8 @@ from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import cot_inference, direct_inference
 
 if 'Users' in os.getcwd():
-    os.chdir('C:\\Users\\t-astolfo\\workspace\\t-astolfo')
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
     print('We\'re on a Windows machine')
 elif 'home' in os.getcwd():
     os.chdir('/home/t-astolfo/t-astolfo')

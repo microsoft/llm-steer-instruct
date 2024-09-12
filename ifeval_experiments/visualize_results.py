@@ -1,8 +1,8 @@
 # %%
 import os
 if 'Users' in os.getcwd():
-    os.chdir('C:\\Users\\t-astolfo\\workspace\\t-astolfo')
-    print('We\'re on a Windows machine')
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
 elif 'home' in os.getcwd():
     os.chdir('/home/t-astolfo/t-astolfo')
     print('We\'re on a sandbox machine')
@@ -170,15 +170,15 @@ fig = px.bar(df, x='Setting', y='Accuracy', color='Setting',
 
 # set title
 if nonparametric_only:
-    title = f'{model_name.replace('-', ' ').capitalize()} on IFEval (single nonpar. instructions)'
+    title = f'{model_name.replace("-", " ").capitalize()} on IFEval (single nonpar. instructions)'
 else:
-    title = f'{model_name.replace('-', ' ').capitalize()} on IFEval (single instr. only)'
+    title = f'{model_name.replace("-", " ").capitalize()} on IFEval (single instr. only)'
 fig.update_layout(title_text=title)
 # remove legend
 fig.update_layout(showlegend=False)
 fig.update_layout(width=420, height=300)
 # remove padding
-fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
 
 # save plot as pdf
 # fig.write_image(f'./ifeval_experiments/figures/{model_name}_overall_accuracy.pdf')
@@ -255,7 +255,7 @@ df = pd.read_hdf('./ifeval_experiments/representations/phi-3/single_instr_subset
 # =============================================================================
 
 # load the dataframes
-model_names = ['phi-3', 'gemma-2-2b-it', 'mistral-7b-instruct' ]
+model_names = ['phi-3', 'gemma-2-2b-it', 'mistral-7b-instruct', 'gemma-2-9b-it', ]
 
 dfs = {}
 for model_name in model_names:
@@ -280,7 +280,7 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_steering = pd.DataFrame(results)
 
-    mode = 'standard'
+    mode = 'standard' if model_name != 'gemma-2-9b-it' else 'standard_no_hf'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -332,83 +332,146 @@ for model_name in model_names:
         'results_df_standard': results_df_standard,
         'results_df_instr_plus_steering': results_df_instr_plus_steering
     }
+
+    from scipy.stats import wilcoxon
+
+    model1_accuracies = dfs[model_name]['results_df_standard'].follow_all_instructions.astype(int).values
+    model2_accuracies = dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.astype(int).values
+
+    stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
+    print(f"{model_name} - Instr + Steering Wilcoxon statistic: {stat}, P-value: {p_value}")
+
+    model1_accuracies = dfs[model_name]['results_df'].follow_all_instructions.astype(int).values
+    model2_accuracies = dfs[model_name]['results_df_steering'].follow_all_instructions.astype(int).values
+
+    stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
+    print(f"{model_name} - No Instr Wilcoxon statistic: {stat}, P-value: {p_value}")
+
+    # compute mcnamara test
+    from statsmodels.stats.contingency_tables import mcnemar
+
+    model1_accuracies = dfs[model_name]['results_df_standard'].follow_all_instructions.astype(int).values
+    model2_accuracies = dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.astype(int).values
+
+    table = [[0, 0], [0, 0]]
+
+    for i in range(len(model1_accuracies)):
+        table[int(model1_accuracies[i])][int(model2_accuracies[i])] += 1
+
+    result = mcnemar(table, exact=True)
+    print(f"{model_name} - Instr - McNemar test: {result}")
+
+    model1_accuracies = dfs[model_name]['results_df'].follow_all_instructions.astype(int).values
+    model2_accuracies = dfs[model_name]['results_df_steering'].follow_all_instructions.astype(int).values
+
+    table = [[0, 0], [0, 0]]
+
+    for i in range(len(model1_accuracies)):
+        table[int(model1_accuracies[i])][int(model2_accuracies[i])] += 1
+
+    result = mcnemar(table, exact=True)
+    print(f"{model_name} - No Instr - McNemar test: {result}")
+
+
 # %%
 # make bar plot with all models of results_df.follow_all_instructions.mean() and results_df_steering.follow_all_instructions.mean()
+
+# Calculate means and 95% confidence intervals
 df = pd.DataFrame({
     'Model': model_names,
-    'Standard Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
     'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names]
+    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
 })
 
 # Specify a list of colors for each 'Setting'
 index = 0
-colors = [px.colors.qualitative.Plotly[index], px.colors.qualitative.Plotly[index]]
+color = px.colors.qualitative.Plotly[index]
 
-# plot 'w/o Instr.' and 'w/o Instr. + Steering' in one plot
+# plot 'Std. Inference' and 'Steering' in one plot
 fig = go.Figure()
-for i, setting in enumerate(['Standard Inference', 'Steering']):
+for i, setting in enumerate(['Std. Inference', 'Steering']):
     fig.add_trace(go.Bar(
         x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
         y=df[setting],
         name=setting,
-        marker_color=colors[i],
-        opacity=1 if i == 1 else 0.5
+        marker_color=color,
+        opacity=1 if i == 1 else 0.5,
+        # error_y=dict(
+        #     type='data',
+        #     array=df[f'{setting} Error'],
+        #     visible=True
+        # )
     ))
 
 # set title
-fig.update_layout(title_text='IFEval Format & Structure: *without* Input Instruction')
-# resize plot
-fig.update_layout(width=500, height=350)
+fig.update_layout(title_text='(a) Format & Structure: <b>w/o</b> Text Instr.')
+# change title font size
+fig.update_layout(title_font_size=16)
 
+# resize plot
+fig.update_layout(width=350, height=250)
+
+fig.update_layout(yaxis=dict(range=[0, 0.4]))
 
 # remove padding
-fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
 
 # store plot as pdf
-fig.write_image(f'./plots/IFEval_Format_Structure_no_instr.pdf')
+# fig.write_image(f'./plots_for_paper/format_no_instr.pdf')
 fig.show()
-
 # %%
 # =============================================================================
 # Setting 3-4: make plot with all models
 # =============================================================================
 
-# make bar plot with all models of results_df.follow_all_instructions.mean() and results_df_steering.follow_all_instructions.mean()
+# Calculate means and 95% confidence intervals
 df = pd.DataFrame({
     'Model': model_names,
-    'Standard Inference': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names]
+    'Std. Inference': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
+    'Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference Error': [1.96 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1.96 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
 })
 
 # Specify a list of colors for each 'Setting'
 index = 3
-colors = [px.colors.qualitative.Plotly[index], px.colors.qualitative.Plotly[index]]
+color = px.colors.qualitative.Plotly[index]
 
-# plot 'w/o Instr.' and 'w/o Instr. + Steering' in one plot
+# plot 'Std. Inference' and 'Steering' in one plot
 fig = go.Figure()
-for i, setting in enumerate(['Standard Inference', 'Steering']):
+for i, setting in enumerate(['Std. Inference', 'Steering']):
     fig.add_trace(go.Bar(
         x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
         y=df[setting],
         name=setting,
-        marker_color=colors[i],
-        opacity=1 if i == 1 else 0.5
+        marker_color=color,
+        opacity=1 if i == 1 else 0.5,
+        # error_y=dict(
+        #     type='data',
+        #     array=df[f'{setting} Error'],
+        #     visible=True
+        # )
     ))
 
 # set title
-fig.update_layout(title_text='IFEval Format & Structure: *with* Input Instruction')
+fig.update_layout(title_text='(b) Format & Structure: <b>with</b> Text Instr.')
+# change title font size
+fig.update_layout(title_font_size=16)
+
 # resize plot
-fig.update_layout(width=500, height=350)
+fig.update_layout(width=350, height=250)
 
 # set min y to 0.5
-fig.update_layout(yaxis=dict(range=[0.5, 0.85]))
+fig.update_layout(yaxis=dict(range=[0.5, 0.90]))
 
 # remove padding
-fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
 
 # store plot as pdf
-fig.write_image(f'./plots/IFEval_Format_Structure_instr.pdf')
+# fig.write_image(f'./plots_for_paper/format_instr.pdf')
 fig.show()
 # %%

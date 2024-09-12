@@ -1,7 +1,8 @@
 # %%
 import os
 if 'Users' in os.getcwd():
-    os.chdir('C:\\Users\\t-astolfo\\workspace\\t-astolfo')
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
     print('We\'re on a Windows machine')
 elif 'home' in os.getcwd():
     os.chdir('/home/t-astolfo/t-astolfo')

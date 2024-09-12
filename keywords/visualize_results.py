@@ -1,12 +1,18 @@
 # %%
 import os
-os.chdir('/home/t-astolfo/t-astolfo')
 import json
 import pandas as pd
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import re
+
+if 'Users' in os.getcwd():
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
+elif 'home' in os.getcwd():
+    os.chdir('/home/t-astolfo/t-astolfo')
+    print('We\'re on a sandbox machine')
 
 # %%
 def correct_loose_score(df):
@@ -27,11 +33,11 @@ def correct_loose_score(df):
 # %%
 
 folder = 'keywords/out'
-model_name = 'phi-3'
-constrain_type = 'existence'
+model_name = 'gemma-2-2b-it'
+constrain_type = 'forbidden'
 steering= 'add_vector'
 layer = 24
-weight = 120
+weight = -200
 n_examples = 20
 
 file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
@@ -184,104 +190,187 @@ print(f'Number of keywords found: {c}')
 
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
-weights = {'phi-3': -150, 'gemma-2-2b-it': -200}
-dfs = {}
+weights = {'forbidden' : {'phi-3': -150, 'gemma-2-2b-it': -200}, 'existence': {'phi-3': 120, 'gemma-2-2b-it': -200}}
+constraints = ['forbidden', 'existence']
+all_dfs = {}
 for model_name in model_names:
-    
-    folder = 'keywords/out'
-    constrain_type = 'forbidden'
-    steering= 'add_vector'
-    layer = 24
-    weight = weights[model_name]
-    n_examples = 20
+    for constraint_type in constraints:
+        
+        folder = 'keywords/out'
+        steering= 'add_vector'
+        layer = 24
+        weight = weights[constraint_type][model_name]
+        n_examples = 20
 
-    file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
-    with open(file, 'r') as f:
-        results = [json.loads(line) for line in f]
+        # todo remove this when we have the results
+        if constraint_type == 'existence' and model_name == 'gemma-2-2b-it':
+            all_dfs[constraint_type][model_name] = all_dfs[constraint_type]['phi-3']
+            continue
 
-    df_steering = pd.DataFrame(results)
+        file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
+        with open(file, 'r') as f:
+            results = [json.loads(line) for line in f]
 
-    steering = 'no_instr'
-    file = f'{folder}/{model_name}/{constrain_type}/{steering}/out.jsonl'
-    with open(file, 'r') as f:
-        results = [json.loads(line) for line in f]
+        df_steering = pd.DataFrame(results)
 
-    df_no_steering = pd.DataFrame(results)
+        steering = 'no_instr'
+        file = f'{folder}/{model_name}/{constraint_type}/{steering}/out.jsonl'
+        with open(file, 'r') as f:
+            results = [json.loads(line) for line in f]
 
-    steering = 'standard'
-    file = f'{folder}/{model_name}/{constrain_type}/{steering}/out.jsonl'
-    with open(file, 'r') as f:
-        results = [json.loads(line) for line in f]
+        df_no_steering = pd.DataFrame(results)
 
-    df_standard = pd.DataFrame(results)
+        steering = 'standard'
+        file = f'{folder}/{model_name}/{constraint_type}/{steering}/out.jsonl'
+        with open(file, 'r') as f:
+            results = [json.loads(line) for line in f]
 
-    steering = 'instr_plus_add_vector'
-    file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
-    with open(file, 'r') as f:
-        results = [json.loads(line) for line in f]
+        df_standard = pd.DataFrame(results)
 
-    df_instr_plus_steering = pd.DataFrame(results)
+        steering = 'instr_plus_add_vector'
+        file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
+        with open(file, 'r') as f:
+            results = [json.loads(line) for line in f]
 
-    print(f'No steering: {df_no_steering.follow_all_instructions.mean()}')
-    print(f'Steering: {df_steering.follow_all_instructions.mean()}')
-    print(f'Standard: {df_standard.follow_all_instructions.mean()}')
-    print(f'Instr + steering: {df_instr_plus_steering.follow_all_instructions.mean()}')
-    
-    df_no_steering = correct_loose_score(df_no_steering)
-    df_steering = correct_loose_score(df_steering)
-    df_standard = correct_loose_score(df_standard)
-    df_instr_plus_steering = correct_loose_score(df_instr_plus_steering)
+        df_instr_plus_steering = pd.DataFrame(results)
 
-    print(f'No steering: {df_no_steering.follow_all_instructions.mean()}')
-    print(f'Steering: {df_steering.follow_all_instructions.mean()}')
-    print(f'Standard: {df_standard.follow_all_instructions.mean()}')
-    print(f'Instr + steering: {df_instr_plus_steering.follow_all_instructions.mean()}')
+        if 'forbidden_words' in df_no_steering.kwargs[0]:
+            df_no_steering = correct_loose_score(df_no_steering)
+            df_steering = correct_loose_score(df_steering)
+            df_standard = correct_loose_score(df_standard)
+            df_instr_plus_steering = correct_loose_score(df_instr_plus_steering)
 
-    dfs[model_name] = {
-    'results_df': df_no_steering,
-    'results_df_steering': df_steering,
-    'results_df_standard': df_standard,
-    'results_df_instr_plus_steering': df_instr_plus_steering
-    }
+        print(f'Model: {model_name} | Constraint: {constraint_type}')
+        print(f'No steering: {df_no_steering.follow_all_instructions.mean()}')
+        print(f'Steering: {df_steering.follow_all_instructions.mean()}')
+        print(f'Standard: {df_standard.follow_all_instructions.mean()}')
+        print(f'Instr + steering: {df_instr_plus_steering.follow_all_instructions.mean()}')
+
+        if constraint_type not in all_dfs:
+            all_dfs[constraint_type] = {}
+
+        all_dfs[constraint_type][model_name] = {
+        'results_df': df_no_steering,
+        'results_df_steering': df_steering,
+        'results_df_standard': df_standard,
+        'results_df_instr_plus_steering': df_instr_plus_steering
+        }
+
 # %%
-# make bar plot with all models of results_df.follow_all_instructions.mean() and results_df_steering.follow_all_instructions.mean()
-df = pd.DataFrame({
+from plotly.subplots import make_subplots
+
+# Calculate means and 95% confidence intervals for df_forbidden
+dfs = all_dfs['forbidden']
+df_forbidden = pd.DataFrame({
     'Model': model_names,
-    'Standard Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
     'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names]
+    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
 })
 
+# Calculate means and 95% confidence intervals for df_existence
+dfs = all_dfs['existence']
+df_existence = pd.DataFrame({
+    'Model': model_names,
+    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
+    'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
+    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
+})
+
+# Create subplots
+fig = make_subplots(rows=1, cols=2, subplot_titles=('Exclusion', 'Inclusion'))
+
 # Specify a list of colors for each 'Setting'
-index = 0
-colors = [px.colors.qualitative.Plotly[index], px.colors.qualitative.Plotly[index]]
+index = 1
+color = px.colors.qualitative.Plotly[index]
 
-# plot 'w/o Instr.' and 'w/o Instr. + Steering' in one plot
-fig = go.Figure()
-for i, setting in enumerate(['Standard Inference', 'Steering']):
+# settings = ['Std. Inference', 'Steering']
+settings = ['w/ Instr.', 'w/ Instr. + Steering']
+
+# Add traces for df_forbidden
+for i, setting in enumerate(settings):
     fig.add_trace(go.Bar(
-        x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
-        y=df[setting],
+        x=df_forbidden['Model'].apply(lambda x: x.replace('-', ' ').title()),
+        y=df_forbidden[setting],
         name=setting,
-        marker_color=colors[i],
-        opacity=1 if i == 1 else 0.5
-    ))
+        marker_color=color,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape="/" if i == 1 else "",
+        showlegend=False
+    ), row=1, col=1)
 
-# set title
-fig.update_layout(title_text='Keyword Exclusion: *without* Input Instruction')
-# resize plot
-fig.update_layout(width=500, height=350)
+index = 4
+color = px.colors.qualitative.Plotly[index]
+
+# Add traces for df_existence
+for i, setting in enumerate(settings):
+    fig.add_trace(go.Bar(
+        x=df_existence['Model'].apply(lambda x: x.replace('-', ' ').title()),
+        y=df_existence[setting],
+        name=setting,
+        marker_color=color,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape="/" if i == 1 else "",
+        showlegend=False
+    ), row=1, col=2)
 
 
-# remove padding
+# Add custom legend item for 'Std. Inference'
+fig.add_trace(go.Bar(
+    x=[None], y=[None],
+    marker=dict(color='white', line=dict(color='black', width=1)),
+    showlegend=True,
+    name='Std. Inference',
+    offset=-10,
+    # width=0.01  # Set tiny width
+), row=1, col=1)
+
+# Add custom legend item for 'Steering' with pattern
+fig.add_trace(go.Bar(
+    x=[None], y=[None],
+    marker=dict(color='white', pattern=dict(
+            shape="/",
+            fillmode="replace",
+            size=10,
+            solidity=0.2,
+            fgcolor='black'  # Pattern color
+        ), line=dict(color='black', width=1)),
+    showlegend=True,
+    name='Steering',
+    offset=-10,
+    # width=0.01  # Set tiny width
+), row=1, col=2)
+
+# Update layout
+fig.update_layout(title_text='Accuracy <b>without</b> Text Instruction')
+fig.update_layout(width=350, height=250)
 fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
 
-# set min y to 0.5
-fig.update_layout(yaxis=dict(range=[0.3, 1]))
+# Set y-axis range
+if 'Steering' in settings:
+    fig.update_yaxes(range=[0.5, 0.9], row=1, col=1)
+    fig.update_yaxes(range=[0, 0.4], row=1, col=2)
+else:
+    fig.update_yaxes(range=[0.6, 1], row=1, col=1)
+    fig.update_yaxes(range=[0.6, 1], row=1, col=2)
 
-# store plot as pdf
-fig.write_image('plots/keyword_exclusion_no_instruction.pdf')
+# incline x-axis labels
+# fig.update_xaxes(tickangle=30)
+
+# move the legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-0.3,
+    xanchor='right',
+    x=0.8
+))
 
 fig.show()
 
@@ -290,27 +379,33 @@ fig.show()
 # =============================================================================
 # Setting 3-4: make plot with all models
 # =============================================================================
-
-# make bar plot with all models of results_df.follow_all_instructions.mean() and results_df_steering.follow_all_instructions.mean()
+# Calculate means and 95% confidence intervals
 df = pd.DataFrame({
     'Model': model_names,
-    'Standard Inference': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names]
+    'Std. Inference': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
+    'Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
+    'Std. Inference Error': [1.96 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1.96 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
 })
 
 # Specify a list of colors for each 'Setting'
 index = 3
 colors = [px.colors.qualitative.Plotly[index], px.colors.qualitative.Plotly[index]]
 
-# plot 'w/o Instr.' and 'w/o Instr. + Steering' in one plot
+# plot 'Std. Inference' and 'Steering' in one plot
 fig = go.Figure()
-for i, setting in enumerate(['Standard Inference', 'Steering']):
+for i, setting in enumerate(['Std. Inference', 'Steering']):
     fig.add_trace(go.Bar(
         x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
         y=df[setting],
         name=setting,
         marker_color=colors[i],
-        opacity=1 if i == 1 else 0.5
+        opacity=1 if i == 1 else 0.5,
+        error_y=dict(
+            type='data',
+            array=df[f'{setting} Error'],
+            visible=True
+        )
     ))
 
 # set title
@@ -325,6 +420,46 @@ fig.update_layout(yaxis=dict(range=[0.5, 1]))
 fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
 
 # store plot as pdf
-fig.write_image('plots/keyword_exclusion_with_instruction.pdf')
+# fig.write_image('plots/keyword_exclusion_with_instruction.pdf')
 fig.show()
+# %%
+# =============================================================================
+# test statistical significance
+# =============================================================================
+
+from statsmodels.stats.contingency_tables import mcnemar
+
+model_name = 'phi-3'
+
+
+# Construct the contingency table
+# Let's assume n01 = 7, n10 = 3 (example values)
+n00 = analysis_df['w2w'].sum()
+n01 = analysis_df['w2r'].sum()
+n10 = analysis_df['r2w'].sum()
+n11 = analysis_df['r2r'].sum()
+table = [[n00, n01], [n10, n11]]
+print(table)
+
+
+# Perform McNemar's test
+result = mcnemar(table, exact=True, correction=True)  # exact=False for large samples
+
+# Output the test statistic and p-value
+print(f"Test statistic: {result.statistic}")
+print(f"P-value: {result.pvalue}")
+# %%
+from scipy.stats import wilcoxon
+
+model1_accuracies = dfs[model_name]['results_df_standard'].follow_all_instructions.astype(int).values
+model2_accuracies = dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.astype(int).values
+
+stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
+print(f"Wilcoxon statistic: {stat}, P-value: {p_value}")
+
+model1_accuracies = dfs[model_name]['results_df'].follow_all_instructions.astype(int).values
+model2_accuracies = dfs[model_name]['results_df_steering'].follow_all_instructions.astype(int).values
+
+stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
+print(f"Wilcoxon statistic: {stat}, P-value: {p_value}")
 # %%
