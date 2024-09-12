@@ -6,8 +6,10 @@ if 'Users' in os.getcwd():
     sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
     sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
     print('We\'re on the local machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/ifeval_experiments')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
     print('We\'re on a sandbox machine')
 
 
@@ -75,7 +77,7 @@ def direction_projection_hook(
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
+    # os.chdir(args.project_dir)
 
     # Some environment variables
     device = args.device
@@ -135,8 +137,8 @@ def run_experiment(args: DictConfig):
         if args.specific_instruction == 'forbidden':
             file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence':
-            if 'keywords_test' in args.data_path:
-                file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs_text.h5'
+            if 'keyword_test' in args.data_path:
+                file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs.h5'
             else:    
                 file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
         else:
@@ -234,7 +236,7 @@ def run_experiment(args: DictConfig):
     #     break
 
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}'
+    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}'
 
     if args.specific_instruction:
         folder += f'/{args.specific_instruction}'
@@ -253,7 +255,10 @@ def run_experiment(args: DictConfig):
     os.makedirs(folder, exist_ok=True)
     out_path = f'{folder}/out'
     out_path += ('_test' if args.dry_run else '')
+    out_path += ('_gen_data' if 'keyword_test' in args.data_path)
     out_path +=  '.jsonl'
+
+    print(f'Storing at: {out_path}')
 
     with open(out_path, 'w') as f:
         for line in out_lines:

@@ -1,9 +1,9 @@
 device: 'cuda'
-project_dir: '/Users/alestolfo/workspace/llm-steer-instruct/keywords'
-data_path: '../data/input_data_single_instr.jsonl'
+project_dir: './keywords'
+data_path: './data/input_data_single_instr.jsonl'
 dry_run: False
 output_path: 'out/'
-path_to_hf_token: '../hf_token.txt'
+path_to_hf_token: './hf_token.txt'
 nonparametric_only: False
 
 model_name: 'phi-3'
