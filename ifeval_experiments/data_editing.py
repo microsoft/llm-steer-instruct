@@ -352,6 +352,8 @@ for i, r in data_df.iterrows():
         new_prompt = r.prompt_without_instruction + phrasing.format(word)
         new_row['old_prompt'] = r.prompt
         new_row['prompt'] = new_prompt
+        new_row['instruction_id_list_old'] = r.instruction_id_list
+        new_row['instruction_id_list'] = ['keywords:forbidden_words']
         new_rows.append(new_row)
 
 
@@ -368,7 +370,7 @@ new_df.to_json('../data/ifeval_single_keyword_exclude.jsonl', orient='records', 
 
 # load ../data/all_base_x_all_instructions_filtered.jsonl
 # with open('./data/input_data_single_instr.jsonl') as f:
-with open('./data/input_data.jsonl') as f:
+with open('../data/input_data.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 
@@ -417,6 +419,8 @@ for i, r in data_df.iterrows():
         new_prompt = r.prompt_without_instruction + phrasing.format(word)
         new_row['old_prompt'] = r.prompt
         new_row['prompt'] = new_prompt
+        new_row['instruction_id_list_old'] = r.instruction_id_list
+        new_row['instruction_id_list'] = ['keywords:existence']
         new_rows.append(new_row)
 
 
