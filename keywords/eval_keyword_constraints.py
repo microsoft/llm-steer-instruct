@@ -83,8 +83,6 @@ def run_experiment(args: DictConfig):
     device = args.device
     print(f"Using device: {device}")
 
-    transformer_cache_dir = None
-
     if 'no_instr' in args.data_path:
         raise ValueError('To run without instructions, set the include_instructions argument to False')
 
@@ -103,7 +101,7 @@ def run_experiment(args: DictConfig):
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     out_lines = []

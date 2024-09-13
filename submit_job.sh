@@ -1,6 +1,7 @@
 #!/bin/bash
 
 model_name="phi-3"
+model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
 gpu_req="rtx_4090:1"
