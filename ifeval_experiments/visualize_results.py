@@ -339,13 +339,13 @@ for model_name in model_names:
     model2_accuracies = dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.astype(int).values
 
     stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
-    print(f"{model_name} - Instr + Steering Wilcoxon statistic: {stat}, P-value: {p_value}")
+    # print(f"{model_name} - Instr + Steering Wilcoxon statistic: {stat}, P-value: {p_value}")
 
     model1_accuracies = dfs[model_name]['results_df'].follow_all_instructions.astype(int).values
     model2_accuracies = dfs[model_name]['results_df_steering'].follow_all_instructions.astype(int).values
 
     stat, p_value = wilcoxon(model1_accuracies, model2_accuracies)
-    print(f"{model_name} - No Instr Wilcoxon statistic: {stat}, P-value: {p_value}")
+    # print(f"{model_name} - No Instr Wilcoxon statistic: {stat}, P-value: {p_value}")
 
     # compute mcnamara test
     from statsmodels.stats.contingency_tables import mcnemar
@@ -358,8 +358,8 @@ for model_name in model_names:
     for i in range(len(model1_accuracies)):
         table[int(model1_accuracies[i])][int(model2_accuracies[i])] += 1
 
-    result = mcnemar(table, exact=True)
-    print(f"{model_name} - Instr - McNemar test: {result}")
+    result = mcnemar(table, exact=False, correction=True)
+    print(f"{model_name} - Instr - McNemar test:\t\t\t {result.pvalue}")
 
     model1_accuracies = dfs[model_name]['results_df'].follow_all_instructions.astype(int).values
     model2_accuracies = dfs[model_name]['results_df_steering'].follow_all_instructions.astype(int).values
@@ -369,8 +369,8 @@ for model_name in model_names:
     for i in range(len(model1_accuracies)):
         table[int(model1_accuracies[i])][int(model2_accuracies[i])] += 1
 
-    result = mcnemar(table, exact=True)
-    print(f"{model_name} - No Instr - McNemar test: {result}")
+    result = mcnemar(table, exact=False, correction=True)
+    print(f"{model_name} - No Instr - McNemar test:\t\t\t {result.pvalue}")
 
 
 # %%

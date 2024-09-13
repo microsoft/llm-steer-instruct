@@ -17,7 +17,7 @@ dir = 'keywords/layer_search_out/'
 model_name = 'phi-3'
 n_examples = 20
 seed = 42
-instr = 'instr'
+instr = 'no_instr'
 
 file = f'{dir}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
 with open(file, 'r') as f:
@@ -118,6 +118,21 @@ question = uids[0]
 
 # get outputs for the question
 outputs = results_df_no_instr[results_df_no_instr.question == question]
+
+for i, r in outputs.iterrows():
+    print(f'Prompt: {r.model_input}')
+    print(f'LAYER: {r.layer} | WEIGHT: {r.weight}')
+    print(f'Response: {r.response}')
+    print(f'Accuracy: {r.accuracy}')
+    print(f'Occurrences: {r.occurrences}')
+    print('--------------------------------')
+# %%
+
+layer = 22
+steering_weight = 150
+
+# get outputs for the question
+outputs = results_df_no_instr[(results_df_no_instr.layer == layer) & (results_df_no_instr.weight == steering_weight)]
 
 for i, r in outputs.iterrows():
     print(f'Prompt: {r.model_input}')

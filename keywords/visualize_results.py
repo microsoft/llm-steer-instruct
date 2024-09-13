@@ -256,6 +256,30 @@ for model_name in model_names:
         'results_df_instr_plus_steering': df_instr_plus_steering
         }
 
+        # carry out mcnemar test
+        from statsmodels.stats.contingency_tables import mcnemar
+
+        # Construct the contingency table
+        base_accuracies = df_no_steering.follow_all_instructions.astype(int).values
+        steering_accuracies = df_steering.follow_all_instructions.astype(int).values
+        table = [[0, 0], [0, 0]]
+        for i in range(len(base_accuracies)):
+            table[base_accuracies[i]][steering_accuracies[i]] += 1
+        
+        # Perform McNemar's test
+        result = mcnemar(table, exact=True, correction=True)
+        print(f"NO Instr - P-value: {result.pvalue}")
+
+        standard_accuracies = df_standard.follow_all_instructions.astype(int).values
+        instr_plus_steering_accuracies = df_instr_plus_steering.follow_all_instructions.astype(int).values
+        table = [[0, 0], [0, 0]]
+        for i in range(len(standard_accuracies)):
+            table[standard_accuracies[i]][instr_plus_steering_accuracies[i]] += 1
+
+        # Perform McNemar's test
+        result = mcnemar(table, exact=True, correction=True)
+
+
 # %%
 from plotly.subplots import make_subplots
 
@@ -275,8 +299,8 @@ df_forbidden = pd.DataFrame({
 dfs = all_dfs['existence']
 df_existence = pd.DataFrame({
     'Model': model_names,
-    'Std. Inference': [0 for model_name in model_names],
-    'Steering': [0 for model_name in model_names],
+    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
+    'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr.': [0 for model_name in model_names],
     'w/ Instr. + Steering': [0 for model_name in model_names],
     'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],

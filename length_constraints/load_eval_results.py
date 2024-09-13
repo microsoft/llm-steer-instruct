@@ -304,6 +304,19 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
         showlegend=first,
     ))
 
+    # carry out mcnemar test
+    # first, count the number of correct and incorrect predictions
+    no_steering_correct = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct'].sum()
+    no_steering_incorrect = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint].shape[0] - no_steering_correct
+    steering_correct = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['correct'].sum()
+    steering_incorrect = results_df_steering[results_df_steering['length_constraint'] == length_constraint].shape[0] - steering_correct
+
+    # carry out the mcnemar test
+    from statsmodels.stats.contingency_tables import mcnemar
+    table = [[no_steering_correct, no_steering_incorrect], [steering_correct, steering_incorrect]]
+    result = mcnemar(table, exact=False, correction=True)
+    print(f'Length constraint: {length_constraint+1} | p-value: {result.pvalue}')
+
     first = False
 
 # Group the pairs of columns by length constraint
@@ -339,7 +352,7 @@ fig.update_layout(width=350, height=250)
 
 
 # save theplot as pdf
-fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
+# fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
 
 fig.show()
 
