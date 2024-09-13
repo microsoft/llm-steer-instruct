@@ -9,15 +9,15 @@ import plotly
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
     print('We\'re on the local machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
     print('We\'re on a sandbox machine')
 # %%
 dir = 'keywords/layer_search_out/'
 model_name = 'phi-3'
 n_examples = 20
 seed = 42
-instr = 'no_instr'
+instr = 'instr'
 
 file = f'{dir}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
 with open(file, 'r') as f:
@@ -51,7 +51,9 @@ for uid in uids:
         if layer == -1:
             continue
         results_df_no_instr.loc[(results_df_no_instr.question == uid) & (results_df_no_instr.layer == layer), 'weight'] = weights
-
+# %%
+# baseline accuracy with no steering
+results_df_no_instr[results_df_no_instr.layer == -1].accuracy.mean()
 # %%
 ## group by layer and weight and compute mean of "accuracy"
 accuracy_values = { (l, w) : results_df_no_instr[(results_df_no_instr.layer == l) & (results_df_no_instr.weight == w)].accuracy.mean() for l in layer_range for w in weights } 
