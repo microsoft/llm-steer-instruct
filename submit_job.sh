@@ -13,7 +13,7 @@ data_path=./data/ifeval_single_keyword_include.jsonl
 
 source_layer_idx=24
 steering_weight=120
-steering=add_vector
+steering=none
 include_instructions=false
 
 specific_instruction=existence
@@ -28,6 +28,6 @@ sbatch --output="${HOME}/bsub_logs/steering/keywords/incl-${model_name}-${steeri
     --gres=gpumem:30g \
     --mem-per-cpu=50G \
     --time=23:59:00 \
---wrap="python keywords/eval_keyword_constraints.py data_path=$data_path source_layer_idx=$source_layer_idx steering_weight=$steering_weight steering=$steering specific_instruction=$specific_instruction n_examples=$n_examples include_instructions=$include_instructions dry_run=$dry_run
+--wrap="python keywords/eval_keyword_constraints.py data_path=$data_path model_name=$model_name source_layer_idx=$source_layer_idx steering_weight=$steering_weight steering=$steering specific_instruction=$specific_instruction n_examples=$n_examples include_instructions=$include_instructions dry_run=$dry_run
 "
 

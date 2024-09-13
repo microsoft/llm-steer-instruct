@@ -1,9 +1,9 @@
 device: 'cuda'
-project_dir: '/home/t-astolfo/t-astolfo/keywords'
-data_path: '../data/keyword_validation.jsonl'
+project_dir: './keywords'
+data_path: './data/keyword_validation.jsonl'
 dry_run: False
 output_path: 'layer_search_out/'
-path_to_hf_token: '../hf_token.txt'
+path_to_hf_token: './hf_token.txt'
 nonparametric_only: False
 
 model_name: 'phi-3'

@@ -77,7 +77,7 @@ def direction_projection_hook(
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
+    # os.chdir(args.project_dir)
 
     random.seed(args.seed)
 
@@ -242,7 +242,7 @@ def run_experiment(args: DictConfig):
 
 
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}'
+    folder = f'{args.project_dir}{args.output_path}/{args.model_name}'
     folder += f'/n_examples{args.n_examples}_seed{args.seed}'
 
     os.makedirs(folder, exist_ok=True)
