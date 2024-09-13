@@ -10,10 +10,10 @@ gpu_req="rtx_3090:1"
 dry_run=false
 data_path=./data/keyword_test_inclusion.jsonl
 
-source_layer_idx=22
-steering_weight=150
-steering=none
-include_instructions=false
+source_layer_idx=24
+steering_weight=120
+steering=add_vector
+include_instructions=true
 
 specific_instruction=existence
 n_examples=20
