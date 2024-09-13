@@ -108,10 +108,10 @@ def run_experiment(args: DictConfig):
 
     out_lines = []
 
-    all_instructions = list(set([ item for l in data_df.instruction_id_list_for_eval for item in l]))
+    all_instructions = list(set([ item for l in data_df.instruction_id_list for item in l]))
 
     all_instructions = [instr for instr in all_instructions if args.specific_instruction in instr]
-    data_df = data_df[data_df['instruction_id_list_for_eval'].apply(lambda x: any(y in all_instructions for y in x))]
+    data_df = data_df[data_df['instruction_id_list'].apply(lambda x: any(y in all_instructions for y in x))]
     print(f'Using only the following instructions: {all_instructions}')
     
     if args.dry_run:
