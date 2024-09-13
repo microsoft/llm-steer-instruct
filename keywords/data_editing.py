@@ -30,5 +30,5 @@ for i, r in data_df.iterrows():
 new_data_df = pd.DataFrame(new_rows)
 # %%
 # store the new data
-new_data_df.to_json('data/keyword_test_inclusion.jsonl', orient='records', lines=True)
+new_data_df.to_json('../data/keyword_test_inclusion.jsonl', orient='records', lines=True)
 # %%

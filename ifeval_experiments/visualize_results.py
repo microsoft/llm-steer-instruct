@@ -408,17 +408,26 @@ for i, setting in enumerate(['Std. Inference', 'Steering']):
     ))
 
 # set title
-fig.update_layout(title_text='(a) Format & Structure: <b>w/o</b> Text Instr.')
+fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
 # change title font size
 fig.update_layout(title_font_size=16)
 
 # resize plot
-fig.update_layout(width=350, height=250)
+fig.update_layout(width=325, height=275)
 
 fig.update_layout(yaxis=dict(range=[0, 0.4]))
 
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-0.6,
+    xanchor='right',
+    x=0.95
+))
 
 # store plot as pdf
 # fig.write_image(f'./plots_for_paper/format_no_instr.pdf')

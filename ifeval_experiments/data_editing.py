@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import plotly.express as px
 import random
+import os
+os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
 # %%
 
 # read in ../data/input_data.jsonl
@@ -270,18 +272,22 @@ with open('../data/input_data_multiple_instr_nonpar.jsonl', 'w') as f:
 # add prompt w/o instr to data
 # =============================================================================
 # read in ../data/input_data.jsonl
-with open('./data/input_data_single_instr.jsonl') as f:
+with open('../data/input_data.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 
 data_df = pd.DataFrame(data)
 
+# drop the column 'prompt_without_instruction'
+data_df.drop(columns=['prompt_without_instruction'], inplace=True)
+
 # load ../data/input_data_single_instr_no_instr.jsonl
-with open('./data/input_data_single_instr_no_instr.jsonl') as f:
+with open('../data/input_data_no_instr.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 
 data_df_no_instr = pd.DataFrame(data)
+
 # %%
 # rename the column 'prompt' to 'prompt_without_instruction'
 data_df_no_instr.rename(columns={'prompt': 'prompt_without_instruction'}, inplace=True)
@@ -290,14 +296,15 @@ data_df_no_instr.rename(columns={'prompt': 'prompt_without_instruction'}, inplac
 data_df = data_df.join(data_df_no_instr[['key', 'prompt_without_instruction']].set_index('key'), on='key')
 # %%
 # store the df as jsonl
-data_df.to_json('./data/input_data_single_instr.jsonl', orient='records', lines=True)
+data_df.to_json('../data/input_data.jsonl', orient='records', lines=True)
 # %%
 # =============================================================================
 # look at keyword data
 # =============================================================================
 
 # load ../data/all_base_x_all_instructions_filtered.jsonl
-with open('./data/input_data_single_instr.jsonl') as f:
+# with open('./data/input_data_single_instr.jsonl') as f:
+with open('../data/input_data.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 
@@ -316,22 +323,28 @@ for i in filtered_df.index:
 keywords = []
 new_prompts = []
 for i in filtered_df.index:
-    keywords.extend(filtered_df.loc[i].kwargs[0]['forbidden_words'])
+    for kwarg in filtered_df.loc[i].kwargs:
+        if 'forbidden_words' in kwarg:
+            keywords.extend(kwarg['forbidden_words'])
     
 # %%
 # store keywords in a txt file
-with open('./data/ifeval_keywords_exclude.txt', 'w') as f:
+with open('../data/ifeval_keywords_exclude.txt', 'w') as f:
     for k in keywords:
         f.write(k + '\n')
 # %%
 phrasings_exclude = [' Do not include the word {}.', ' Make sure not to include the word "{}".', ' Do not use the word {}.', ' Do not say "{}".', ' Please exclude the word "{}".', ' The output should not contain the word "{}".']
 new_rows = []
 for i, r in data_df.iterrows():
-    instr = r.instruction_id_list[0]
-    if 'forbidden' not in instr:
+    if 'keywords:forbidden_words' not in r.instruction_id_list:
         continue
     # get words to exclude
-    word_list = r.kwargs[0]['forbidden_words']
+    word_list = []
+    for kwarg in filtered_df.loc[i].kwargs:
+        if 'forbidden_words' in kwarg:
+            word_list = kwarg['forbidden_words']
+    if not word_list:
+        raise ValueError('word_list is empty')
     for word in word_list:
         new_row = dict(r)
         new_row['kwargs'] = [{'forbidden_words': [word]}]
@@ -354,7 +367,8 @@ new_df.to_json('../data/ifeval_single_keyword_exclude.jsonl', orient='records', 
 # =============================================================================
 
 # load ../data/all_base_x_all_instructions_filtered.jsonl
-with open('./data/input_data_single_instr.jsonl') as f:
+# with open('./data/input_data_single_instr.jsonl') as f:
+with open('./data/input_data.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 
@@ -373,22 +387,29 @@ for i in filtered_df.index:
 keywords = []
 new_prompts = []
 for i in filtered_df.index:
-    keywords.extend(filtered_df.loc[i].kwargs[0]['keywords'])
+    for kwarg in filtered_df.loc[i].kwargs:
+        if 'keywords' in kwarg:
+            keywords.extend(kwarg['keywords'])
+    
     
 # %%
 # store keywords in a txt file
-with open('./data/ifeval_keywords_include.txt', 'w') as f:
+with open('../data/ifeval_keywords_include.txt', 'w') as f:
     for k in keywords:
         f.write(k + '\n')
 # %%
 phrasings_include = [' Include the word {}.', ' Make sure to include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' Make sure that the word "{}" is included in the output.', ' The output must include the word "{}".']
 new_rows = []
 for i, r in data_df.iterrows():
-    instr = r.instruction_id_list[0]
-    if 'existence' not in instr:
+    if 'keywords:existence' not in r.instruction_id_list:
         continue
     # get words to exclude
-    word_list = r.kwargs[0]['keywords']
+    word_list = []
+    for kwarg in filtered_df.loc[i].kwargs:
+        if 'keywords' in kwarg:
+            word_list = kwarg['keywords']
+    if not word_list:
+        raise ValueError('word_list is empty')
     for word in word_list:
         new_row = dict(r)
         new_row['kwargs'] = [{'keywords': [word]}]
@@ -403,7 +424,7 @@ new_df = pd.DataFrame(new_rows)
 print(len(new_df))
 # %%
 # store the new_df as jsonl
-new_df.to_json('./data/ifeval_single_keyword_include.jsonl', orient='records', lines=True)
+new_df.to_json('../data/ifeval_single_keyword_include.jsonl', orient='records', lines=True)
 # %%
 
 # =============================================================================

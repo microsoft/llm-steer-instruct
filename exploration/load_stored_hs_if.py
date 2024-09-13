@@ -4,8 +4,8 @@ if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
     print('We\'re on the local machine')
     print('We\'re on a Windows machine')
-elif 'cluster' in os.getcwd():
-    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+elif 'home' in os.getcwd():
+    os.chdir('/home/t-astolfo/t-astolfo')
     print('We\'re on a remote machine')
 # %%
 import pandas as pd
@@ -25,9 +25,9 @@ from tqdm import tqdm
 
 # %%
 model_name = 'meta-llama/Meta-Llama-3-8B-Instruct'
-model_name = 'phi-3'
-model_name = 'mistral-7b-instruct'
-model_name= 'gemma-2-9b-it'
+# model_name = 'phi-3'
+# model_name = 'mistral-7b-instruct'
+# model_name= 'gemma-2-9b-it'
 #folder = f'stored_hs/if/{model_name}'
 folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
 instruct_type = ['detectable_format:json_format']

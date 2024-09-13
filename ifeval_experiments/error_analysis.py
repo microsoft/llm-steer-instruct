@@ -256,7 +256,7 @@ fig.update_layout(title_font_size=16)
 fig.update_layout(width=350, height=250)
 
 # remove padding
-fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
 
 # save the figure as a pdf
 fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}.pdf')
