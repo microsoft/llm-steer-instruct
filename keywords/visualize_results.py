@@ -188,6 +188,9 @@ print(f'Number of keywords found: {c}')
 # Setting 1-2: make plot with all models
 # =============================================================================
 
+# import deepcopy
+from copy import deepcopy
+
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
 weights = {'forbidden' : {'phi-3': -150, 'gemma-2-2b-it': -200}, 'existence': {'phi-3': 120, 'gemma-2-2b-it': -200}}
@@ -204,7 +207,7 @@ for model_name in model_names:
 
         # todo remove this when we have the results
         if constraint_type == 'existence' and model_name == 'gemma-2-2b-it':
-            all_dfs[constraint_type][model_name] = all_dfs[constraint_type]['phi-3']
+            all_dfs[constraint_type][model_name] = deepcopy(all_dfs[constraint_type]['phi-3'])
             continue
 
         file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
@@ -278,6 +281,7 @@ for model_name in model_names:
 
         # Perform McNemar's test
         result = mcnemar(table, exact=True, correction=True)
+        print(f"+ Instr - P-value: {result.pvalue}")
 
 
 # %%
@@ -297,12 +301,19 @@ df_forbidden = pd.DataFrame({
 
 # Calculate means and 95% confidence intervals for df_existence
 dfs = all_dfs['existence']
+
+# todo set accuracy to 0 for gemma until we have the results
+dfs['gemma-2-2b-it']['results_df_instr_plus_steering']['follow_all_instructions'] = 0
+dfs['gemma-2-2b-it']['results_df_standard']['follow_all_instructions'] = 0
+dfs['gemma-2-2b-it']['results_df_steering']['follow_all_instructions'] = 0
+dfs['gemma-2-2b-it']['results_df']['follow_all_instructions'] = 0
+
 df_existence = pd.DataFrame({
     'Model': model_names,
     'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
     'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr.': [0 for model_name in model_names],
-    'w/ Instr. + Steering': [0 for model_name in model_names],
+    'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
+    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
     'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
     'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
 })
@@ -310,12 +321,24 @@ df_existence = pd.DataFrame({
 # Create subplots
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Exclusion', 'Inclusion'))
 
-# Specify a list of colors for each 'Setting'
-index = 4
-color = px.colors.qualitative.Plotly[index]
-
 settings = ['Std. Inference', 'Steering']
 # settings = ['w/ Instr.', 'w/ Instr. + Steering']
+
+# sample 4 colors from the continuous color scale "Blues"
+scale = px.colors.sequential.Oranges
+color1 = scale[3]
+color2 = scale[4]
+color3 = scale[5]
+color4 = scale[7]
+
+# Specify a list of colors for each 'Setting'
+if 'Steering' in settings:
+    index = 8
+    color = color1
+else:
+    index = 4
+    color  =color3
+#color = px.colors.qualitative.Plotly[index]
 
 # Add traces for df_forbidden
 for i, setting in enumerate(settings):
@@ -329,8 +352,13 @@ for i, setting in enumerate(settings):
         showlegend=False
     ), row=1, col=1)
 
-index = 9
-color = px.colors.qualitative.Plotly[index]
+if 'Steering' in settings:
+    index = 3
+    color = color2
+else:
+    index = 1
+    color = color4
+# color = px.colors.qualitative.Plotly[index]
 
 # Add traces for df_existence
 for i, setting in enumerate(settings):
@@ -377,8 +405,8 @@ fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
 
 # Set y-axis range
 if 'Steering' in settings:
-    fig.update_yaxes(range=[0.5, 0.9], row=1, col=1)
-    fig.update_yaxes(range=[0, 0.4], row=1, col=2)
+    fig.update_yaxes(range=[0.4, 0.9], row=1, col=1)
+    fig.update_yaxes(range=[0.1, 0.6], row=1, col=2)
 else:
     fig.update_yaxes(range=[0.6, 1], row=1, col=1)
     fig.update_yaxes(range=[0.6, 1], row=1, col=2)
@@ -395,14 +423,17 @@ fig.update_layout(legend=dict(
     x=0.8
 ))
 
-# store plot as pdf
-if 'Steering' in settings:
-    fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
-    fig.write_image('plots_for_paper/keywords/no_instruction.pdf')
-else:
-    fig.update_layout(title_text='(b) Accuracy <b>With</b> Text Instructions')
-    fig.write_image('plots_for_paper/keywords/with_instruction.pdf')
-# fig.write_image('plots/keyword_exclusion_without_instruction.pdf')
+store = True
+
+if store:
+    # store plot as pdf
+    if 'Steering' in settings:
+        fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
+        fig.write_image('plots_for_paper/keywords/no_instruction.pdf')
+    else:
+        fig.update_layout(title_text='(b) Accuracy <b>With</b> Text Instructions')
+        fig.write_image('plots_for_paper/keywords/with_instruction.pdf')
+    # fig.write_image('plots/keyword_exclusion_without_instruction.pdf')
 
 fig.show()
 
