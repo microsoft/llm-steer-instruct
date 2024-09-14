@@ -14,7 +14,8 @@ elif 'cluster' in os.getcwd():
     print('We\'re on a sandbox machine')
 # %%
 dir = 'keywords/layer_search_out/'
-model_name = 'phi-3'
+# model_name = 'phi-3'
+model_name = 'gemma-2-2b-it'
 n_examples = 20
 seed = 42
 instr = 'no_instr'
@@ -24,23 +25,25 @@ with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
 results_df_no_instr = pd.DataFrame(results)
+results_df_no_instr['weight'] = results_df_no_instr['steering_weight'] 
 
-instr = 'instr'
-file = f'{dir}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
-with open(file, 'r') as f:
-    results = [json.loads(line) for line in f]
+# instr = 'instr'
+# file = f'{dir}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
+# with open(file, 'r') as f:
+#     results = [json.loads(line) for line in f]
 
-results_df_instr = pd.DataFrame(results)
+# results_df_instr = pd.DataFrame(results)
 # %%
 # %%
-weights = [50,75,100,125,150]
-layer_range = range(32 // 5, 32, 2)
-layer_range = [-1] + list(layer_range)
+# weights = [50,75,100,125,150]
+# layer_range = range(32 // 5, 32, 2)
+# layer_range = [-1] + list(layer_range)
+layer_range = results_df_no_instr.layer.unique()
 
-uids = results_df_no_instr.question.unique()
-results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
-layers = [l for l in layer_range[1:] for _ in range(len(weights))]
-layers = [-1] + layers
+# uids = results_df_no_instr.question.unique()
+# results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
+# layers = [l for l in layer_range[1:] for _ in range(len(weights))]
+# layers = [-1] + layers
 # %%
 results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
 results_df_no_instr['weight'] = [-1 for _ in range(len(results_df_no_instr))]
