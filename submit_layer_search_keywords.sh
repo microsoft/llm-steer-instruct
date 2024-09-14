@@ -20,7 +20,7 @@ n_examples=20
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 
-sbatch --output="${HOME}/bsub_logs/steering/keywords/search-${model_name}-instr-${include_instructions}" \
+sbatch --output="${HOME}/bsub_logs/steering/keywords/search-${model_name}-instr-${include_instruction}" \
     --job-name="ls-${model_name}" \
     -n 4 \
     --gpus=1 \

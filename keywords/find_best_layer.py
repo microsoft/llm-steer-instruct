@@ -242,7 +242,7 @@ def run_experiment(args: DictConfig):
 
 
     # write out_lines as jsonl
-    folder = f'{args.project_dir}{args.output_path}/{args.model_name}'
+    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}'
     folder += f'/n_examples{args.n_examples}_seed{args.seed}'
 
     os.makedirs(folder, exist_ok=True)

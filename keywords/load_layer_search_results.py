@@ -39,21 +39,24 @@ results_df_no_instr['weight'] = results_df_no_instr['steering_weight']
 # layer_range = range(32 // 5, 32, 2)
 # layer_range = [-1] + list(layer_range)
 layer_range = results_df_no_instr.layer.unique()
+print(layer_range)
+weights = results_df_no_instr.weight.unique()
+print(weights)
 
 # uids = results_df_no_instr.question.unique()
 # results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
 # layers = [l for l in layer_range[1:] for _ in range(len(weights))]
 # layers = [-1] + layers
 # %%
-results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
-results_df_no_instr['weight'] = [-1 for _ in range(len(results_df_no_instr))]
-for uid in uids:
-    # assign layer to each uid
-    results_df_no_instr.loc[results_df_no_instr.question == uid, 'layer'] = layers
-    for layer in layer_range:
-        if layer == -1:
-            continue
-        results_df_no_instr.loc[(results_df_no_instr.question == uid) & (results_df_no_instr.layer == layer), 'weight'] = weights
+# results_df_no_instr['layer'] = [0 for _ in range(len(results_df_no_instr))]
+# results_df_no_instr['weight'] = [-1 for _ in range(len(results_df_no_instr))]
+# for uid in uids:
+#     # assign layer to each uid
+#     results_df_no_instr.loc[results_df_no_instr.question == uid, 'layer'] = layers
+#     for layer in layer_range:
+#         if layer == -1:
+#             continue
+#         results_df_no_instr.loc[(results_df_no_instr.question == uid) & (results_df_no_instr.layer == layer), 'weight'] = weights
 # %%
 # baseline accuracy with no steering
 results_df_no_instr[results_df_no_instr.layer == -1].accuracy.mean()
@@ -131,8 +134,8 @@ for i, r in outputs.iterrows():
     print('--------------------------------')
 # %%
 
-layer = 22
-steering_weight = 150
+layer = 21
+steering_weight = 250
 
 # get outputs for the question
 outputs = results_df_no_instr[(results_df_no_instr.layer == layer) & (results_df_no_instr.weight == steering_weight)]
