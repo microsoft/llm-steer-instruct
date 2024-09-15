@@ -322,7 +322,7 @@ df_existence = pd.DataFrame({
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Exclusion', 'Inclusion'))
 
 settings = ['Std. Inference', 'Steering']
-# settings = ['w/ Instr.', 'w/ Instr. + Steering']
+settings = ['w/ Instr.', 'w/ Instr. + Steering']
 
 # sample 4 colors from the continuous color scale "Blues"
 scale = px.colors.sequential.Oranges

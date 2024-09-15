@@ -14,8 +14,8 @@ elif 'cluster' in os.getcwd():
     print('We\'re on a sandbox machine')
 # %%
 dir = 'keywords/layer_search_out/'
-# model_name = 'phi-3'
-model_name = 'gemma-2-2b-it'
+model_name = 'phi-3'
+# model_name = 'gemma-2-2b-it'
 n_examples = 20
 seed = 42
 instr = 'no_instr'
@@ -134,8 +134,8 @@ for i, r in outputs.iterrows():
     print('--------------------------------')
 # %%
 
-layer = 21
-steering_weight = 250
+layer = 30
+steering_weight = 110
 
 # get outputs for the question
 outputs = results_df_no_instr[(results_df_no_instr.layer == layer) & (results_df_no_instr.weight == steering_weight)]
