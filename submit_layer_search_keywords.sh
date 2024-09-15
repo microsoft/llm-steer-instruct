@@ -1,7 +1,7 @@
 #!/bin/bash
 
 model_name="phi-3"
-# model_name="gemma-2-2b-it"
+model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
 gpu_req="rtx_4090:1"
@@ -14,7 +14,7 @@ constraint=include
 max_generation_length=256
 include_instruction=false
 steering_weights=[80,90,100,110,120,140]
-# steering_weights=[150,175,200,225,250]
+steering_weights=[240,250,260,270,280,290,300]
 specific_instruction=existence
 n_examples=20
 #   --gpus="${gpu_req}" \
