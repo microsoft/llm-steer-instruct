@@ -1,6 +1,15 @@
 # %%
-import os
-os.chdir('/home/t-astolfo/t-astolfo/composition')
+import os 
+import sys
+if 'Users' in os.getcwd():
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/composition')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct/composition')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    print('We\'re on a sandbox machine')
+
 
 import json
 import plotly.express as px
@@ -109,10 +118,10 @@ color2 = plotly.colors.qualitative.Plotly[3]
 
 
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=[coordinates_no_steering_no_instr[0]], y=[coordinates_no_steering_no_instr[1]], mode='markers', name='No Instr.', marker=dict(size=10), marker_color=color1, opacity=0.6))
-fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='No Instr. + Steering', marker=dict(size=10), marker_color=color1))
-fig.add_trace(go.Scatter(x=[coordinates_no_steering_plus_instr[0]], y=[coordinates_no_steering_plus_instr[1]], mode='markers', name='Instr.', marker=dict(size=10), marker_color=color2, opacity=0.6))
-fig.add_trace(go.Scatter(x=[coordinates_steering_plus_instr[0]], y=[coordinates_steering_plus_instr[1]], mode='markers', name='Instr. + Steering', marker=dict(size=10), marker_color=color2))
+fig.add_trace(go.Scatter(x=[coordinates_no_steering_no_instr[0]], y=[coordinates_no_steering_no_instr[1]], mode='markers', name='<b>w/o</b> Instr.', marker=dict(size=10), marker_color=color1, opacity=0.6))
+fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color1))
+fig.add_trace(go.Scatter(x=[coordinates_no_steering_plus_instr[0]], y=[coordinates_no_steering_plus_instr[1]], mode='markers', name='<b>w/</b> Instr.', marker=dict(size=10), marker_color=color2, opacity=0.6))
+fig.add_trace(go.Scatter(x=[coordinates_steering_plus_instr[0]], y=[coordinates_steering_plus_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color2))
 
 # add labels
 fig.update_layout(
@@ -170,22 +179,35 @@ fig.update_layout(
 
 # add title
 fig.update_layout(
-    title='Instruction Composition: Lowercase & Word Exclusion'
+    title='(b) Multi-instr.: Casing & Word Exc.',
+    title_font_size=16
 )
 
 # resize the figure
 fig.update_layout(
-    width=500,
-    height=300
+    width=300,
+    height=250
 )
 
 # remove padding
 fig.update_layout(
-    margin=dict(l=0, r=0, t=50, b=20)
+    margin=dict(l=0, r=0, t=50, b=00)
 )
 
+# move legend to the bottom
+fig.update_layout(
+    legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-.85,
+        xanchor='right',
+        x=0.85
+    )
+)
+
+
 # store the figure as pdf
-# fig.write_image(f'../plots/{model_name}_case_word_exclusion.pdf')
+fig.write_image(f'../plots_for_paper/composition/{model_name}_case_word_exclusion.pdf')
 
 fig.show()
 # %%

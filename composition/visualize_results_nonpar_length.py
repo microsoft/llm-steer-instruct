@@ -1,6 +1,14 @@
 # %%
-import os
-os.chdir('/home/t-astolfo/t-astolfo/composition')
+import os 
+import sys
+if 'Users' in os.getcwd():
+    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/composition')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    print('We\'re on the local machine')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct/composition')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    print('We\'re on a sandbox machine')
 
 import json
 import plotly.express as px
@@ -75,6 +83,49 @@ print(df_no_steering_no_instr.length_accuracy.mean())
 print(df_steering_no_instr.length_accuracy.mean())
 print(df_no_steering_plus_instr.length_accuracy.mean())
 print(df_steering_plus_instr.length_accuracy.mean())
+
+# %%
+# carry out mcNemar test
+from statsmodels.stats.contingency_tables import mcnemar
+
+for df1, df2 in [(df_no_steering_no_instr, df_steering_no_instr), (df_no_steering_plus_instr, df_steering_plus_instr)]: 
+    correct1 = df1.length_accuracy
+    correct2 = df2.length_accuracy
+
+    table = [[0, 0], [0, 0]]
+    for i in range(len(correct1)):
+        if correct1.iloc[i] and correct2.iloc[i]:
+            table[0][0] += 1
+        elif correct1.iloc[i] and not correct2.iloc[i]:
+            table[0][1] += 1
+        elif not correct1.iloc[i] and correct2.iloc[i]:
+            table[1][0] += 1
+        elif not correct1.iloc[i] and not correct2.iloc[i]:
+            table[1][1] += 1
+
+    result = mcnemar(table, exact=False, correction=True)
+    print(f'McNemar test for LENGTH: {result.pvalue}')
+
+    correct1 = df1.follow_all_instructions
+    correct2 = df2.follow_all_instructions
+
+    table = [[0, 0], [0, 0]]
+    for i in range(len(correct1)):
+        if correct1.iloc[i] and correct2.iloc[i]:
+            table[0][0] += 1
+        elif correct1.iloc[i] and not correct2.iloc[i]:
+            table[0][1] += 1
+        elif not correct1.iloc[i] and correct2.iloc[i]:
+            table[1][0] += 1
+        elif not correct1.iloc[i] and not correct2.iloc[i]:
+            table[1][1] += 1
+
+    result = mcnemar(table, exact=False, correction=True)
+    print(f'McNemar test for FOLLOWING ALL INSTRUCTIONS: {result.pvalue}')
+
+
+
+
 # %%
 def add_follow_everything(df):
     follow_everything = []
@@ -234,14 +285,14 @@ color2 = plotly.colors.qualitative.Bold[8]
 
 
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=[coordinates_no_steering_no_instr[0]], y=[coordinates_no_steering_no_instr[1]], mode='markers', name='No Instr.', marker=dict(size=10), marker_color=color1, opacity=0.6))
-fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='No Instr. + Steering', marker=dict(size=10), marker_color=color1))
-fig.add_trace(go.Scatter(x=[coordinates_no_steering_plus_instr[0]], y=[coordinates_no_steering_plus_instr[1]], mode='markers', name='Instr.', marker=dict(size=10), marker_color=color2, opacity=0.6))
-fig.add_trace(go.Scatter(x=[coordinates_steering_plus_instr[0]], y=[coordinates_steering_plus_instr[1]], mode='markers', name='Instr. + Steering', marker=dict(size=10), marker_color=color2))
+fig.add_trace(go.Scatter(x=[coordinates_no_steering_no_instr[0]], y=[coordinates_no_steering_no_instr[1]], mode='markers', name='<b>w/o</b> Instr.', marker=dict(size=10), marker_color=color1, opacity=0.6))
+fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color1))
+fig.add_trace(go.Scatter(x=[coordinates_no_steering_plus_instr[0]], y=[coordinates_no_steering_plus_instr[1]], mode='markers', name='<b>w/</b> Instr.', marker=dict(size=10), marker_color=color2, opacity=0.6))
+fig.add_trace(go.Scatter(x=[coordinates_steering_plus_instr[0]], y=[coordinates_steering_plus_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color2))
 
 # add labels
 fig.update_layout(
-    xaxis_title='Fomat Instruction-following Accuracy',
+    xaxis_title='Fomat Accuracy',
     yaxis_title='Length Accuracy'
 )
 
@@ -250,8 +301,8 @@ fig.add_annotation(
     dict(
         x=coordinates_steering_no_instr[0]-0.01,
         y=coordinates_steering_no_instr[1]-0.014,
-        ax=coordinates_no_steering_no_instr[0],
-        ay=coordinates_no_steering_no_instr[1],
+        ax=coordinates_no_steering_no_instr[0]-0.01,
+        ay=coordinates_no_steering_no_instr[1]-0.02,
         xref="x",
         yref="y",
         axref="x",
@@ -267,10 +318,10 @@ fig.add_annotation(
 # Add arrow annotation between the first and the second point
 fig.add_annotation(
     dict(
-        x=coordinates_steering_plus_instr[0]-0.006,
-        y=coordinates_steering_plus_instr[1]-0.012,
+        x=coordinates_steering_plus_instr[0]-0,
+        y=coordinates_steering_plus_instr[1]-0,
         ax=coordinates_no_steering_plus_instr[0]-0.01,
-        ay=coordinates_no_steering_plus_instr[1]-0.01,
+        ay=coordinates_no_steering_plus_instr[1]-0.02,
         xref="x",
         yref="y",
         axref="x",
@@ -289,28 +340,40 @@ fig.update_layout(
         range=[0.15, 0.8]
     ),
     xaxis=dict(
-        range=[0, 0.9]
+        range=[0.05, 0.85]
     )
 )
 
 # add title
 fig.update_layout(
-    title='Multi-instruction Steering: Format & Length'
+    title='(a) Multi-instr.: Format & Length',
+    title_font_size=16
 )
 
 # resize the figure
 fig.update_layout(
-    width=500,
-    height=300
+    width=300,
+    height=250
+)
+
+# move legend to the bottom
+fig.update_layout(
+    legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-.85,
+        xanchor='right',
+        x=0.85
+    )
 )
 
 # remove padding
 fig.update_layout(
-    margin=dict(l=0, r=0, t=50, b=20)
+    margin=dict(l=0, r=0, t=50, b=0)
 )
 
 # store the figure as pdf
-fig.write_image(f'../plots/{model_name}_all_instr.pdf')
+fig.write_image(f'../plots_for_paper/composition/{model_name}_all_instr.pdf')
 
 fig.show()
 
@@ -319,11 +382,12 @@ fig.show()
 # make plots for all instructions
 # =============================================================================
 
-colors = plotly.colors.qualitative.Plotly[5:]
+colors = plotly.colors.qualitative.Plotly * 2
 fig = go.Figure()
 filtered_instr = [i for i in all_instructions if 'english_capital' in i or 'multiple' in i ] #or 'highlighted' in i or 'title' in i]
 
-for i, instr in enumerate(filtered_instr):
+for i, instr in enumerate(all_instructions):
+
     df1 = df_no_steering_no_instr[df_no_steering_no_instr.instruction_id_list.apply(lambda x: x[0]) == instr]
     df2 = df_steering_no_instr[df_steering_no_instr.instruction_id_list.apply(lambda x: x[0]) == instr]
     df3 = df_no_steering_plus_instr[df_no_steering_plus_instr.instruction_id_list.apply(lambda x: x[0]) == instr]
@@ -414,7 +478,7 @@ fig.update_layout(
         range=[0.1, 1.03]
     ),
     xaxis=dict(
-        range=[0.3, 1.0]
+        range=[0.3, 1.1]
     )
 )
 
