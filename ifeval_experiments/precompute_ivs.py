@@ -1,13 +1,16 @@
 # %%
-import sys
 import os
+import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/keywords')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
-    print('We\'re on a remote machine')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/keywords')
+    print('We\'re on a sandbox machine')
 # %%
 import pandas as pd
 import numpy as np

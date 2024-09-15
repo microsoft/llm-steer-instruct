@@ -1,15 +1,15 @@
 # %%
 import os
+import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
     print('We\'re on the local machine')
     print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/ifeval_experiments')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/')
     print('We\'re on a sandbox machine')
-
-import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
 
 import numpy as np
 import torch
@@ -74,13 +74,11 @@ def direction_projection_hook(
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
+    # os.chdir(args.project_dir)
 
     # Some environment variables
     device = args.device
     print(f"Using device: {device}")
-
-    transformer_cache_dir = None
 
     # load the data
     with open(args.data_path) as f:
@@ -102,7 +100,7 @@ def run_experiment(args: DictConfig):
     else:
         print('Steering is not none, using HF model')
         hf_model = False
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     out_lines = []
@@ -274,7 +272,7 @@ def run_experiment(args: DictConfig):
     #     break
 
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}'
+    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}'
     if 'single_instr' in args.data_path:
         folder += '/single_instr'
     else:
