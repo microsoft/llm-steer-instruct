@@ -1,7 +1,7 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-9b"
+model_name="gemma-2-2b"
 
 gpu_req="a100_80gb:1"
 gpu_req="rtx_4090:1"
@@ -29,7 +29,7 @@ sbatch --output="${HOME}/bsub_logs/steering/format/${model_name}-${steering}-ins
     --job-name="f-${model_name}" \
     -n 4 \
     --gpus=1 \
-    --gres=gpumem:50g \
+    --gres=gpumem:20g \
     --mem-per-cpu=50G \
     --time=23:59:00 \
 --wrap="python ifeval_experiments/ifeval_evaluation.py model_name=$model_name data_path=$data_path source_layer_idx=$source_layer_idx steering=$steering  nonparametric_only=$nonparametric_only cross_model_steering=$cross_model_steering dry_run=$dry_run
