@@ -248,7 +248,7 @@ for kde_trace in kde_fig.data:
 # Updating layout for better visualization
 fig.update_layout(title=f'(a) Output Length vs. Steering Weights',
                   xaxis_title='Length (# of words)',
-                  yaxis_title='Density',
+                  yaxis_title='Probability Density',
                   barmode='overlay',
                   legend_title='Weight')
 

@@ -322,12 +322,12 @@ results_df = pd.DataFrame(results)
 #     results = [json.loads(r) for r in results]
 # results_df_steering = pd.DataFrame(results)
 
-# mode = 'adjust_rs_-1'
-# path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
-# with open(path_to_results) as f:
-#     results = f.readlines()
-#     results = [json.loads(r) for r in results]
-# results_df_steering = pd.DataFrame(results)
+mode = 'adjust_rs_-1'
+path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
+with open(path_to_results) as f:
+    results = f.readlines()
+    results = [json.loads(r) for r in results]
+results_df_steering = pd.DataFrame(results)
 
 mode = 'adjust_rs_-1_cross_model'
 path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
@@ -343,12 +343,20 @@ with open(path_to_results) as f:
     results = [json.loads(r) for r in results]
 results_df_standard = pd.DataFrame(results)
 
-# mode = 'instr_plus_adjust_rs_-1_cross_model'
-# path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
-# with open(path_to_results) as f:
-#     results = f.readlines()
-#     results = [json.loads(r) for r in results]
-# results_df_instr_plus_steering_cross = pd.DataFrame(results)
+mode = 'instr_plus_adjust_rs_-1_cross_model'
+path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
+with open(path_to_results) as f:
+    results = f.readlines()
+    results = [json.loads(r) for r in results]
+results_df_instr_plus_steering_cross = pd.DataFrame(results)
+
+
+mode = 'instr_plus_adjust_rs_-1'
+path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
+with open(path_to_results) as f:
+    results = f.readlines()
+    results = [json.loads(r) for r in results]
+results_df_instr_plus_steering = pd.DataFrame(results)
 
 # load ./data/input_data_single_instr_no_instr.jsonl
 with open('./data/input_data_single_instr_no_instr.jsonl') as f:
