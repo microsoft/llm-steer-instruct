@@ -274,7 +274,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     lengths_no_steering = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct']
     acc_no_steering = lengths_no_steering.mean()
     fig.add_trace(go.Bar(
-        x=[f'# of Sents. = {length_constraint+1}'], 
+        x=[f'{length_constraint+1}'], 
         y=[acc_no_steering], 
         name='Std. Inference', 
         marker_color=no_steering_color,
@@ -284,7 +284,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     
 
     fig.add_trace(go.Bar(
-        x=[f'# of Sents. = {length_constraint+1}'], 
+        x=[f'{length_constraint+1}'], 
         y=[0], 
         name='yyy', 
         marker_color=steering_color,
@@ -296,7 +296,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     lengths_steering = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['correct']
     acc_steering = lengths_steering.mean()
     fig.add_trace(go.Bar(
-        x=[f'# of Sents. = {length_constraint+1}'], 
+        x=[f'{length_constraint+1}'], 
         y=[acc_steering],
         name='Steering', 
         marker_color=steering_color,
@@ -323,7 +323,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
 fig.update_layout(barmode='group')
 
 # incline x-axis labels
-fig.update_layout(xaxis_tickangle=45)
+# fig.update_layout(xaxis_tickangle=45)
 
 # Add title
 fig.update_layout(title_text='(b) Accuracy Per Length Constraint')
@@ -332,13 +332,16 @@ fig.update_layout(title_text='(b) Accuracy Per Length Constraint')
 fig.update_layout(legend=dict(
     orientation="h",
     yanchor="bottom",
-    y=-1,
+    y=-0.55,
     xanchor="right",
     x=0.9
 ))
 
+# add label for x axis
+fig.update_layout(xaxis_title='# of Sentences')
 
-# cahnge title font size
+
+# change title font size
 fig.update_layout(title_font_size=16)
 
 # remove padding
@@ -348,13 +351,15 @@ fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 fig.update_layout(yaxis=dict(range=[0.5, 1]))
 
 # reshape figure
-fig.update_layout(width=350, height=250)
+fig.update_layout(width=300, height=250)
 
 
 # save theplot as pdf
 # fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
 
 fig.show()
+
+# %%
 
 # %%
 # %%
@@ -509,7 +514,7 @@ kde_trace2 = kde_fig.data[1]
 fig = go.Figure(data=[hist_trace1, hist_trace2, kde_trace1, kde_trace2])
 
 # Updating layout for better visualization
-fig.update_layout(title=f'(c) Output Length: Pre- vs Post-Steering',
+fig.update_layout(title=f'(c) Length: Pre- vs. Post-Steering',
                   xaxis_title='Length',
                   yaxis_title='Density',
                   barmode='overlay',
@@ -553,11 +558,11 @@ fig.update_layout(legend=dict(
     yanchor="bottom",
     y=-.5,
     xanchor="right",
-    x=0.83
+    x=0.89
 ))
 
 # reshape figure
-fig.update_layout(width=350, height=250)
+fig.update_layout(width=300, height=250)
 
 # change title font size
 fig.update_layout(title_font_size=16)
@@ -569,6 +574,8 @@ fig.write_image(f'../plots_for_paper/length/length_distribution_constraint_{leng
 
 fig.show()
 
+
+# %%
 
 # %%
 # =============================================================================

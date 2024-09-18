@@ -222,6 +222,8 @@ new_names = { i: i.split(':')[1].replace('_', ' ').title() for i in sorted_r2w_d
 new_names['detectable_format:number_highlighted_sections'] = 'Highlight Text'
 new_names['change_case:english_lowercase'] = 'Lowercase'
 new_names['detectable_format:json_format'] = 'JSON Format'
+new_names['change_case:capital_word_frequency'] = 'Capital Word Freq.'
+new_names['language:response_language'] = 'Language'
 
 sorted_r2w_diff_categories = [new_names[i] for i in sorted_r2w_diff_categories]
 
@@ -245,7 +247,7 @@ fig.add_trace(go.Bar(
 
     )
 ))
-fig.update_layout(title='(c) Post-steering Rel. Accuracy Change')
+fig.update_layout(title='(c) Post-steering Accuracy Change')
 # Incline the x-axis labels
 fig.update_layout(xaxis_tickangle=45)
 
@@ -253,10 +255,13 @@ fig.update_layout(xaxis_tickangle=45)
 fig.update_layout(title_font_size=16)
 
 # reshape the figure
-fig.update_layout(width=350, height=250)
+fig.update_layout(width=300, height=250)
+
+# add y axis title
+fig.update_layout(yaxis_title='Rel. Acc. Change')
 
 # remove padding
-fig.update_layout(margin=dict(l=0, r=0, t=25, b=0))
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
 # save the figure as a pdf
 fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}.pdf')
@@ -264,7 +269,7 @@ fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}
 fig.show()
 # %%
 # print some examples of the transitions
-filtered_df = analysis_df[analysis_df['w2r'] == 1]
+filtered_df = analysis_df[analysis_df['r2w'] == 1]
 # filter for json instructions
 # filtered_df = filtered_df[filtered_df.instruction_id_list.apply(lambda x: 'title' in x[0])]
 
