@@ -264,10 +264,129 @@ fig.update_layout(yaxis_title='Rel. Acc. Change')
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
 # save the figure as a pdf
-fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}.pdf')
+# fig.write_image(f'./plots_for_paper/accuracy_change_per_instruction_{model_name}.pdf')
 
 fig.show()
 # %%
+# =============================================================================
+# Radar plot
+# =============================================================================
+
+
+# Get accuracy per instruction for standard and steering
+acc_per_instruction_standard = {}
+acc_per_instruction_steering = {}
+for instr in all_instruct:
+    acc_per_instruction_standard[instr] = analysis_df[analysis_df.instruction_id_list.apply(lambda x: x[0] == instr)].follow_all_instructions.mean()
+    acc_per_instruction_steering[instr] = analysis_df[analysis_df.instruction_id_list.apply(lambda x: x[0] == instr)].follow_all_instructions_steering.mean()
+
+# Rename categories
+new_names = {i: i.split(':')[1].replace('_', ' ').title() for i in acc_per_instruction_standard.keys()}
+new_names['detectable_format:number_highlighted_sections'] = 'Highlight Text'
+new_names['change_case:english_lowercase'] = 'Lowercase'
+new_names['detectable_format:json_format'] = 'JSON Format'
+new_names['change_case:capital_word_frequency'] = 'Capital Word Freq.'
+new_names['detectable_format:constrained_response'] = 'Constrained Resp.'
+new_names['language:response_language'] = 'Language'
+new_names['change_case:english_capital'] = 'Capitalize'
+new_names['detectable_format:multiple_sections'] = 'Multiple Sect.'
+
+# Sort categories by acc_per_instruction_standard values
+sorted_categories = sorted(acc_per_instruction_standard.keys(), key=lambda x: acc_per_instruction_steering[x], reverse=True)
+
+# Apply new names to the sorted categories
+sorted_categories = [new_names[i] for i in sorted_categories]
+
+# Get the sorted values for the radar plot
+sorted_values_standard = [acc_per_instruction_standard[i] for i in sorted(acc_per_instruction_steering.keys(), key=lambda x: acc_per_instruction_steering[x], reverse=True)]
+sorted_values_steering = [acc_per_instruction_steering[i] for i in sorted(acc_per_instruction_steering.keys(), key=lambda x: acc_per_instruction_steering[x], reverse=True)]
+
+# Make a radar plot of the accuracies per category
+fig = go.Figure()
+
+fig.add_trace(go.Scatterpolar(
+    r=sorted_values_standard,
+    theta=sorted_categories,
+    fill='toself',
+    name='Std. Inference',
+    marker=dict(
+        color='rgb(31, 119, 180)'
+    )
+))
+
+fig.add_trace(go.Scatterpolar(
+    r=sorted_values_steering,
+    theta=sorted_categories,
+    fill='toself',
+    name='Steering',
+    marker=dict(
+        color='rgb(255, 127, 14)'
+    )
+))
+
+# Update layout
+fig.update_layout(
+    polar=dict(
+        radialaxis=dict(
+            visible=True,
+            range=[0, 1]  # Assuming accuracy values are between 0 and 1
+        )
+    ),
+    title='(c) Phi-3: Accuracy per Instruction',
+    title_font_size=20,
+    width=375,
+    height=312,
+    margin=dict(l=85, r=102, t=37.5, b=0),
+    showlegend=True
+)
+
+# Add y-axis title (as a polar plot, this will be the radial axis title)
+# fig.update_layout(polar=dict(
+#     radialaxis=dict(
+#         title='Accuracy'
+#     )
+# ))
+
+# set max y axis value
+fig.update_layout(polar=dict(
+    radialaxis=dict(
+        range=[0, 0.82]
+    )
+))
+
+# set the tick of the y axis
+fig.update_layout(polar=dict(
+    radialaxis=dict(
+        tickvals=[0.2, 0.4, 0.6, 0.8]
+    )
+))
+
+# set the tick font size
+fig.update_layout(polar=dict(
+    radialaxis=dict(
+        tickfont=dict(
+            size=11
+        )
+    )
+))
+
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-0.2,
+    xanchor='right',
+    x=1.2
+))
+
+# Save the figure as a PDF (optional)
+fig.write_image(f'./plots_for_paper/accuracy_per_category_{model_name}_radar.pdf')
+
+fig.show()
+
+# %%
+
 # print some examples of the transitions
 filtered_df = analysis_df[analysis_df['r2w'] == 1]
 # filter for json instructions

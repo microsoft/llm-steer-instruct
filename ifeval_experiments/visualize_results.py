@@ -399,7 +399,8 @@ for i, setting in enumerate(['Std. Inference', 'Steering']):
         y=df[setting],
         name=setting,
         marker_color=color,
-        opacity=1 if i == 1 else 0.5,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape='/' if i == 1 else '',
         # error_y=dict(
         #     type='data',
         #     array=df[f'{setting} Error'],
@@ -461,7 +462,8 @@ for i, setting in enumerate(['Std. Inference', 'Steering']):
         y=df[setting],
         name=setting,
         marker_color=color,
-        opacity=1 if i == 1 else 0.5,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape='/' if i == 1 else '',
         # error_y=dict(
         #     type='data',
         #     array=df[f'{setting} Error'],

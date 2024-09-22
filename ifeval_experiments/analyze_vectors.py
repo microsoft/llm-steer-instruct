@@ -13,11 +13,18 @@ elif 'cluster' in os.getcwd():
     print('We\'re on a sandbox machine')
 
 import pandas as pd
-import json
-import plotly.express as px
-import plotly.graph_objects as go
 import numpy as np
+import os
 import torch
+import plotly.express as px
+import sys
+import plotly.graph_objects as go
+from transformers import AutoTokenizer
+import einops
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import adjust_vectors
+import functools
+from transformer_lens import utils as tlutils
 from tqdm import tqdm
 
 # %%
@@ -28,22 +35,23 @@ files = os.listdir(rep_dir)
 
 # from the files, remove the ones that have "pre_computed" in the name
 files = [f for f in files if 'pre_computed' not in f]
-# %%
 df = pd.read_hdf(rep_dir + files[0])
 
 # max_length = min([x.shape[1] for x in results_df['last_token_rs_no_instr'].values])
+# %%
+# load pred_computed_ivs
+file = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr/pre_computed_ivs_best_layer_validation_no_instr.h5'
+df_ivs = pd.read_hdf(file)
+best_layers_dict = {r.instruction.replace(':', '_') : r.max_diff_layer_idx for r in df_ivs.itertuples()}
 
 
 # %%
-layer_idx = 20
 instr_dirs = {}
 
 for f in tqdm(files):
     if 'length' in f:
         continue
     if 'keywords' in f:
-        continue
-    if 'language' in f:
         continue
     if 'detectable_content_' in f:
         continue
@@ -61,7 +69,7 @@ for f in tqdm(files):
     mean_repr_diffs = repr_diffs.mean(dim=0)
     last_token_mean_diff = mean_repr_diffs[:, -1, :]
 
-    instr_dir = last_token_mean_diff[layer_idx] / last_token_mean_diff[layer_idx].norm()
+    instr_dir = last_token_mean_diff / last_token_mean_diff.norm()
 
     f = f.replace('language_response_', '')
     f = f.replace('.h5', '')
@@ -70,6 +78,12 @@ for f in tqdm(files):
     f = f.replace('change_case_', '')
     f = f.replace('punctuation_', '')
     f = f.replace('startend_', '')
+
+    if f in best_layers_dict:
+        layer_idx = best_layers_dict[f.replace('.h5', '')]
+    else:
+        layer_idx = -1
+    best_layers_dict[f] = layer_idx
 
     instr_dirs[f] = instr_dir
 
@@ -94,4 +108,34 @@ fig.update_layout(
 # incline the x-axis labels
 fig.update_layout(xaxis=dict(tickangle=45))
 fig.show()
+# %%
+# =============================================================================
+# compute projection onto the vocabulary
+# =============================================================================
+
+model_name = 'phi-3'
+
+device = 'mps' if torch.backends.mps.is_available() else 'cuda'
+print(f"Using device: {device}")
+
+with open('hf_token.txt') as f:
+    hf_token = f.read()
+transformer_cache_dir = None
+model, tokenizer = load_model_from_tl_name(model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token)
+# model_hf, tokenizer_hf = load_model_from_tl_name(model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=True)
+model.to(device)
+# %%
+
+for instruction in instr_dirs.keys():
+    layer_idx = best_layers_dict[instruction]
+    if layer_idx == -1:
+        layer_idx = 30
+    instr_dir = instr_dirs[instruction][layer_idx].to(device)
+    logits_projections = instr_dir @ model.W_U
+    # argsort logits_projections and take the top 10
+    top_ids = torch.argsort(logits_projections, descending=True)[:10]
+    top_tokens = tokenizer.convert_ids_to_tokens(top_ids.cpu().numpy())
+    print(f'{instruction} - Layer {layer_idx}: {top_tokens}')
+    print('----------------------')
+
 # %%

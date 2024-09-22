@@ -109,8 +109,8 @@ fig.show()
 # Error analysis
 # =============================================================================
 
-df1 = df_no_steering
-df2 = df_steering
+df1 = df_standard
+df2 = df_instr_plus_steering
 
 # join the two dataframes on index
 analysis_df = df1.copy()
@@ -159,9 +159,16 @@ fig.update_layout(margin=dict(l=0, r=0, t=50, b=20))
 # Add custom colors
 fig.update_traces(marker=dict(colors=custom_colors), textinfo='percent+label')
 # %%
+# print average length of the responses for the different transitions
+print(f'Average length of the responses for the different transitions')
+print(f'Wrong -> Correct: {analysis_df[analysis_df["w2r"] == 1]["response"].apply(len).mean()}')
+print(f'Wrong -> Wrong: {analysis_df[analysis_df["w2w"] == 1]["response"].apply(len).mean()}')
+print(f'Correct -> Wrong: {analysis_df[analysis_df["r2w"] == 1]["response"].apply(len).mean()}')
+print(f'Correct -> Correct: {analysis_df[analysis_df["r2r"] == 1]["response"].apply(len).mean()}')
+
 # %%
 # print some examples of the transitions
-filtered_df = analysis_df[analysis_df['r2r'] == 1]
+filtered_df = analysis_df[analysis_df['w2r'] == 1]
 # filter for json instructions
 
 for i, r in filtered_df.iterrows():

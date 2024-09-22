@@ -15,7 +15,7 @@ from eval.evaluation_main import test_instruction_following_loose
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-# model_name='gemma-2-9b'
+model_name='gemma-2-2b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
 n_examples = 8
@@ -23,7 +23,7 @@ seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
 instr = 'no_instr_lowercase'
-instr = 'instr'
+instr = 'no_instr'
 
 file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
 with open(file, 'r') as f:
@@ -82,9 +82,9 @@ for instr in optimal_layers:
 # %%
 # print some outputs
 #instr = instrs_no_optimal_layer[2]
-instr = [i for i in all_instructions if 'json' in i][0]
+instr = [i for i in all_instructions if 'multiple' in i][0]
 instr_df = results_df[results_df.single_instruction_id == instr]
-instr_df = instr_df[instr_df.layer == 16]
+instr_df = instr_df[instr_df.layer == 38]
 for i, r in instr_df.iterrows():
     print(f"uid: {r.uid} | layer: {r.layer} | follow_all_instructions: {r.follow_all_instructions}")
     print(f'Prompt: {r.prompt}')

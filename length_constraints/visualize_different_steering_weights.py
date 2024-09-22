@@ -270,7 +270,8 @@ fig.update_layout(legend=dict(
     yanchor='bottom',
     y=-0.75,
     xanchor='right',
-    x=1
+    x=0.8,
+    # change the font size
 ))
 
 # store the plot as pdf
@@ -286,18 +287,19 @@ fig.show()
 
  # %%
 # print some outputs
-uids = filtered_df.uid.unique()
+uids = results_df.uid.unique()
 
 length_constraint = 0
 filtered_df = results_df[results_df.length_constraint == length_constraint]
 # filtered_df = results_df[results_df.length_of_outputs > 400]
-filtered_df = filtered_df[filtered_df.steering_weight == 40]
+# filtered_df = filtered_df[filtered_df.steering_weight == 40]
 
-uid = uids[0]
+uid = uids[9]
+filtered_df = filtered_df[filtered_df.uid == uid]
 
 for i, row in filtered_df.iterrows():
     print(f'Prompt: {row["prompt"]}')
-    print(f'Steering weight: {row['steering_weight']}\nLength: {row['length_of_outputs_sent']}\nGenerated: {row["response"]}')
+    print(f'Steering weight: {row['steering_weight']}\nLength: {row['length_of_outputs_sent']}\nLength (words): {row['length_of_outputs']}\nGenerated: {row["response"]}')
     print('-----------------------')
 # =============================================================================
 # phi 3 steer for longer outputs

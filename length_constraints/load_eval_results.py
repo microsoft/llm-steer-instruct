@@ -300,6 +300,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
         y=[acc_steering],
         name='Steering', 
         marker_color=steering_color,
+        marker_pattern_shape="/",
         width=0.25,
         showlegend=first,
     ))
@@ -339,6 +340,7 @@ fig.update_layout(legend=dict(
 
 # add label for x axis
 fig.update_layout(xaxis_title='# of Sentences')
+fig.update_layout(yaxis_title='Accuracy')
 
 
 # change title font size
@@ -355,7 +357,7 @@ fig.update_layout(width=300, height=250)
 
 
 # save theplot as pdf
-# fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
+fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
 
 fig.show()
 
@@ -516,7 +518,7 @@ fig = go.Figure(data=[hist_trace1, hist_trace2, kde_trace1, kde_trace2])
 # Updating layout for better visualization
 fig.update_layout(title=f'(c) Length: Pre- vs. Post-Steering',
                   xaxis_title='Length',
-                  yaxis_title='Density',
+                  yaxis_title='Probability Density',
                   barmode='overlay',
                   legend_title='')
 
