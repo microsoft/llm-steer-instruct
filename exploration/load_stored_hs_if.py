@@ -25,13 +25,13 @@ from tqdm import tqdm
 
 # %%
 model_name = 'meta-llama/Meta-Llama-3-8B-Instruct'
-# model_name = 'phi-3'
+model_name = 'phi-3'
 # model_name = 'mistral-7b-instruct'
 # model_name= 'gemma-2-9b-it'
 #folder = f'stored_hs/if/{model_name}'
 folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
 instruct_type = ['detectable_format:json_format']
-# instruct_type = ['change_case:english_lowercase']
+instruct_type = ['change_case:english_lowercase']
 # instruct_type = ['language:response_language_bn']
 # instruct_type = ['detectable_format:number_highlighted_sections']
 #instruct_type = ['keywords:frequency_at least']

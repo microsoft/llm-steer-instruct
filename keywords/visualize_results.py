@@ -166,6 +166,18 @@ print(f'Wrong -> Wrong: {analysis_df[analysis_df["w2w"] == 1]["response"].apply(
 print(f'Correct -> Wrong: {analysis_df[analysis_df["r2w"] == 1]["response"].apply(len).mean()}')
 print(f'Correct -> Correct: {analysis_df[analysis_df["r2r"] == 1]["response"].apply(len).mean()}')
 
+# make histogram of the length of the responses for the different transitions
+resp_lengths = []
+for i, r in analysis_df.iterrows():
+    resp_lengths.append(len(r.response.split()))
+analysis_df['response_length'] = resp_lengths
+
+fig = px.histogram(analysis_df, x='response_length', color='w2r', nbins=100, color_discrete_sequence=custom_colors)
+fig.update_layout(title='Distribution of Response Lengths')
+fig.update_layout(showlegend=False)
+fig.update_layout(margin=dict(l=0, r=0, t=50, b=20))
+fig.show()
+
 # %%
 # print some examples of the transitions
 filtered_df = analysis_df[analysis_df['w2r'] == 1]
@@ -303,11 +315,142 @@ df_forbidden = pd.DataFrame({
     'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
-    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
+    'Std. Inference Error': [1 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names],
+    'w/ Instr. Error': [1 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
+    'w/ Instr. + Steering Error': [1 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
 })
 
-# Calculate means and 95% confidence intervals for df_existence
+
+# Create subplots
+fig = make_subplots(rows=1, cols=2, subplot_titles=('<b>w/o</b> Instr.', '<b>w/</b> Instr.'))
+
+settings = ['Std. Inference', 'Steering']
+
+show_errors = False
+
+# sample 4 colors from the continuous color scale "Blues"
+scale = px.colors.sequential.Oranges
+color1 = scale[3]
+color2 = scale[4]
+color3 = scale[5]
+color4 = scale[7]
+
+# Specify a list of colors for each 'Setting'
+
+color = color3
+#color = px.colors.qualitative.Plotly[index]
+
+model_labels = ['Phi-3*', 'Gemma 2B IT*']
+
+# Add traces for df_forbidden
+for i, setting in enumerate(settings):
+    fig.add_trace(go.Bar(
+        x=model_labels,
+        y=df_forbidden[setting],
+        name=setting,
+        marker_color=color,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape="/" if i == 1 else "",
+        showlegend=False,
+        error_y=dict(
+            type='data',
+            array=df_forbidden[f'{setting} Error'],
+            visible=show_errors
+        )
+    ), row=1, col=1)
+
+color = color4
+
+# color = px.colors.qualitative.Plotly[index]
+
+settings = ['w/ Instr.', 'w/ Instr. + Steering']
+
+# Add traces for df_existence
+for i, setting in enumerate(settings):
+    fig.add_trace(go.Bar(
+        x=model_labels,
+        y=df_forbidden[setting],
+        name=setting,
+        marker_color=color,
+        opacity=1 if i == 1 else 0.8,
+        marker_pattern_shape="/" if i == 1 else "",
+        showlegend=False,
+        error_y=dict(
+            type='data',
+            array=df_forbidden[f'{setting} Error'],
+            visible=show_errors
+        )
+    ), row=1, col=2)
+
+
+# Add custom legend item for 'Std. Inference'
+fig.add_trace(go.Bar(
+    x=[None], y=[None],
+    marker=dict(color='white', line=dict(color='black', width=1)),
+    showlegend=True,
+    name='Std. Inference',
+    offset=-10,
+    # width=0.01  # Set tiny width
+), row=1, col=1)
+
+# Add custom legend item for 'Steering' with pattern
+fig.add_trace(go.Bar(
+    x=[None], y=[None],
+    marker=dict(color='white', pattern=dict(
+            shape="/",
+            fillmode="replace",
+            size=10,
+            solidity=0.2,
+            fgcolor='black'  # Pattern color
+        ), line=dict(color='black', width=1)),
+    showlegend=True,
+    name='Steering',
+    offset=-10,
+    # width=0.01  # Set tiny width
+), row=1, col=2)
+
+# Update layout
+fig.update_layout(width=350, height=250)
+fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+
+# Set y-axis range
+fig.update_yaxes(range=[0.1, 1], row=1, col=1)
+fig.update_yaxes(range=[0.1, 1], row=1, col=2)
+
+
+# incline x-axis labels
+# fig.update_xaxes(tickangle=30)
+
+# move the legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-0.3,
+    xanchor='right',
+    x=0.85
+))
+
+store = True
+fig.update_layout(title_text='(b) Word-Exclusion Instructions')
+# move title up
+fig.update_layout(title_y=0.98)
+if store:
+    
+    fig.write_image('plots_for_paper/keywords/exclusion.pdf')
+    # store plot as pdf
+    # if 'Steering' in settings:
+    #     fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
+    #     fig.write_image('plots_for_paper/keywords/no_instruction.pdf')
+    # else:
+    #     fig.update_layout(title_text='(b) Accuracy <b>With</b> Text Instructions')
+    #     fig.write_image('plots_for_paper/keywords/with_instruction.pdf')
+    # fig.write_image('plots/keyword_exclusion_without_instruction.pdf')
+
+fig.show()
+
+# %%
+# Calculate means and 95% confidence intervals for df_forbidden
 dfs = all_dfs['existence']
 
 df_existence = pd.DataFrame({
@@ -316,10 +459,11 @@ df_existence = pd.DataFrame({
     'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
     'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
-    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
+    'Std. Inference Error': [1 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names],
+    'w/ Instr. Error': [1 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
+    'w/ Instr. + Steering Error': [1 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
 })
-
 # Create subplots
 fig = make_subplots(rows=1, cols=2, subplot_titles=('<b>w/o</b> Instr.', '<b>w/</b> Instr.'))
 
@@ -337,16 +481,23 @@ color4 = scale[7]
 color = color1
 #color = px.colors.qualitative.Plotly[index]
 
+model_labels = ['Phi-3*', 'Gemma 2B IT*']
+
 # Add traces for df_forbidden
 for i, setting in enumerate(settings):
     fig.add_trace(go.Bar(
-        x=df_forbidden['Model'].apply(lambda x: x.replace('-', ' ').title()),
-        y=df_forbidden[setting],
+        x=model_labels,
+        y=df_existence[setting],
         name=setting,
         marker_color=color,
         opacity=1 if i == 1 else 0.8,
         marker_pattern_shape="/" if i == 1 else "",
-        showlegend=False
+        showlegend=False,
+        error_y=dict(
+            type='data',
+            array=df_existence[f'{setting} Error'],
+            visible=show_errors
+        )
     ), row=1, col=1)
 
 color = color2
@@ -355,16 +506,23 @@ color = color2
 
 settings = ['w/ Instr.', 'w/ Instr. + Steering']
 
+model_labels = ['Phi-3', 'Gemma 2B IT']
+
 # Add traces for df_existence
 for i, setting in enumerate(settings):
     fig.add_trace(go.Bar(
-        x=df_forbidden['Model'].apply(lambda x: x.replace('-', ' ').title()),
-        y=df_forbidden[setting],
+        x=model_labels,
+        y=df_existence[setting],
         name=setting,
         marker_color=color,
         opacity=1 if i == 1 else 0.8,
         marker_pattern_shape="/" if i == 1 else "",
-        showlegend=False
+        showlegend=False,
+        error_y=dict(
+            type='data',
+            array=df_existence[f'{setting} Error'],
+            visible=show_errors
+        )
     ), row=1, col=2)
 
 
@@ -399,8 +557,8 @@ fig.update_layout(width=350, height=250)
 fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
 
 # Set y-axis range
-fig.update_yaxes(range=[0.5, 0.9], row=1, col=1)
-fig.update_yaxes(range=[0.6, 1], row=1, col=2)
+fig.update_yaxes(range=[0.1, 1], row=1, col=1)
+fig.update_yaxes(range=[0.1, 1], row=1, col=2)
 
 
 # incline x-axis labels
@@ -415,139 +573,13 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = False
+store = True
 fig.update_layout(title_text='(a) Word-Inclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)
 if store:
     
     fig.write_image('plots_for_paper/keywords/inclusion.pdf')
-    # store plot as pdf
-    # if 'Steering' in settings:
-    #     fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
-    #     fig.write_image('plots_for_paper/keywords/no_instruction.pdf')
-    # else:
-    #     fig.update_layout(title_text='(b) Accuracy <b>With</b> Text Instructions')
-    #     fig.write_image('plots_for_paper/keywords/with_instruction.pdf')
-    # fig.write_image('plots/keyword_exclusion_without_instruction.pdf')
-
-fig.show()
-
-# %%
-# Calculate means and 95% confidence intervals for df_forbidden
-dfs = all_dfs['forbidden']
-df_forbidden = pd.DataFrame({
-    'Model': model_names,
-    'Std. Inference': [dfs[model_name]['results_df'].follow_all_instructions.mean() for model_name in model_names],
-    'Steering': [dfs[model_name]['results_df_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr.': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
-    'w/ Instr. + Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'Std. Inference Error': [1.96 * dfs[model_name]['results_df'].follow_all_instructions.std() / (len(dfs[model_name]['results_df']) ** 0.5) for model_name in model_names],
-    'Steering Error': [1.96 * dfs[model_name]['results_df_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_steering']) ** 0.5) for model_name in model_names]
-})
-
-# Create subplots
-fig = make_subplots(rows=1, cols=2, subplot_titles=('<b>w/o</b> Instr.', '<b>w/</b> Instr.'))
-
-settings = ['Std. Inference', 'Steering']
-
-# sample 4 colors from the continuous color scale "Blues"
-scale = px.colors.sequential.Oranges
-color1 = scale[3]
-color2 = scale[4]
-color3 = scale[5]
-color4 = scale[7]
-
-# Specify a list of colors for each 'Setting'
-
-color = color3
-#color = px.colors.qualitative.Plotly[index]
-
-# Add traces for df_forbidden
-for i, setting in enumerate(settings):
-    fig.add_trace(go.Bar(
-        x=df_existence['Model'].apply(lambda x: x.replace('-', ' ').title()),
-        y=df_existence[setting],
-        name=setting,
-        marker_color=color,
-        opacity=1 if i == 1 else 0.8,
-        marker_pattern_shape="/" if i == 1 else "",
-        showlegend=False
-    ), row=1, col=1)
-
-color = color4
-
-# color = px.colors.qualitative.Plotly[index]
-
-settings = ['w/ Instr.', 'w/ Instr. + Steering']
-
-# Add traces for df_existence
-for i, setting in enumerate(settings):
-    fig.add_trace(go.Bar(
-        x=df_existence['Model'].apply(lambda x: x.replace('-', ' ').title()),
-        y=df_existence[setting],
-        name=setting,
-        marker_color=color,
-        opacity=1 if i == 1 else 0.8,
-        marker_pattern_shape="/" if i == 1 else "",
-        showlegend=False
-    ), row=1, col=2)
-
-
-# Add custom legend item for 'Std. Inference'
-fig.add_trace(go.Bar(
-    x=[None], y=[None],
-    marker=dict(color='white', line=dict(color='black', width=1)),
-    showlegend=True,
-    name='Std. Inference',
-    offset=-10,
-    # width=0.01  # Set tiny width
-), row=1, col=1)
-
-# Add custom legend item for 'Steering' with pattern
-fig.add_trace(go.Bar(
-    x=[None], y=[None],
-    marker=dict(color='white', pattern=dict(
-            shape="/",
-            fillmode="replace",
-            size=10,
-            solidity=0.2,
-            fgcolor='black'  # Pattern color
-        ), line=dict(color='black', width=1)),
-    showlegend=True,
-    name='Steering',
-    offset=-10,
-    # width=0.01  # Set tiny width
-), row=1, col=2)
-
-# Update layout
-fig.update_layout(width=350, height=250)
-fig.update_layout(margin=dict(l=0, r=0, t=50, b=0))
-
-# Set y-axis range
-fig.update_yaxes(range=[0.2, 0.6], row=1, col=1)
-fig.update_yaxes(range=[0.6, 1], row=1, col=2)
-
-
-# incline x-axis labels
-# fig.update_xaxes(tickangle=30)
-
-# move the legend to the bottom
-fig.update_layout(legend=dict(
-    orientation='h',
-    yanchor='bottom',
-    y=-0.3,
-    xanchor='right',
-    x=0.85
-))
-
-store = False
-fig.update_layout(title_text='(b) Word-Exclusion Instructions')
-# move title up
-fig.update_layout(title_y=0.98)
-if store:
-    
-    fig.write_image('plots_for_paper/keywords/exclusion.pdf')
     # store plot as pdf
     # if 'Steering' in settings:
     #     fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')

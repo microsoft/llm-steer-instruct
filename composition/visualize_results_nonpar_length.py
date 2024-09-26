@@ -280,13 +280,13 @@ coordinates_steering_no_instr = df2[['follow_all_instructions', 'length_accuracy
 coordinates_no_steering_plus_instr = df3[['follow_all_instructions', 'length_accuracy']].mean()
 coordinates_steering_plus_instr = df4[['follow_all_instructions', 'length_accuracy']].mean()
 
-color1 = plotly.colors.qualitative.Plotly[4]
-color2 = plotly.colors.qualitative.Bold[8]
+color1 = plotly.colors.qualitative.Plotly[0]
+color2 = plotly.colors.qualitative.Plotly[3]
 
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=[coordinates_no_steering_no_instr[0]], y=[coordinates_no_steering_no_instr[1]], mode='markers', name='<b>w/o</b> Instr.', marker=dict(size=10), marker_color=color1, opacity=0.6))
-fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color1))
+fig.add_trace(go.Scatter(x=[coordinates_steering_no_instr[0]], y=[coordinates_steering_no_instr[1]], mode='markers', name='+ Steering*', marker=dict(size=10), marker_color=color1))
 fig.add_trace(go.Scatter(x=[coordinates_no_steering_plus_instr[0]], y=[coordinates_no_steering_plus_instr[1]], mode='markers', name='<b>w/</b> Instr.', marker=dict(size=10), marker_color=color2, opacity=0.6))
 fig.add_trace(go.Scatter(x=[coordinates_steering_plus_instr[0]], y=[coordinates_steering_plus_instr[1]], mode='markers', name='+ Steering', marker=dict(size=10), marker_color=color2))
 

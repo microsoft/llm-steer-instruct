@@ -104,6 +104,18 @@ results_df_steering = results_df_steering.merge(data_df, on='prompt')
 results_df_standard = results_df_standard.merge(data_df, on='prompt')
 results_df_instr_plus_steering = results_df_instr_plus_steering.merge(data_df, on='prompt')
 
+instr_to_drop = ['detectable_format:multiple_sections', 'detectable_format:title']
+for i, r in results_df_steering.iterrows():
+    if any([instr in r.instruction_id_list for instr in instr_to_drop]):
+        # set follow_all_instructions to the same value as in the entry with the same key in results_df
+        results_df_steering.at[i, 'follow_all_instructions'] = results_df[results_df.key == r.key].follow_all_instructions.values[0]
+
+for i, r in results_df_instr_plus_steering.iterrows():
+    if any([instr in r.instruction_id_list for instr in instr_to_drop]):
+        # set follow_all_instructions to the same value as in the entry with the same key in results_df_standard
+        results_df_instr_plus_steering.at[i, 'follow_all_instructions'] = results_df_standard[results_df_standard.key == r.key].follow_all_instructions.values[0]
+
+
 
 # %%
 all_instruct = list(set([ item for l in results_df.instruction_id_list for item in l]))
@@ -388,9 +400,9 @@ fig.show()
 # %%
 
 # print some examples of the transitions
-filtered_df = analysis_df[analysis_df['r2w'] == 1]
+filtered_df = analysis_df[analysis_df['w2r'] == 1]
 # filter for json instructions
-# filtered_df = filtered_df[filtered_df.instruction_id_list.apply(lambda x: 'title' in x[0])]
+filtered_df = filtered_df[filtered_df.instruction_id_list.apply(lambda x: 'language' in x[0])]
 
 for i, r in filtered_df.iterrows():
     print(f'Prompt: {r.prompt}')

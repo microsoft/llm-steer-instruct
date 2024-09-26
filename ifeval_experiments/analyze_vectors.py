@@ -47,6 +47,8 @@ best_layers_dict = {r.instruction.replace(':', '_') : r.max_diff_layer_idx for r
 
 # %%
 instr_dirs = {}
+repr_w_instr = {}
+repr_wo_instr = {}
 
 for f in tqdm(files):
     if 'length' in f:
@@ -71,6 +73,11 @@ for f in tqdm(files):
 
     instr_dir = last_token_mean_diff / last_token_mean_diff.norm()
 
+    if f in best_layers_dict:
+        layer_idx = best_layers_dict[f.replace('.h5', '')]
+    else:
+        layer_idx = -1
+
     f = f.replace('language_response_', '')
     f = f.replace('.h5', '')
     f = f.replace('detectable_format_', '')
@@ -79,13 +86,11 @@ for f in tqdm(files):
     f = f.replace('punctuation_', '')
     f = f.replace('startend_', '')
 
-    if f in best_layers_dict:
-        layer_idx = best_layers_dict[f.replace('.h5', '')]
-    else:
-        layer_idx = -1
     best_layers_dict[f] = layer_idx
 
     instr_dirs[f] = instr_dir
+    repr_w_instr[f] = hs_instr
+    repr_wo_instr[f] = hs_no_instr
 
 
 # %%
@@ -129,7 +134,7 @@ model.to(device)
 for instruction in instr_dirs.keys():
     layer_idx = best_layers_dict[instruction]
     if layer_idx == -1:
-        layer_idx = 30
+        layer_idx = 16
     instr_dir = instr_dirs[instruction][layer_idx].to(device)
     logits_projections = instr_dir @ model.W_U
     # argsort logits_projections and take the top 10
@@ -137,5 +142,87 @@ for instruction in instr_dirs.keys():
     top_tokens = tokenizer.convert_ids_to_tokens(top_ids.cpu().numpy())
     print(f'{instruction} - Layer {layer_idx}: {top_tokens}')
     print('----------------------')
+
+# %%
+# =============================================================================
+# makeplot of cos sims across layers
+# =============================================================================
+instr = list(instr_dirs.keys())[2]
+
+for instr in instr_dirs.keys():
+
+    if 'language_ur' not in instr and 'quotation' not in instr:
+        continue
+        
+    print(f'Instruction: {instr}')
+
+    n_examples= 200
+
+    cos_sims = []
+    cos_sims_instr = []
+    cos_sims_no_instr = []
+
+    for layer_idx in range(repr_w_instr[instr].shape[1]):
+        hs_instr = repr_w_instr[instr][:n_examples, layer_idx, -1]
+        hs_no_instr = repr_wo_instr[instr][:n_examples, layer_idx, -1]
+
+        # copmute pairwise cosine similarity between the two
+        cos_sim = torch.nn.functional.cosine_similarity(hs_instr, hs_no_instr).mean()
+
+        # compute cosine similarity between all hs_instr
+        cos_sim_instr = torch.nn.functional.cosine_similarity(hs_instr.unsqueeze(1), hs_instr.unsqueeze(0), dim=2).mean()
+
+        # compute cosine similarity between all hs_no_instr
+        cos_sim_no_instr = torch.nn.functional.cosine_similarity(hs_no_instr.unsqueeze(1), hs_no_instr.unsqueeze(0), dim=2).mean()
+
+        cos_sims.append(cos_sim)
+        cos_sims_instr.append(cos_sim_instr)
+        cos_sims_no_instr.append(cos_sim_no_instr)
+
+    # make line plot of cos sims across layers
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims, mode='lines', name='Same Ex. <b>w/</b> vs. <b>w/o</b> Instr.'))
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_no_instr, mode='lines', name='Examples <b>w/o</b> Instr.'))
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_instr, mode='lines', name='Examples <b>w/</b> Instr.'))
+    fig.update_layout(
+        xaxis_title='Layer',
+        yaxis_title='Cosine Similarity')
+    
+    # resize the plot
+    fig.update_layout(
+        autosize=False,
+        width=300,
+        height=250)
+    
+    if 'quotation' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(a) "Quotation" Instruction')
+    elif 'language_ur' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(b) "Urdu Language" Instr.')
+    else:
+        # set title
+        fig.update_layout(
+            title=f'(b) "{instr}" Instruction')
+    
+    # remove padding
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=30, b=0))   
+    
+    # move the legend to the bottom
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=-1.1,
+        xanchor="right",
+        x=0.9
+    ))
+
+    # store the plot as pdf 
+    fig.write_image(f'./plots_for_paper/format/{model_name}_{instr}_cos_sim.pdf')
+
+    fig.show()
 
 # %%

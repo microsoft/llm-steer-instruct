@@ -72,6 +72,19 @@ data_df = data_df.rename(columns={'original_prompt': 'prompt'})
 
 # drop instruction_id_list
 data_df = data_df.drop(columns=['instruction_id_list'])
+
+# %%
+instr_to_drop = ['detectable_format:multiple_sections', 'detectable_format:title']
+
+# from all dfs drop rows with instruction_id_list containing instr_to_drop
+results_df = results_df[~results_df.instruction_id_list.apply(lambda x: any([instr in x for instr in instr_to_drop]))]
+results_df_steering = results_df_steering[~results_df_steering.instruction_id_list.apply(lambda x: any([instr in x for instr in instr_to_drop]))]
+results_df_standard = results_df_standard[~results_df_standard.instruction_id_list.apply(lambda x: any([instr in x for instr in instr_to_drop]))]
+results_df_instr_plus_steering = results_df_instr_plus_steering[~results_df_instr_plus_steering.instruction_id_list.apply(lambda x: any([instr in x for instr in instr_to_drop]))]
+print(f'Number of rows in results_df: {len(results_df)}')
+print(f'Number of rows in results_df_steering: {len(results_df_steering)}')
+print(f'Number of rows in results_df_standard: {len(results_df_standard)}')
+print(f'Number of rows in results_df_instr_plus_steering: {len(results_df_instr_plus_steering)}')
 # %%
 # join data_df with results_df on prompt
 results_df = results_df.merge(data_df, on='prompt')
@@ -326,6 +339,18 @@ for model_name in model_names:
     results_df_standard = results_df_standard.merge(data_df, on='prompt')
     results_df_instr_plus_steering = results_df_instr_plus_steering.merge(data_df, on='prompt')
 
+    instr_to_drop = ['detectable_format:multiple_sections', 'detectable_format:title']
+    for i, r in results_df_steering.iterrows():
+        if any([instr in r.instruction_id_list for instr in instr_to_drop]):
+            # set follow_all_instructions to the same value as in the entry with the same key in results_df
+            results_df_steering.at[i, 'follow_all_instructions'] = results_df[results_df.key == r.key].follow_all_instructions.values[0]
+    
+    for i, r in results_df_instr_plus_steering.iterrows():
+        if any([instr in r.instruction_id_list for instr in instr_to_drop]):
+            # set follow_all_instructions to the same value as in the entry with the same key in results_df_standard
+            results_df_instr_plus_steering.at[i, 'follow_all_instructions'] = results_df_standard[results_df_standard.key == r.key].follow_all_instructions.values[0]
+
+
     dfs[model_name] = {
         'results_df': results_df,
         'results_df_steering': results_df_steering,
@@ -376,6 +401,8 @@ for model_name in model_names:
 # %%
 # make bar plot with all models of results_df.follow_all_instructions.mean() and results_df_steering.follow_all_instructions.mean()
 
+show_error_bars = False
+
 # Calculate means and 95% confidence intervals
 df = pd.DataFrame({
     'Model': model_names,
@@ -391,21 +418,30 @@ df = pd.DataFrame({
 index = 0
 color = px.colors.qualitative.Plotly[index]
 
+model_labels_dict = {
+    'phi-3': 'Phi-3*',
+    'gemma-2-2b-it': 'Gemma 2<br>2B IT*',
+    'mistral-7b-instruct': 'Mistral<br>7B Instr.*',
+    'gemma-2-9b-it': 'Gemma 2<br>9B IT*'
+}
+model_labels = [model_labels_dict[model_name] for model_name in model_names]
+
 # plot 'Std. Inference' and 'Steering' in one plot
 fig = go.Figure()
 for i, setting in enumerate(['Std. Inference', 'Steering']):
     fig.add_trace(go.Bar(
-        x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
+        x=model_labels,
         y=df[setting],
         name=setting,
         marker_color=color,
         opacity=1 if i == 1 else 0.8,
         marker_pattern_shape='/' if i == 1 else '',
-        # error_y=dict(
-        #     type='data',
-        #     array=df[f'{setting} Error'],
-        #     visible=True
-        # )
+        error_y=dict(
+            type='data',
+            array=df[f'{setting} Error'],
+            visible=show_error_bars,
+            width=0,
+        )
     ))
 
 # set title
@@ -428,13 +464,13 @@ fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 fig.update_layout(legend=dict(
     orientation='h',
     yanchor='bottom',
-    y=-0.8,
+    y=-0.4,
     xanchor='right',
-    x=1.05
+    x=0.9
 ))
 
 # store plot as pdf
-fig.write_image(f'./plots_for_paper/format_no_instr.pdf')
+fig.write_image(f'./plots_for_paper/format/format_no_instr.pdf')
 fig.show()
 # %%
 # =============================================================================
@@ -446,29 +482,38 @@ df = pd.DataFrame({
     'Model': model_names,
     'Std. Inference': [dfs[model_name]['results_df_standard'].follow_all_instructions.mean() for model_name in model_names],
     'Steering': [dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.mean() for model_name in model_names],
-    'Std. Inference Error': [1.96 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
-    'Steering Error': [1.96 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
+    'Std. Inference Error': [1 * dfs[model_name]['results_df_standard'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_standard']) ** 0.5) for model_name in model_names],
+    'Steering Error': [1 * dfs[model_name]['results_df_instr_plus_steering'].follow_all_instructions.std() / (len(dfs[model_name]['results_df_instr_plus_steering']) ** 0.5) for model_name in model_names]
 })
 
 # Specify a list of colors for each 'Setting'
 index = 3
 color = px.colors.qualitative.Plotly[index]
 
+model_labels_dict = {
+    'phi-3': 'Phi-3*',
+    'gemma-2-2b-it': 'Gemma 2<br>2B IT*',
+    'mistral-7b-instruct': 'Mistral<br>7B Instr.',
+    'gemma-2-9b-it': 'Gemma 2<br>9B IT'
+}
+model_labels = [model_labels_dict[model_name] for model_name in model_names]
+
 # plot 'Std. Inference' and 'Steering' in one plot
 fig = go.Figure()
 for i, setting in enumerate(['Std. Inference', 'Steering']):
     fig.add_trace(go.Bar(
-        x=df['Model'].apply(lambda x: x.replace('-', ' ').title()),
+        x=model_labels,
         y=df[setting],
         name=setting,
         marker_color=color,
         opacity=1 if i == 1 else 0.8,
         marker_pattern_shape='/' if i == 1 else '',
-        # error_y=dict(
-        #     type='data',
-        #     array=df[f'{setting} Error'],
-        #     visible=True
-        # )
+        error_y=dict(
+            type='data',
+            array=df[f'{setting} Error'],
+            visible=show_error_bars,
+            width=0,
+        )
     ))
 
 # set title
@@ -492,13 +537,13 @@ fig.update_layout(yaxis_title='Accuracy')
 fig.update_layout(legend=dict(
     orientation='h',
     yanchor='bottom',
-    y=-0.8,
+    y=-0.4,
     xanchor='right',
-    x=1.05
+    x=0.9
 ))
 
 # store plot as pdf
-fig.write_image(f'./plots_for_paper/format_instr.pdf')
+fig.write_image(f'./plots_for_paper/format/format_instr.pdf')
 fig.show()
 # %%
 

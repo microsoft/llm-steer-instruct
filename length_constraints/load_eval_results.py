@@ -8,6 +8,8 @@ import nltk
 import plotly
 import plotly.figure_factory as ff
 import numpy as np
+from statsmodels.stats.contingency_tables import mcnemar
+
 
 os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/length_constraints')
 
@@ -273,36 +275,39 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     # No steering
     lengths_no_steering = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct']
     acc_no_steering = lengths_no_steering.mean()
+    sem_no_steering = lengths_no_steering.sem()  # Calculate standard error of the mean
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}'], 
+        x=[f'{length_constraint+1}*'], 
         y=[acc_no_steering], 
         name='Std. Inference', 
         marker_color=no_steering_color,
         width=0.47,
         showlegend=first,
+        # error_y=dict(type='data', array=[sem_no_steering])  # Add error bars
     ))
-    
 
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}'], 
+        x=[f'{length_constraint+1}*'], 
         y=[0], 
         name='yyy', 
         marker_color=steering_color,
-        width=0.5,
+        width=0.1,
         showlegend=False,
     ))
 
     # Steering
     lengths_steering = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['correct']
     acc_steering = lengths_steering.mean()
+    sem_steering = lengths_steering.sem()  # Calculate standard error of the mean
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}'], 
+        x=[f'{length_constraint+1}*'], 
         y=[acc_steering],
         name='Steering', 
         marker_color=steering_color,
         marker_pattern_shape="/",
         width=0.25,
         showlegend=first,
+        # error_y=dict(type='data', array=[sem_steering])  # Add error bars
     ))
 
     # carry out mcnemar test
@@ -313,7 +318,6 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     steering_incorrect = results_df_steering[results_df_steering['length_constraint'] == length_constraint].shape[0] - steering_correct
 
     # carry out the mcnemar test
-    from statsmodels.stats.contingency_tables import mcnemar
     table = [[no_steering_correct, no_steering_incorrect], [steering_correct, steering_incorrect]]
     result = mcnemar(table, exact=False, correction=True)
     print(f'Length constraint: {length_constraint+1} | p-value: {result.pvalue}')
@@ -339,9 +343,8 @@ fig.update_layout(legend=dict(
 ))
 
 # add label for x axis
-fig.update_layout(xaxis_title='# of Sentences')
+fig.update_layout(xaxis_title='Max. # of Sentences')
 fig.update_layout(yaxis_title='Accuracy')
-
 
 # change title font size
 fig.update_layout(title_font_size=16)
@@ -349,15 +352,14 @@ fig.update_layout(title_font_size=16)
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
-# modefiy ymin
+# modify ymin
 fig.update_layout(yaxis=dict(range=[0.5, 1]))
 
 # reshape figure
 fig.update_layout(width=300, height=250)
 
-
-# save theplot as pdf
-fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
+# save the plot as pdf
+# fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
 
 fig.show()
 
