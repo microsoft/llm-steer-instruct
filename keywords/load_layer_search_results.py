@@ -120,6 +120,7 @@ fig.show()
 # =============================================================================
 
 # get some outputs
+uids = results_df_no_instr.question.unique()
 question = uids[0]
 
 # get outputs for the question
@@ -134,8 +135,8 @@ for i, r in outputs.iterrows():
     print('--------------------------------')
 # %%
 
-layer = 30
-steering_weight = 110
+layer = 26
+steering_weight = 100
 
 # get outputs for the question
 outputs = results_df_no_instr[(results_df_no_instr.layer == layer) & (results_df_no_instr.weight == steering_weight)]
