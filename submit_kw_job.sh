@@ -1,19 +1,21 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-2b-it"
+# model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
 gpu_req="rtx_4090:1"
 gpu_req="rtx_3090:1"
+
+
 
 # arguments
 dry_run=false
 data_path=./data/ifeval_single_keyword_include.jsonl
 # data_path=./data/ifeval_single_keyword_exclude.jsonl
 
-source_layer_idx=21
-steering_weight=290
+source_layer_idx=26
+steering_weight=40
 steering=add_vector
 include_instructions=true
 

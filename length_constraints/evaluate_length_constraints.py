@@ -1,14 +1,16 @@
 # %%
 import os
+import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
-    import sys
-    sys.path.append('/home/t-astolfo/t-astolfo')
-    print('We\'re on the sandbox machine')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/ifeval_experiments')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    print('We\'re on a sandbox machine')
 
 import numpy as np
 import torch
@@ -26,63 +28,16 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 
 
-# def generate_with_hooks(
-#     model,
-#     toks,
-#     max_tokens_generated: int = 64,
-#     fwd_hooks = [],
-# ):
-
-#     all_toks = torch.zeros((toks.shape[0], toks.shape[1] + max_tokens_generated), dtype=torch.long, device=toks.device)
-#     all_toks[:, :toks.shape[1]] = toks
-
-#     with torch.no_grad():
-#         for i in range(max_tokens_generated):
-#             with model.hooks(fwd_hooks=fwd_hooks):
-#                 logits = model(all_toks[:, :-max_tokens_generated + i])
-#                 next_tokens = logits[:, -1, :].argmax(dim=-1) # greedy sampling (temperature=0)
-#                 if next_tokens[0] == model.tokenizer.eos_token_id or next_tokens[0] == 32007:
-#                     break
-#                     print(f'Stopping the generation as the model is generating a new question (Q:)')
-#                     # remove the Q
-#                     all_toks[0, -max_tokens_generated+i-1] = 0
-#                     break
-#                 all_toks[:,-max_tokens_generated+i] = next_tokens
-
-#     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
-
-# def direction_ablation_hook(
-#     activation,
-#     hook,
-#     direction,
-#     weight=1.0,
-# ):
-#     return activation + (direction * weight)
-
-# def direction_projection_hook(
-#     activation,
-#     hook,
-#     direction,
-#     value_along_direction,
-# ):
-#     adjusted_activations = adjust_vectors(activation.squeeze(), direction, value_along_direction)
-#     return adjusted_activations.unsqueeze(0)
-
-
 @hydra.main(config_path='../config', config_name='conf_length')
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
-
-    os.chdir(args.project_dir)
 
     # Some environment variables
     device = args.device
     print(f"Using device: {device}")
 
-    transformer_cache_dir = None
-
     # load the data
-    with open('../data/ifeval_wo_instructions.jsonl') as f:
+    with open('./data/ifeval_wo_instructions.jsonl') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
@@ -125,7 +80,7 @@ def run_experiment(args: DictConfig):
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     if args.dry_run:
@@ -287,7 +242,7 @@ def run_experiment(args: DictConfig):
                 p_bar.update(1)
 
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}/1-{args.n_sent_max}sentences_{args.n_examples}examples/'
+    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}/1-{args.n_sent_max}sentences_{args.n_examples}examples/'
     if args.steering != 'none' and not args.include_instructions:
         folder += f'/{args.steering}_{args.source_layer_idx}'
         if args.apply_to_all_layers:
