@@ -16,12 +16,12 @@ source_layer_idx=12
 steering_weight=20
 steering_weights=[$steering_weight]
 steering=add_vector_conciseness
-# steering=none
+steering=none
 include_instructions=true
 
 constraint_type=at_most
 
-n_examples=100
+n_examples=200
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 
