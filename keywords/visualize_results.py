@@ -213,7 +213,7 @@ from copy import deepcopy
 
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
-weights = {'forbidden' : {'phi-3': -150, 'gemma-2-2b-it': -200}, 'existence': {'phi-3': 120, 'gemma-2-2b-it': 120}}
+weights = {'forbidden' : {'phi-3': -150, 'gemma-2-2b-it': -200}, 'existence': {'phi-3': 60, 'gemma-2-2b-it': 120}}
 layers = {'forbidden': {'phi-3': 24, 'gemma-2-2b-it': 24}, 'existence': {'phi-3': 24, 'gemma-2-2b-it': 24}}
 constraints = ['forbidden', 'existence']
 all_dfs = {}
@@ -432,7 +432,7 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = True
+store = False
 fig.update_layout(title_text='(b) Word-Exclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)
@@ -574,7 +574,7 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = True
+store = False
 fig.update_layout(title_text='(a) Word-Inclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)

@@ -19,7 +19,7 @@ os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/length_constraints')
 output_path = './out'
 model_name = 'phi-3'
 n_sent_max = 5
-n_examples = 40
+n_examples = 100
 include_instructions = True
 steering = 'add_vector_verbosity'
 steering = 'none'
@@ -112,6 +112,7 @@ fig.show()
 # =============================================================================
 
 constraint_type= 'at_most'
+n_examples = 100
 # constraint_type= 'at_least'
 # load data without instructions with and without steering
 folder_no_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/no_steering_{constraint_type}'
@@ -127,7 +128,7 @@ results_df_no_steering = pd.DataFrame(results)
 steering_type = 'conciseness'
 # steering_type = 'verbosity'
 
-n_examples = 40
+n_examples = 100
 folder_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/{constraint_type}_instr_plus_add_vector_{steering_type}_{source_layer_idx}'
 out_path = f'{folder_steering}/out'
 out_path +=  '.jsonl'
