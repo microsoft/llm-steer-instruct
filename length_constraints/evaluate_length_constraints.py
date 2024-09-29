@@ -84,7 +84,7 @@ def run_experiment(args: DictConfig):
     model.to(device)
 
     if args.dry_run:
-        data_df = data_df.head(20)
+        data_df = data_df.head(3)
 
     out_lines = []
 
@@ -227,12 +227,10 @@ def run_experiment(args: DictConfig):
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn)]
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
-                    print(f'Example: {example}')
                     out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length, decode_directly=True)
                     # if out 1 is a list, take the first element
                     if isinstance(out1, list):
                         out1 = out1[0]
-                    print(f'Generated: {out1}')
                 else:
                     raise ValueError(f"Unknown steering method: {args.steering}")
                                                 
