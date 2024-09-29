@@ -21,9 +21,9 @@ model_name = 'phi-3'
 n_sent_max = 5
 n_examples = 40
 include_instructions = True
-steering = 'add_vector_conciseness'
+steering = 'add_vector_verbosity'
 steering = 'none'
-constraint_type= 'at_most'
+constraint_type= 'at_least'
 source_layer_idx = 12
 apply_to_all_layers = False
 dry_run = False
@@ -112,6 +112,7 @@ fig.show()
 # =============================================================================
 
 constraint_type= 'at_most'
+# constraint_type= 'at_least'
 # load data without instructions with and without steering
 folder_no_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/no_steering_{constraint_type}'
 out_path = f'{folder_no_steering}/out'
@@ -124,6 +125,7 @@ with open(out_path) as f:
 results_df_no_steering = pd.DataFrame(results)
 
 steering_type = 'conciseness'
+# steering_type = 'verbosity'
 
 n_examples = 40
 folder_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/{constraint_type}_instr_plus_add_vector_{steering_type}_{source_layer_idx}'
@@ -144,7 +146,12 @@ lenght_of_outputs_sent_no_steering = []
 for i, row in results_df_no_steering.iterrows():
     lenght_of_outputs_sent_no_steering.append(len(nltk.sent_tokenize(row['response'])))
     lenght_of_outputs_char_no_steering.append(len(row['response']))
-    lenght_correct_no_steering.append(row['length_constraint']+1 >= len(nltk.sent_tokenize(row['response'])))
+    if constraint_type == 'at_most':
+        lenght_correct_no_steering.append(row['length_constraint']+1 >= len(nltk.sent_tokenize(row['response'])))
+    elif constraint_type == 'at_least':
+        lenght_correct_no_steering.append(row['length_constraint']+1 <= len(nltk.sent_tokenize(row['response'])))
+    else:
+        raise ValueError('Unknown constraint type')
 
 lenght_correct_steering = []
 lenght_of_outputs_char_steering = []
@@ -153,7 +160,10 @@ lenght_of_outputs_sent_steering = []
 for i, row in results_df_steering.iterrows():
     lenght_of_outputs_sent_steering.append(len(nltk.sent_tokenize(row['response'])))
     lenght_of_outputs_char_steering.append(len(row['response']))
-    lenght_correct_steering.append(row['length_constraint']+1 >= len(nltk.sent_tokenize(row['response'])))
+    if constraint_type == 'at_most':
+        lenght_correct_steering.append(row['length_constraint']+1 >= len(nltk.sent_tokenize(row['response'])))
+    elif constraint_type == 'at_least':
+        lenght_correct_steering.append(row['length_constraint']+1 <= len(nltk.sent_tokenize(row['response'])))
 
 results_df_no_steering['length'] = lenght_of_outputs_sent_no_steering
 results_df_no_steering['correct'] = lenght_correct_no_steering
@@ -312,13 +322,18 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
 
     # carry out mcnemar test
     # first, count the number of correct and incorrect predictions
-    no_steering_correct = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct'].sum()
-    no_steering_incorrect = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint].shape[0] - no_steering_correct
-    steering_correct = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['correct'].sum()
-    steering_incorrect = results_df_steering[results_df_steering['length_constraint'] == length_constraint].shape[0] - steering_correct
+    table = [[0, 0], [0, 0]]
+    for i, row in results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint].iterrows():
+        if row['correct'] and not results_df_steering.iloc[i]['correct']:
+            table[0][1] += 1
+        elif not row['correct'] and results_df_steering.iloc[i]['correct']:
+            table[1][0] += 1
+        elif not row['correct'] and not results_df_steering.iloc[i]['correct']:
+            table[1][1] += 1
+        else:
+            table[0][0] += 1
 
     # carry out the mcnemar test
-    table = [[no_steering_correct, no_steering_incorrect], [steering_correct, steering_incorrect]]
     result = mcnemar(table, exact=False, correction=True)
     print(f'Length constraint: {length_constraint+1} | p-value: {result.pvalue}')
 

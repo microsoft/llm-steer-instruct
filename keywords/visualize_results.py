@@ -34,10 +34,11 @@ def correct_loose_score(df):
 
 folder = 'keywords/out'
 model_name = 'gemma-2-2b-it'
-constrain_type = 'forbidden'
+constrain_type = 'existence'
 steering= 'add_vector'
 layer = 24
-weight = -200
+# weight = -200
+weight = 120
 n_examples = 20
 
 file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'

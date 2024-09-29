@@ -204,7 +204,7 @@ table = pd.pivot_table(best_layer_df, values='optimal_layer', index='instruction
 table
 # %%
 # remove rows with 'language' in the instruction
-no_language_table = table[~table.index.str.contains('language')]
+no_language_table = table[table.index.str.contains('language')]
 no_language_table
 # %%
 # make table with setttin == 'no_instr'
@@ -215,4 +215,26 @@ no_instr_table
 no_instr_table = no_language_table.loc[:, (slice(None), 'instr')]
 no_instr_table
 
+# %%
+paper_table = no_language_table
+for i,r in paper_table.iterrows():
+    instruction_name = i.split(':')[-1].replace('_', ' ').title()
+    if 'Language' in instruction_name:
+        instruction_name = instruction_name.replace('Response ', '')
+    phi_no_instr = int(r['phi-3', 'no_instr']) if r['phi-3', 'no_instr'] != -1 else '-'
+    phi_instr = int(r['phi-3', 'instr']) if r['phi-3', 'instr'] != -1 else '-'
+
+    gemma2b_no_instr = int(r['gemma-2-2b-it', 'no_instr']) if r['gemma-2-2b-it', 'no_instr'] != -1 else '-'
+    gemma2b_instr = int(r['gemma-2-2b-it', 'instr']) if r['gemma-2-2b-it', 'instr'] != -1 else '-'
+
+    mistral_no_instr = int(r['mistral-7b-instruct', 'no_instr']) if r['mistral-7b-instruct', 'no_instr'] != -1 else '-'
+    mistral_instr = int(r['mistral-7b-instruct', 'instr']) if r['mistral-7b-instruct', 'instr'] != -1 else '-'
+
+    gemma9b_no_instr = int(r['gemma-2-9b-it', 'no_instr']) if r['gemma-2-9b-it', 'no_instr'] != -1 else '-'
+    gemma9b_instr = int(r['gemma-2-9b-it', 'instr']) if r['gemma-2-9b-it', 'instr'] != -1 else '-'
+
+
+    print(f'{instruction_name} & {phi_no_instr} & {phi_instr} & {gemma2b_no_instr} & {gemma2b_instr} & {mistral_no_instr} & {mistral_instr} & {gemma9b_no_instr} & {gemma9b_instr} \\\\')
+# %%
+len(paper_table)
 # %%

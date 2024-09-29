@@ -378,6 +378,93 @@ fig.update_layout(margin=dict(l=50, r=0, t=50, b=30))
 fig.show()
 
 # %%
+# %%
+# =============================================================================
+# TODO make plot for paper 
+# =============================================================================
+length_constraint = 1
+max_length = 10000
+# Creating a histogram with a boxplot as marginal_x
+filtered_df = results_df[results_df.length_constraint == length_constraint]
+plot_df = filtered_df[filtered_df.length_of_outputs < max_length]
+
+plot_df = plot_df[plot_df.length_constraint == length_constraint]
+plot_df = plot_df[plot_df.steering_weight != 60]
+
+data = [plot_df[plot_df.steering_weight == i].length_of_outputs for i in plot_df.steering_weight.unique()]
+labels = plot_df.steering_weight.unique().astype(str)
+colors = plotly.colors.qualitative.Plotly
+
+# filter data: remove outliers 
+for i, d in enumerate(data):
+    # compute 75th percentile
+    q75, q25 = np.percentile(d, 75), np.percentile(d, 25)
+    iqr = q75 - q25
+    data[i] = d #[d < q75 + 1.5 * iqr]
+
+# Creating the KDE plot
+kde_fig = ff.create_distplot(data, 
+                             group_labels=labels, 
+                             show_hist=False, 
+                             show_rug=False,
+                                colors=colors,
+                             )
+
+# Make lines thicker
+for trace in kde_fig.data:
+    trace.update(line=dict(width=4))  
+
+
+fig = px.histogram(plot_df, 
+                   x='length_of_outputs', 
+                   color='steering_weight', 
+                   marginal='box', 
+                   title=f'Length of outputs for constraint {length_constraint}', 
+                   labels={'length_of_outputs': 'Length of outputs', 'steering_weight': 'Steering weight'}, 
+                   nbins=100, 
+                   barmode='overlay', 
+                   histnorm='probability density')
+
+# Extracting traces from the px.histogram figure
+for kde_trace in kde_fig.data:
+    kde_trace.update(showlegend=False)  # Disable legend for KDE traces
+    fig.add_trace(kde_trace)
+
+# Updating layout for better visualization
+fig.update_layout(title=f'(a) Length vs. Steering Weights',
+                  xaxis_title='Length (# of words)',
+                  yaxis_title='Probability Density',
+                  barmode='overlay',
+                  legend_title='Weight')
+
+# reshape figure
+fig.update_layout(width=300, height=250)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+# change title font size
+fig.update_layout(title_font_size=16)
+
+# set x max to max_length
+# fig.update_xaxes(range=[0, max_length])
+
+# move the legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-0.75,
+    xanchor='right',
+    x=0.8,
+    # change the font size
+))
+
+# store the plot as pdf
+fig.write_image(f'../plots_for_paper/length/length_distribution_{model_name}_long.pdf')
+
+fig.show()
+
+# %%
 # =============================================================================
 # load results without steering
 # =============================================================================
