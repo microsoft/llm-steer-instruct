@@ -11,16 +11,16 @@ gpu_req="rtx_3090:1"
 
 # arguments
 dry_run=false
-data_path=./data/ifeval_single_keyword_include.jsonl
-# data_path=./data/ifeval_single_keyword_exclude.jsonl
+# data_path=./data/ifeval_single_keyword_include.jsonl
+data_path=./data/ifeval_single_keyword_exclude.jsonl
 
-source_layer_idx=26
-steering_weight=40
+source_layer_idx=24
+steering_weight=-60
 steering=add_vector
 include_instructions=true
 
-specific_instruction=existence
-# specific_instruction=forbidden
+# specific_instruction=existence
+specific_instruction=forbidden
 n_examples=20
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
