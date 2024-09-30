@@ -14,6 +14,7 @@ with open(path, 'r') as f:
 data_df = pd.DataFrame(results)
 # %%
 phrasings_include = [' Include the word {} in your answer.', ' Make sure to include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' Make sure that the word "{}" is included in the output.', ' The output must include the word "{}".']
+phrasings_exclude = [' Do not include the word {}.', ' Make sure not to include the word "{}".', ' Do not use the word {}.', ' Do not say "{}".', ' Please exclude the word "{}".', ' The output should not contain the word "{}".']
 new_rows = []
 for i, r in data_df.iterrows():
     for word in r['likely_words']:
@@ -25,7 +26,7 @@ for i, r in data_df.iterrows():
         new_row["instruction_id_list_for_eval"] = ["keywords:forbidden_words"]
         # new_row['kwargs'] = [{"keywords": [word]}]
         new_row['kwargs'] = [{"forbidden_words": [word]}]
-        phrasing = random.choice(phrasings_include)
+        phrasing = random.choice(phrasings_exclude)
         new_prompt = new_row['prompt_without_instruction'] + phrasing.format(word)
         new_row['prompt'] = new_prompt
         new_rows.append(new_row)
