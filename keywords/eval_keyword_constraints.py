@@ -139,6 +139,8 @@ def run_experiment(args: DictConfig):
                 file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs.h5'
             else:    
                 file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'exisitence_validation':
+            file = f'{args.project_dir}/representations/{args.model_name}/include_validation_include_{args.n_examples}examples_hs.h5'
         else:
             raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
         results_df = pd.read_hdf(file)
