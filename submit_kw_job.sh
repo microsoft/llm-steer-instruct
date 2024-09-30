@@ -10,9 +10,10 @@ gpu_req="rtx_3090:1"
 
 
 # arguments
-dry_run=false
+dry_run=true
 data_path=./data/ifeval_single_keyword_include.jsonl
 data_path=./data/keyword_test_inclusion_likely.jsonl
+data_path=./data/keyword_test_exclusion_likely.jsonl
 # data_path=./data/ifeval_single_keyword_exclude.jsonl
 
 source_layer_idx=28
@@ -23,6 +24,7 @@ include_instructions=false
 
 specific_instruction=existence
 specific_instruction=existence_validation
+specific_instruction=forbidden_validation
 max_generation_length=256
 # specific_instruction=forbidden
 n_examples=10

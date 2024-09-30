@@ -117,7 +117,7 @@ def run_experiment(args: DictConfig):
         print(f'Using only the following instructions: {all_instructions}')
     
     if args.dry_run:
-        data_df = data_df.head(40)
+        data_df = data_df.head(2)
     total = len(data_df)
 
     print(f'Running on {total} examples')
