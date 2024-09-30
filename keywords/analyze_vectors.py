@@ -36,10 +36,11 @@ all_words_df = pd.read_hdf(rep_file)
 # %%
 all_words_df.head()
 # %%
-layer_idx = 28
+layer_idx = 29
 mean_projections = []
 mean_projections_no_instr = []
 proj_deltas = []
+instr_dirs = {}
 for word in all_words_df['word'].unique():
     print(f'Word: {word}')
     df = all_words_df[all_words_df['word'] == word]
@@ -56,6 +57,7 @@ for word in all_words_df['word'].unique():
     last_token_mean_diff = mean_repr_diffs[layer_idx, :]
 
     instr_dir = last_token_mean_diff / last_token_mean_diff.norm()
+    instr_dirs[word] = instr_dir
 
     # compute projection for inputs with instruction
     proj = hs_instr[:, layer_idx] @ instr_dir
@@ -73,4 +75,25 @@ for word in all_words_df['word'].unique():
 print(f'mean proj with instr {np.sum(mean_projections) / len(mean_projections)}')
 print(f'mean proj without instr {np.sum(mean_projections_no_instr) / len(mean_projections_no_instr)}')
 print(f'mean proj delta {np.sum(proj_deltas) / len(proj_deltas)}')
+# %%
+model_name = 'phi-3'
+
+device = 'mps' if torch.backends.mps.is_available() else 'cuda'
+print(f"Using device: {device}")
+
+with open('hf_token.txt') as f:
+    hf_token = f.read()
+transformer_cache_dir = None
+model, tokenizer = load_model_from_tl_name(model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token)
+# model_hf, tokenizer_hf = load_model_from_tl_name(model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=True)
+model.to(device)
+# %%
+for word, instr_dir in instr_dirs.items():
+    logits_projections = instr_dir.to(device) @ model.W_U
+    # argsort logits_projections and take the top 10
+    top_ids = torch.argsort(logits_projections, descending=True)[:10]
+    top_tokens = tokenizer.convert_ids_to_tokens(top_ids.cpu().numpy())
+    print(f'{word} - Layer {layer_idx}: {top_tokens}')
+    print('----------------------')
+
 # %%
