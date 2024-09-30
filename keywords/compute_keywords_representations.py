@@ -3,9 +3,8 @@ import os
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
     print('We\'re on the sandbox machine')
 
 import sys
@@ -79,11 +78,11 @@ def compute_representations(args: DictConfig):
             df = pd.DataFrame(data)
             word_list = [w for l in df['likely_words'] for w in l]
     elif args.word_list.__len__() == 1 and args.word_list[0] == 'validation_include':
-        with open('data/keyword_validation.jsonl') as f:
+        with open('data/keyword_test_inclusion_likely.jsonl') as f:
             data = f.readlines()
             data = [json.loads(d) for d in data]
             df = pd.DataFrame(data)
-            word_list = [w for l in df['unlikely_words'] for w in l]
+            word_list = [w for l in df['likely'] for w in l]
     elif args.word_list.__len__() == 1 and args.word_list[0] == 'ifeval_include':
         # load ifeval keywords
         with open('data/ifeval_keywords_include.txt') as f:
