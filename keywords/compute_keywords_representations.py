@@ -82,7 +82,7 @@ def compute_representations(args: DictConfig):
             data = f.readlines()
             data = [json.loads(d) for d in data]
             df = pd.DataFrame(data)
-            word_list = [w for l in df['likely'] for w in l]
+            word_list = list(set([w for l in df['likely_words'] for w in l]))
     elif args.word_list.__len__() == 1 and args.word_list[0] == 'ifeval_include':
         # load ifeval keywords
         with open('data/ifeval_keywords_include.txt') as f:
@@ -98,6 +98,7 @@ def compute_representations(args: DictConfig):
     else:
         word_list = args.word_list
 
+    word_list = word_list[:40]
     print(f'word_list: {word_list}')
 
     # exclude the examples that have "keyword" in the instruction_id_list
@@ -125,7 +126,7 @@ def compute_representations(args: DictConfig):
     model_name = args.model_name
     with open('hf_token.txt') as f:
         hf_token = f.read()
-    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=None, hf_token=hf_token)
+    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir, hf_token=hf_token)
     #model = AutoModelForCausalLM.from_pretrained(model_name)
     #tokenizer = AutoTokenizer.from_pretrained(model_name)
     model.to(args.device)
