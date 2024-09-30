@@ -6,7 +6,7 @@ import sys
 import random
 sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
 # %%
-path = '../data/keyword_test.jsonl'
+path = './data/keyword_test.jsonl'
 
 with open(path, 'r') as f:
     results = [json.loads(line) for line in f]
@@ -19,9 +19,12 @@ for i, r in data_df.iterrows():
     for word in r['likely_words']:
         new_row = r.copy()
         new_row['prompt_without_instruction'] = r['question'] 
-        new_row["instruction_id_list"] = ["keywords:existence"]
-        new_row["instruction_id_list_for_eval"] = ["keywords:existence"]
-        new_row['kwargs'] = [{"keywords": [word]}]
+        # new_row["instruction_id_list"] = ["keywords:existence"]
+        new_row["instruction_id_list"] = ["keywords:forbidden_words"]
+        # new_row["instruction_id_list_for_eval"] = ["keywords:existence"]
+        new_row["instruction_id_list_for_eval"] = ["keywords:forbidden_words"]
+        # new_row['kwargs'] = [{"keywords": [word]}]
+        new_row['kwargs'] = [{"forbidden_words": [word]}]
         phrasing = random.choice(phrasings_include)
         new_prompt = new_row['prompt_without_instruction'] + phrasing.format(word)
         new_row['prompt'] = new_prompt
@@ -30,5 +33,5 @@ for i, r in data_df.iterrows():
 new_data_df = pd.DataFrame(new_rows)
 # %%
 # store the new data
-new_data_df.to_json('../data/keyword_test_inclusion_likely.jsonl', orient='records', lines=True)
+new_data_df.to_json('./data/keyword_test_exclusion_likely.jsonl', orient='records', lines=True)
 # %%
