@@ -16,7 +16,7 @@ data_df = pd.DataFrame(results)
 phrasings_include = [' Include the word {} in your answer.', ' Make sure to include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' Make sure that the word "{}" is included in the output.', ' The output must include the word "{}".']
 new_rows = []
 for i, r in data_df.iterrows():
-    for word in r['unlikely_words']:
+    for word in r['likely_words']:
         new_row = r.copy()
         new_row['prompt_without_instruction'] = r['question'] 
         new_row["instruction_id_list"] = ["keywords:existence"]
