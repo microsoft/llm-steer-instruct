@@ -98,7 +98,8 @@ def compute_representations(args: DictConfig):
     else:
         word_list = args.word_list
 
-    word_list = word_list[:40]
+    word_list = word_list
+    print(f'LEN {len(word_list)}')
     print(f'word_list: {word_list}')
 
     # exclude the examples that have "keyword" in the instruction_id_list

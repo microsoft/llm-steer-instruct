@@ -108,12 +108,16 @@ def run_experiment(args: DictConfig):
 
     all_instructions = list(set([ item for l in data_df.instruction_id_list for item in l]))
 
-    all_instructions = [instr for instr in all_instructions if args.specific_instruction in instr]
-    data_df = data_df[data_df['instruction_id_list'].apply(lambda x: any(y in all_instructions for y in x))]
-    print(f'Using only the following instructions: {all_instructions}')
+    print(f'All instrucitons: {all_instructions}')
+    print(f'Len df {len(data_df)}')
+
+    if args.specific_instruction  != 'existence_validation':
+        all_instructions = [instr for instr in all_instructions if args.specific_instruction in instr]
+        data_df = data_df[data_df['instruction_id_list'].apply(lambda x: any(y in all_instructions for y in x))]
+        print(f'Using only the following instructions: {all_instructions}')
     
     if args.dry_run:
-        data_df = data_df.sample(2)
+        data_df = data_df.head(40)
     total = len(data_df)
 
     print(f'Running on {total} examples')
@@ -139,7 +143,7 @@ def run_experiment(args: DictConfig):
                 file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs.h5'
             else:    
                 file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
-        elif args.specific_instruction == 'exisitence_validation':
+        elif args.specific_instruction == 'existence_validation':
             file = f'{args.project_dir}/representations/{args.model_name}/include_validation_include_{args.n_examples}examples_hs.h5'
         else:
             raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
