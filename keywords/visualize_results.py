@@ -335,7 +335,7 @@ scale = px.colors.sequential.Oranges
 color1 = scale[3]
 color2 = scale[4]
 color3 = scale[5]
-color4 = scale[7]
+color4 = scale[6]
 
 # Specify a list of colors for each 'Setting'
 
@@ -432,7 +432,7 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = False
+store = True
 fig.update_layout(title_text='(b) Word-Exclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)
@@ -475,7 +475,7 @@ scale = px.colors.sequential.Oranges
 color1 = scale[3]
 color2 = scale[4]
 color3 = scale[5]
-color4 = scale[7]
+color4 = scale[6]
 
 # Specify a list of colors for each 'Setting'
 

@@ -111,9 +111,9 @@ fig.show()
 # compare steering vs no steering
 # =============================================================================
 
-constraint_type= 'at_most'
-n_examples = 100
-# constraint_type= 'at_least'
+# constraint_type= 'at_most'
+n_examples = 40
+constraint_type= 'at_least'
 # load data without instructions with and without steering
 folder_no_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/no_steering_{constraint_type}'
 out_path = f'{folder_no_steering}/out'
@@ -125,10 +125,9 @@ with open(out_path) as f:
 
 results_df_no_steering = pd.DataFrame(results)
 
-steering_type = 'conciseness'
-# steering_type = 'verbosity'
+# steering_type = 'conciseness'
+steering_type = 'verbosity'
 
-n_examples = 100
 folder_steering = f'{output_path}/{model_name}/1-{n_sent_max}sentences_{n_examples}examples/{constraint_type}_instr_plus_add_vector_{steering_type}_{source_layer_idx}'
 out_path = f'{folder_steering}/out'
 out_path +=  '.jsonl'
@@ -369,7 +368,7 @@ fig.update_layout(title_font_size=16)
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
 # modify ymin
-fig.update_layout(yaxis=dict(range=[0.5, 1]))
+fig.update_layout(yaxis=dict(range=[0.5, 0.9]))
 
 # reshape figure
 fig.update_layout(width=300, height=250)
@@ -502,7 +501,7 @@ fig.show()
 
 
 
-length_constraint = 4
+length_constraint = 3
 
 # Sample data: replace these with your actual data arrays
 lengths1 = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['length']
