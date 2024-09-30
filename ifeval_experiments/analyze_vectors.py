@@ -149,6 +149,10 @@ for instruction in instr_dirs.keys():
 # =============================================================================
 instr = list(instr_dirs.keys())[2]
 
+color1 = px.colors.qualitative.Plotly[2]
+color2 = px.colors.qualitative.Plotly[0]
+color3 = px.colors.qualitative.Plotly[1]
+
 for instr in instr_dirs.keys():
 
     if 'language_ur' not in instr and 'quotation' not in instr:
@@ -181,9 +185,9 @@ for instr in instr_dirs.keys():
 
     # make line plot of cos sims across layers
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims, mode='lines', name='Same Ex. <b>w/</b> vs. <b>w/o</b> Instr.'))
-    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_no_instr, mode='lines', name='Examples <b>w/o</b> Instr.'))
-    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_instr, mode='lines', name='Examples <b>w/</b> Instr.'))
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_instr, mode='lines', name='(1) Different Query Same Instr.', line=dict(color=color1)))
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims, mode='lines', name='(2) Same Query w/ and w/o Instr.', line=dict(color=color2)))
+    fig.add_trace(go.Scatter(x=list(range(len(cos_sims))), y=cos_sims_no_instr, mode='lines', name='(3) Different Queries', line=dict(color=color3)))
     fig.update_layout(
         xaxis_title='Layer',
         yaxis_title='Cosine Similarity')

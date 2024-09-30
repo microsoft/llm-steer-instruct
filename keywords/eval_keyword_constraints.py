@@ -144,6 +144,7 @@ def run_experiment(args: DictConfig):
         results_df = pd.read_hdf(file)
 
         pre_computed_ivs = {}
+        avg_projections = {}
 
         print(f'words in results_df: {results_df.word.unique()}')
         for word in tqdm.tqdm(keywords, desc='Computing IVs'):
@@ -170,6 +171,13 @@ def run_experiment(args: DictConfig):
             instr_dir = last_token_mean_diff[args.source_layer_idx] / last_token_mean_diff[args.source_layer_idx].norm()
 
             pre_computed_ivs[word] = instr_dir
+
+            # compute projection for inputs with instruction
+            proj = hs_instr[:, args.source_layer_idx] @ instr_dir
+            mean_proj = proj.mean()
+
+            print(f'Mean projection for word {word} with instruction: {mean_proj}')
+            avg_projections[word] = mean_proj
 
     if not args.include_instructions:
         data_df['model_input'] = data_df['prompt_without_instruction']
@@ -205,7 +213,9 @@ def run_experiment(args: DictConfig):
                 if args.steering == 'add_vector':
                     hook_fn = functools.partial(direction_ablation_hook,direction=pre_computed_ivs[word].to(device), weight=steering_weight)
                 elif args.steering == 'adjust_rs':
-                    raise ValueError('Not implemented for keywords')
+                    # raise ValueError('Not implemented for keywords')
+                    hook_fn = functools.partial(direction_projection_hook, direction=pre_computed_ivs[word].to(device), value_along_direction=avg_projections[word])
+
                 fwd_hooks.append((tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn))
             
             print(f'Words to steer for: {keywords}')
@@ -244,6 +254,8 @@ def run_experiment(args: DictConfig):
         folder += f'/{args.steering}_{args.source_layer_idx}_n_examples{args.n_examples}'
         if args.steering == 'add_vector':
             folder += f'_{args.steering_weight}'
+        elif args.steering == 'adjust_rs':
+            folder += f'_adjust_rs'
     elif args.steering != 'none':
         folder += f'/instr_plus_{args.steering}_{args.source_layer_idx}_n_examples{args.n_examples}'
         if args.steering == 'add_vector':
