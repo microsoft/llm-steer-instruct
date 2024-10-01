@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import plotly
 from scipy.stats import ttest_ind, ttest_rel
 import numpy as np
+from plotly.subplots import make_subplots
 # %%
 import os
 import json
@@ -209,6 +210,123 @@ fig.show()
 # plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas.pdf')
 
 # %%
+
+length_constraints = joined_dfs[0, 0]['length_constraint'].unique()
+color_mapping = {length_constraint: px.colors.qualitative.Plotly[4 + i] for i, length_constraint in enumerate(length_constraints)}
+
+# Create subplots
+fig = make_subplots(rows=1, cols=2, shared_yaxes=True)
+
+setting_names = ['Steer<br>w/o Ins.', 'Steer<br>w/ Ins.', 'No Steering<br>w/ vs. w/o Instr.']
+pretty_model_names = {'phi': 'Phi-3', 'gemma-2-2b-it': 'Gemma 2B IT', 'mistral-7b-instruct': 'Mistral 7B I.', 'gemma-2-9b-it': 'Gemma 9B IT'}
+
+show_legend = True
+
+# Calculate the average qual_score_delta for setting_pair_idx=0 and setting_pair_idx=1 across all joined_dfs
+overall_mean_scores = []
+overall_ses = []
+
+for setting_pair_idx in [0, 1]:
+    scores = joined_dfs[setting_pair_idx, 0]['qual_score_delta'].values
+    scores = scores[~np.isnan(scores)]
+
+    mean_score = -np.mean(scores)
+    std_dev = np.std(scores, ddof=1)
+    se = std_dev / np.sqrt(scores.shape[0])
+
+    overall_mean_scores.append(mean_score)
+    overall_ses.append(se)
+
+# Add a single column for setting_pair_idx=0 and setting_pair_idx=1
+fig.add_trace(go.Bar(
+    x=[setting_names[0], setting_names[1]],
+    y=overall_mean_scores,
+    error_y=dict(type='data', array=overall_ses, width=0),
+    name='Avg.',
+    marker_color=px.colors.qualitative.Plotly[0],
+    showlegend=show_legend
+), row=1, col=1)
+
+for length_constraint in length_constraints:
+    overall_mean_scores = []
+    overall_ses = []
+
+    for setting_pair_idx, pair in enumerate(pairs_of_setting):
+        if setting_pair_idx in [0, 1]:
+            continue  # Skip setting_pair_idx=0 and setting_pair_idx=1 as they are already handled
+
+        length_constr_df = joined_dfs[setting_pair_idx, 0][joined_dfs[setting_pair_idx, 0]['length_constraint'] == length_constraint]
+        scores = length_constr_df['qual_score_delta'].values
+
+        # Drop NaN values
+        scores = scores[~np.isnan(scores)]
+
+        print(f'Length constraint: {length_constraint}')
+        print(f'Setting pair: {pair}')
+        print(f'Length of scores: {len(scores)}')
+
+        mean_score = -np.mean(scores)
+        std_dev = np.std(scores, ddof=1)
+        se = std_dev / np.sqrt(scores.shape[0])
+
+        overall_mean_scores.append(mean_score)
+        overall_ses.append(se)
+
+    # Make bar plot of the quality score deltas with error bars
+    fig.add_trace(go.Bar(
+        x=setting_names[2:],  # Only add the remaining settings
+        y=overall_mean_scores,
+        error_y=dict(type='data', array=overall_ses, width=0),
+        name=f'{length_constraint+1}',
+        marker_color=color_mapping[length_constraint],
+        showlegend=show_legend
+    ), row=1, col=2)
+
+fig.update_layout(
+    title='(a) Changes in Response Quality: Length',
+    yaxis_title='Avg. Qual. Score Delta'.title(),
+    barmode='group'
+)
+
+# Resize the figure
+fig.update_layout(
+    autosize=False,
+    width=380,
+    height=221,
+)
+
+# Decrease font size of the legend
+fig.update_layout(
+    legend=dict(
+        font=dict(size=12)
+    )
+)
+
+# change title font size
+fig.update_layout(
+    title_font=dict(size=16)
+)
+
+#inclined x-axis labels in the second subplot
+# fig.update_xaxes(tickangle=30, row=1, col=2)
+
+fig.update_layout(
+    legend=dict(
+        title='Length<br>Constraint',
+    )
+)
+
+# Remove padding
+fig.update_layout(
+    margin=dict(l=0, r=0, t=30, b=0),
+)
+
+# store plot as pdf
+plotly.io.write_image(fig, './plots_for_paper/quality_score/deltas_length.pdf')
+
+fig.show()
+
+# %%
 # =============================================================================
 # Same plot but the x-axis labels are the models and the colors are the settings
 # =============================================================================
@@ -306,45 +424,7 @@ fig.update_layout(
 fig.show()
 
 # Store plot as pdf (optional)
-# plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas.pdf')
-
-
-
- # %%
-model_name = 'mistral-7b-instruct'
-qual_score_delta_means_mean = {}
-qual_score_delta_means_sem = {}
-
-for pair_idx, pair in enumerate(pairs_of_setting):
-    scores = qual_score_deltas_dict[model_name][pair_idx]
-
-    print('Shape of scores:', scores.shape)
-    # drop rows with nans
-    scores = scores[:, ~np.isnan(scores).any(axis=0)]
-    print('Shape of scores after dropping nans:', scores.shape)
-
-    # transpose the matrix
-    scores = scores.T
-
-    # Step 1: Compute the average score for each example across the 3 runs
-    mean_scores = np.mean(scores, axis=1)
-
-    # Step 2: Compute the standard deviation for each example
-    std_devs = np.std(scores, axis=1, ddof=1)
-
-    # Step 3: Compute the standard error for each example
-    standard_errors = std_devs / np.sqrt(3)
-
-    # Option 1: Compute the standard error of the overall mean score
-    overall_mean_score = np.mean(mean_scores)
-    overall_std_dev = np.std(mean_scores, ddof=1)
-    overall_se = overall_std_dev / np.sqrt(scores.shape[0])
-
-    qual_score_delta_means_mean[pair] = overall_mean_score
-    qual_score_delta_means_sem[pair] = overall_se
-
-print(qual_score_delta_means_mean)
-print(qual_score_delta_means_sem)
+# plotly.io.write_image(fig, './plots_for_paper/quality_scores/_deltas.pdf')
 
 # %%
 # make  bar plot of the quality score deltas with error bars

@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import plotly
 from scipy.stats import ttest_ind, ttest_rel
 import numpy as np
+from collections import Counter
 # %%
 import os
 import json
@@ -121,7 +122,7 @@ fig = go.Figure()
 setting_names = ['Steering<br><b>w/o</b> Instr.', 'Steering<br><b>w/</b> Instr.', 'No Steering<br> w/ vs. w/o Instr.']
 pretty_model_names = {'phi': 'Phi-3', 'gemma-2-2b-it': 'Gemma 2B IT', 'mistral-7b-instruct': 'Mistral 7B I.', 'gemma-2-9b-it': 'Gemma 9B IT'}
 
-show_legend = True
+show_legend = False
 
 overall_mean_scores = []
 overall_ses = []
@@ -154,16 +155,16 @@ fig.add_trace(go.Bar(
 ))
 
 fig.update_layout(
-    title='Changes in Response Quality Score',
-    yaxis_title='Avg. Quality score Delta'.title(),
+    title='(b) Word Inclusion',
+    yaxis_title='Avg. Qual. score Delta'.title(),
     barmode='group'
 )
 
 # resize the figure
 fig.update_layout(
     autosize=False,
-    width=350,
-    height=300,
+    width=290,
+    height=250,
 )
 
 # decrease fond size of the legend
@@ -172,11 +173,6 @@ fig.update_layout(
         font=dict(size=11.8)
     )
 )
-
-# # incline the x-axis labels
-# fig.update_layout(
-#     xaxis=dict(tickangle=30),
-# )
 
 # move legend to the bottom
 fig.update_layout(
@@ -191,7 +187,7 @@ fig.update_layout(
 
 # remove padding
 fig.update_layout(
-    margin=dict(l=0, r=0, t=30, b=0),
+    margin=dict(l=0, r=0, t=50, b=0),
 )
 
 # add vertical line that separates the two pairs of settings
@@ -200,7 +196,7 @@ fig.add_shape(
         type='line',
         x0=1.5,
         x1=1.5,
-        y0=0.03,
+        y0=0.05,
         y1=-0.18,
         line=dict(
             color='black',
@@ -213,71 +209,181 @@ fig.add_shape(
 fig.show()
 
 # store plot as pdf
-# plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas.pdf')
+plotly.io.write_image(fig, './plots_for_paper/quality_score/word_inclusion.pdf')
 
 # %%
 # =============================================================================
-# Same plot but the x-axis labels are the models and the colors are the settings
+# histogram
 # =============================================================================
 
-# Define a color mapping for each setting pair
-color_mapping = {}
-color_mapping[0] = px.colors.qualitative.Plotly[0]
-color_mapping[1] = px.colors.qualitative.Plotly[3]
-color_mapping[2] = px.colors.qualitative.T10[9]
-
-# Make bar chart of the quality score deltas for each setting pair for each model
+# Make histogram of the quality score deltas 
 fig = go.Figure()
 
-setting_names = ['Steering <b>w/o</b> Instr.', 'Steering <b>w/</b> Instr.', 'No Steering w/ vs. w/o Instr.']
-pretty_model_names = {'phi': 'Phi-3', 'gemma-2-2b-it': 'Gemma<br>2B IT', 'mistral-7b-instruct': 'Mistral<br>7B I.', 'gemma-2-9b-it': 'Gemma<br>9B IT'}
+setting_names = ['Steering<br><b>w/o</b> Instr.', 'Steering<br><b>w/</b> Instr.', 'No Steering<br> w/ vs. w/o Instr.']
 
-show_legend = True
+setting_idx = 1
 
-for setting_pair_idx, pair in enumerate(pairs_of_setting):
-    overall_mean_scores = []
-    overall_ses = []
+length_constr_df = joined_dfs[setting_idx, 0]
+scores = length_constr_df['qual_score_delta'].values
 
-    for model_name in model_names:
-        scores = qual_score_deltas_dict[model_name][setting_pair_idx]
+# drop nan values
+scores = -scores[~np.isnan(scores)]
+if setting_idx == 0:
+    title = '(a) Steering w/o Instr.'
+    color = px.colors.qualitative.Plotly[2]
+elif setting_idx == 1:
+    title = '(b) Steering w/ Instr.'
+    color = px.colors.qualitative.Plotly[0]
+elif setting_idx == 2:
+    title = '(c) No Steering w/ vs. w/o Instr.'
+    color = px.colors.qualitative.Plotly[1]
 
-        # Drop rows with NaNs
-        scores = scores[:, ~np.isnan(scores).any(axis=0)]
+# make histogram
+fig.add_trace(go.Histogram(
+    x=scores,
+    histnorm='percent',
+    name=setting_names[setting_idx],
+    marker_color=color,
+    showlegend=False
+))
 
-        # Transpose the matrix
-        scores = scores.T
+fig.update_layout(
+    title=title,
+    xaxis_title='Quality score Delta'.title(),
+    yaxis_title='Frequency (%)'.title(),
+    barmode='overlay',
+)
 
-        # Step 1: Compute the average score for each example across the 3 runs
-        mean_scores = np.mean(scores, axis=1)
+# resize the figure
+fig.update_layout(
+    autosize=False,
+    width=300,
+    height=250,
+)
 
-        # Step 2: Compute the standard deviation for each example
-        std_devs = np.std(scores, axis=1, ddof=1)
+# remove padding
+fig.update_layout(
+    margin=dict(l=0, r=0, t=30, b=0),
+)
 
-        # Step 3: Compute the standard error for each example
-        standard_errors = std_devs / np.sqrt(3)
 
-        # Option 1: Compute the standard error of the overall mean score
-        overall_mean_score = -np.mean(mean_scores)
-        overall_std_dev = np.std(mean_scores, ddof=1)
-        overall_se = overall_std_dev / np.sqrt(scores.shape[0])
 
-        overall_mean_scores.append(overall_mean_score)
-        overall_ses.append(overall_se)
+# set x axis range
+fig.update_layout(
+    xaxis=dict(range=[-0.8, 0.8])
+)
 
-    # Make bar plot of the quality score deltas with error bars
-    fig.add_trace(go.Bar(
-        x=[pretty_model_names[model_name] for model_name in model_names],
-        y=overall_mean_scores,
-        error_y=dict(type='data', array=overall_ses, width=0),
-        name=setting_names[setting_pair_idx],
-        marker_color=color_mapping[setting_pair_idx],
-        showlegend=show_legend
+line_color='black'
+# add vertical line at the mean
+fig.add_shape(
+    dict(
+        type='line',
+        x0=scores.mean(),
+        y0=0,
+        x1=scores.mean(),
+        y1=60,
+        line=dict(color=line_color, width=2, dash='dash')
+    )
+)
+
+# set y axis range
+fig.update_layout(
+    yaxis=dict(range=[0, 60])
+)
+
+# set y ticks
+fig.update_layout(
+    yaxis=dict(tickvals=[0, 10, 20, 30, 40, 50, 60])
+)
+
+# add horizontal text at the mean
+fig.add_annotation(
+    x=scores.mean()-0.30,
+    y=55,
+    text=f'Mean: {scores.mean():.2f}',
+    showarrow=False,
+    arrowhead=1,
+    arrowcolor='red',
+    arrowwidth=2,
+    arrowsize=1,
+    ax=-60,
+    ay=+40,
+    font=dict(color=line_color, size=12)
+)
+
+fig.show()
+
+# store plot as pdf
+if setting_idx == 0:
+    plotly.io.write_image(fig, './plots_for_paper/quality_score/histogram_steering_no_instr.pdf')
+elif setting_idx == 1:
+    plotly.io.write_image(fig, './plots_for_paper/quality_score/histogram_steering_instr.pdf')
+elif setting_idx == 2:
+    plotly.io.write_image(fig, './plots_for_paper/quality_score/histogram_no_steering_instr.pdf')
+
+
+# %%
+for pair in [(0,1), (1,2), (0,2)]:
+    a = joined_dfs[pair[0], 0]['qual_score_delta'].values
+    b = joined_dfs[pair[1], 0]['qual_score_delta'].values
+
+    res = ttest_rel(a, b)
+    print(f'Setting pair: {pair}')
+    print(f'p-value: {res.pvalue}')
+
+# %%
+# Make histogram of the quality score deltas 
+fig = go.Figure()
+
+setting_names = ['Steering<br><b>w/o</b> Instr.', 'Steering<br><b>w/</b> Instr.', 'No Steering<br> w/ vs. w/o Instr.']
+
+# Define the settings to plot
+settings_to_plot = [1, 2]
+colors = [px.colors.qualitative.Plotly[0], px.colors.qualitative.Plotly[1]]
+
+for idx, setting_idx in enumerate(settings_to_plot):
+    length_constr_df = joined_dfs[setting_idx, 0]
+    scores = length_constr_df['qual_score_delta'].values
+
+    # Drop NaN values
+    scores = -scores[~np.isnan(scores)]
+
+    # Add histogram trace
+    fig.add_trace(go.Histogram(
+        x=scores,
+        histnorm='percent',
+        name=setting_names[setting_idx],
+        marker_color=colors[idx],
+        opacity=0.6,  # Set opacity for transparency
+        showlegend=True
     ))
+
+    # Add vertical line at the mean
+    fig.add_shape(
+        dict(
+            type='line',
+            x0=scores.mean(),
+            y0=0,
+            x1=scores.mean(),
+            y1=Counter(scores)[0.0] + 10,
+            line=dict(color=colors[idx], width=2, dash='dash')
+        )
+    )
+
+    # Add horizontal text at the mean
+    fig.add_annotation(
+        x=scores.mean() - 0.30,
+        y=Counter(scores)[0.0] + 5,
+        text=f'Mean: {scores.mean():.2f}',
+        showarrow=False,
+        font=dict(color=colors[idx], size=12)
+    )
 
 fig.update_layout(
     title='Changes in Response Quality Score',
-    yaxis_title='Avg. Quality Score Delta'.title(),
-    barmode='group'
+    xaxis_title='Quality score Delta'.title(),
+    yaxis_title='Frequency'.title(),
+    barmode='overlay'
 )
 
 # Resize the figure
@@ -287,11 +393,9 @@ fig.update_layout(
     height=300,
 )
 
-# Decrease font size of the legend
+# Remove padding
 fig.update_layout(
-    legend=dict(
-        font=dict(size=12)
-    )
+    margin=dict(l=0, r=0, t=30, b=0),
 )
 
 # Move legend to the bottom
@@ -299,109 +403,15 @@ fig.update_layout(
     legend=dict(
         orientation='h',
         yanchor='bottom',
-        y=-0.6,
+        y=-0.45,
         xanchor='right',
-        x=0.85
+        x=0.1,
     )
 )
 
-# Remove padding
+# Set x-axis range
 fig.update_layout(
-    margin=dict(l=0, r=0, t=30, b=0),
-)
-
-fig.show()
-
-# Store plot as pdf (optional)
-# plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas.pdf')
-
-
-
- # %%
-model_name = 'mistral-7b-instruct'
-qual_score_delta_means_mean = {}
-qual_score_delta_means_sem = {}
-
-for pair_idx, pair in enumerate(pairs_of_setting):
-    scores = qual_score_deltas_dict[model_name][pair_idx]
-
-    print('Shape of scores:', scores.shape)
-    # drop rows with nans
-    scores = scores[:, ~np.isnan(scores).any(axis=0)]
-    print('Shape of scores after dropping nans:', scores.shape)
-
-    # transpose the matrix
-    scores = scores.T
-
-    # Step 1: Compute the average score for each example across the 3 runs
-    mean_scores = np.mean(scores, axis=1)
-
-    # Step 2: Compute the standard deviation for each example
-    std_devs = np.std(scores, axis=1, ddof=1)
-
-    # Step 3: Compute the standard error for each example
-    standard_errors = std_devs / np.sqrt(3)
-
-    # Option 1: Compute the standard error of the overall mean score
-    overall_mean_score = np.mean(mean_scores)
-    overall_std_dev = np.std(mean_scores, ddof=1)
-    overall_se = overall_std_dev / np.sqrt(scores.shape[0])
-
-    qual_score_delta_means_mean[pair] = overall_mean_score
-    qual_score_delta_means_sem[pair] = overall_se
-
-print(qual_score_delta_means_mean)
-print(qual_score_delta_means_sem)
-
-# %%
-# make  bar plot of the quality score deltas with error bars
-fig = go.Figure()
-for pair in pairs_of_setting:
-    fig.add_trace(go.Bar(
-        x=[f'{steering_settings[pair[0]]} vs {steering_settings[pair[1]]}'],
-        y=[qual_score_delta_means_mean[pair]],
-        error_y=dict(type='data', array=[qual_score_delta_means_sem[pair]]),
-        name='Quality score delta',
-    ))
-
-fig.update_layout(
-    title=f'Quality score deltas - {model_name}',
-    yaxis_title='Quality score delta',
-    barmode='group'
-)
-
-fig.show()
-# %%
-# =============================================================================
-# Per-instruction quality score deltas
-# =============================================================================
-setting_pair_idx = 1
-run_idx = 0
-model_name = 'gemma-2-2b-it'
-joined_df = joined_dfs[model_name][setting_pair_idx, run_idx]
-
-# compute the average quality score delta for each instruction
-instr_to_drop = 'language:response_language'
-filtered_df = joined_df[joined_df['instruction_id_list'].apply(lambda x: instr_to_drop not in x)]
-
-instr_ids = filtered_df['instruction_id_list'].apply(lambda x: x[0].split(':')[-1])
-filtered_df['instruction_id'] = instr_ids
-
-# make bar chart of the quality score deltas per instruction
-grouped_df = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).mean().reset_index()
-grouped_df_sem = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).sem().reset_index()
-fig = go.Figure()
-fig.add_trace(go.Bar(
-    x=grouped_df['instruction_id'],
-    y=grouped_df['qual_score_delta'],
-    error_y=dict(type='data', array=grouped_df_sem['qual_score_delta']),
-    name='Quality score delta'
-))
-
-fig.update_layout(
-    title='Quality score deltas per instruction',
-    yaxis_title='Quality score delta ',
-    barmode='group'
+    xaxis=dict(range=[-0.8, 0.8])
 )
 
 fig.show()
@@ -430,4 +440,3 @@ for i, r in sorted_df.head(10).iterrows():
     print('===========================')
 
 # %%
-
