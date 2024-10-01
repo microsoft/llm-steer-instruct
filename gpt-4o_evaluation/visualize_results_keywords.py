@@ -14,41 +14,54 @@ import os
 import json
 import pandas as pd
 
-folder = 'gpt-4o_evaluation/keyword_length_eval'
-model_name = 'phi'
+folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_inclusion'
+# folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_exclusion'
+# folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/length/1-5sentences_100examples'
+setting_dfs = {}
 
+for setting_folder in os.listdir(folder):
+    if setting_folder == '.DS_Store':
+        continue
+    print(setting_folder)
+    path = os.path.join(folder, setting_folder, 'outputs', 'answer_post_processing_output', 'transformed_data.jsonl')
+    with open(path, 'r') as f:
+        results = [json.loads(line) for line in f]
+    data_df = pd.DataFrame(results)
+    setting_dfs[setting_folder] = data_df
 
+# %%
 qual_score_deltas_dict = {}
 qual_score_sett1_dict = {}
 qual_score_sett2_dict = {}
 
+pairs_of_setting_incl = [(1,0), (3,4), (1,3)]
+pairs_of_setting_excl = [(3,1), (2,4), (3,2)]
+# pairs_of_setting = [(1,0), (1,2), (2,3)]
 
-setting_dfs = {}
+if 'inclusion' in folder:
+    pairs_of_setting = pairs_of_setting_incl
+elif 'exclusion' in folder:
+    pairs_of_setting = pairs_of_setting_excl
+else:
+    raise ValueError('Folder name must contain either "inclusion" or "exclusion"')
 
-steering_settings = ['setting1', 'setting2']
-
-for idx, setting in enumerate(steering_settings):
-    runs = []
-    # Load the results
-    path = f'{folder}/{model_name}_keyword_existence_{setting}_gpt4o/'
-    for f in os.listdir(path):
-        new_path = os.path.join(path, f, 'answer_post_processing_output', 'transformed_data.jsonl')
-        with open(new_path, 'r') as file:
-            results = [json.loads(line) for line in file]
-        df = pd.DataFrame(results)
-        runs.append(df)
-    setting_dfs[setting] = runs
 
 # %%
-n_runs = 3
-qual_score_deltas = np.zeros((1, n_runs, len(setting_dfs[steering_settings[0]][0])))
-qual_score_sett1 = np.zeros((1, n_runs, len(setting_dfs[steering_settings[0]][0])))
-qual_score_sett2 = np.zeros((1, n_runs, len(setting_dfs[steering_settings[0]][0])))
+n_runs = 1
+steering_settings = list(setting_dfs.keys())
+qual_score_deltas = np.zeros((len(pairs_of_setting), n_runs, len(setting_dfs[steering_settings[0]])))
+qual_score_sett1 = np.zeros((len(pairs_of_setting), n_runs, len(setting_dfs[steering_settings[0]])))
+qual_score_sett2 = np.zeros((len(pairs_of_setting), n_runs, len(setting_dfs[steering_settings[0]])))
 joined_dfs = {}
 
-for run_idx in range(n_runs):
-    df1 = setting_dfs['setting1'][run_idx]
-    df2 = setting_dfs['setting2'][run_idx]
+
+for pair_idx, pair in enumerate(pairs_of_setting):
+    setting1 = steering_settings[pair[0]]
+    setting2 = steering_settings[pair[1]]
+    run_idx =0 
+
+    df1 = setting_dfs[setting1]
+    df2 = setting_dfs[setting2]
     columns_to_merge = ['key', 'response', 'model_answers', 'model_output', 'uid']
     print(f'Length of df1: {len(df1)}')
     print(f'Length of df2: {len(df2)}')
@@ -91,22 +104,16 @@ for run_idx in range(n_runs):
     joined_df['qual_score_steering'] = qual_scores_steering
     qual_score_delta = joined_df['qual_score'] - joined_df['qual_score_steering']
     joined_df['qual_score_delta'] = qual_score_delta
-    qual_score_deltas[0, run_idx] = qual_score_delta
-    joined_dfs[0, run_idx] = joined_df
-    qual_score_sett1[0, run_idx] = joined_df['qual_score']
-    qual_score_sett2[0, run_idx] = joined_df['qual_score_steering']
+    qual_score_deltas[pair_idx, run_idx] = qual_score_delta
+    joined_dfs[pair_idx, run_idx] = joined_df
+    qual_score_sett1[pair_idx, run_idx] = joined_df['qual_score']
+    qual_score_sett2[pair_idx, run_idx] = joined_df['qual_score_steering']
 
-qual_score_deltas_dict[model_name] = qual_score_deltas
-qual_score_sett1_dict[model_name] = qual_score_sett1
-qual_score_sett2_dict[model_name] = qual_score_sett2
-
-print(f'Model: {model_name}')
-print(f'Average quality score: {joined_df["qual_score"].mean()}')
-print(f'Average quality score steering: {joined_df["qual_score_steering"].mean()}')
+    print(f'Setting pair: {setting1} vs {setting2}')
+    print(f'Average quality score: {joined_df["qual_score"].mean()}')
+    print(f'Average quality score steering: {joined_df["qual_score_steering"].mean()}')
 
 # %%
-# Define a color mapping for each model
-color_mapping = { model_name: px.colors.qualitative.Plotly[4+i] for i, model_name in enumerate(model_names) }
 
 # Make bar chart of the quality score deltas for each model for each pair of settings
 fig = go.Figure()
@@ -116,45 +123,35 @@ pretty_model_names = {'phi': 'Phi-3', 'gemma-2-2b-it': 'Gemma 2B IT', 'mistral-7
 
 show_legend = True
 
-for model_name in model_names:
-    overall_mean_scores = []
-    overall_ses = []
+overall_mean_scores = []
+overall_ses = []
 
-    for setting_pair_idx, pair in enumerate(pairs_of_setting):
-        scores = qual_score_deltas_dict[model_name][setting_pair_idx]
+for setting_pair_idx, pair in enumerate(pairs_of_setting):
+    length_constr_df = joined_dfs[setting_pair_idx, 0]
+    scores = length_constr_df['qual_score_delta'].values
 
-        # Drop rows with NaNs
-        scores = scores[:, ~np.isnan(scores).any(axis=0)]
+    # drop nan values
+    scores = scores[~np.isnan(scores)]
 
-        # Transpose the matrix
-        scores = scores.T
+    print(f'Setting pair: {pair}')
+    print(f'length of scores: {len(scores)}')
 
-        # Step 1: Compute the average score for each example across the 3 runs
-        mean_scores = np.mean(scores, axis=1)
+    mean_score = -np.mean(scores)
+    std_dev = np.std(scores, ddof=1)
+    se = std_dev / np.sqrt(scores.shape[0])
 
-        # Step 2: Compute the standard deviation for each example
-        std_devs = np.std(scores, axis=1, ddof=1)
+    overall_mean_scores.append(mean_score)
+    overall_ses.append(se)
 
-        # Step 3: Compute the standard error for each example
-        standard_errors = std_devs / np.sqrt(3)
-
-        # Option 1: Compute the standard error of the overall mean score
-        overall_mean_score = -np.mean(mean_scores)
-        overall_std_dev = np.std(mean_scores, ddof=1)
-        overall_se = overall_std_dev / np.sqrt(scores.shape[0])
-
-        overall_mean_scores.append(overall_mean_score)
-        overall_ses.append(overall_se)
-
-    # Make bar plot of the quality score deltas with error bars
-    fig.add_trace(go.Bar(
-        x=setting_names,
-        y=overall_mean_scores,
-        error_y=dict(type='data', array=overall_ses, width=0),
-        name=pretty_model_names[model_name],
-        marker_color=color_mapping[model_name],
-        showlegend=show_legend
-    ))
+# Make bar plot of the quality score deltas with error bars
+fig.add_trace(go.Bar(
+    x=setting_names,
+    y=overall_mean_scores,
+    error_y=dict(type='data', array=overall_ses, width=0),
+    # name=f'{length_constraint}',
+    marker_color=px.colors.qualitative.Plotly[0],
+    showlegend=show_legend
+))
 
 fig.update_layout(
     title='Changes in Response Quality Score',
@@ -412,7 +409,7 @@ fig.show()
 
 # %%
 # print some outputs
-setting_pair_idx = 0
+setting_pair_idx = 1
 run_idx = 0
 joined_df = joined_dfs[setting_pair_idx, run_idx]
 
