@@ -1,6 +1,7 @@
 # %%
 import os
 os.chdir('/Users/alestolfo/workspace/llm-steer-instruct')
+
 # %%
 import json
 import pandas as pd
@@ -19,16 +20,20 @@ folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_
 # folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_exclusion'
 # folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/length/1-5sentences_100examples'
 setting_dfs = {}
+settings = []
 
-for setting_folder in os.listdir(folder):
+for i, setting_folder in enumerate(os.listdir(folder)):
     if setting_folder == '.DS_Store':
         continue
-    print(setting_folder)
     path = os.path.join(folder, setting_folder, 'outputs', 'answer_post_processing_output', 'transformed_data.jsonl')
     with open(path, 'r') as f:
         results = [json.loads(line) for line in f]
     data_df = pd.DataFrame(results)
     setting_dfs[setting_folder] = data_df
+    settings.append(setting_folder)
+
+for i, sett in enumerate(settings):
+    print(f'Setting {i}: {sett}')
 
 # %%
 qual_score_deltas_dict = {}
@@ -36,7 +41,7 @@ qual_score_sett1_dict = {}
 qual_score_sett2_dict = {}
 
 pairs_of_setting_incl = [(1,0), (3,4), (1,3)]
-pairs_of_setting_excl = [(3,1), (2,4), (3,2)]
+pairs_of_setting_excl = [(5,2), (3,6), (5,3)]
 # pairs_of_setting = [(1,0), (1,2), (2,3)]
 
 if 'inclusion' in folder:
@@ -45,6 +50,9 @@ elif 'exclusion' in folder:
     pairs_of_setting = pairs_of_setting_excl
 else:
     raise ValueError('Folder name must contain either "inclusion" or "exclusion"')
+
+for pair in pairs_of_setting:
+    print(f'sett1 : {settings[pair[0]]}, sett2: {settings[pair[1]]}')
 
 
 # %%
@@ -154,8 +162,13 @@ fig.add_trace(go.Bar(
     showlegend=show_legend
 ))
 
+if 'inclusion' in folder:
+    title='(b) Word Inclusion'
+elif 'exclusion' in folder:
+    title='(c) Word Exclusion'
+
 fig.update_layout(
-    title='(b) Word Inclusion',
+    title=title,
     yaxis_title='Avg. Qual. score Delta'.title(),
     barmode='group'
 )
@@ -209,7 +222,10 @@ fig.add_shape(
 fig.show()
 
 # store plot as pdf
-plotly.io.write_image(fig, './plots_for_paper/quality_score/word_inclusion.pdf')
+if 'inclusion' in folder:
+    plotly.io.write_image(fig, './plots_for_paper/quality_score/word_inclusion.pdf')
+elif 'exclusion' in folder:
+    plotly.io.write_image(fig, './plots_for_paper/quality_score/word_exclusion.pdf')
 
 # %%
 # =============================================================================

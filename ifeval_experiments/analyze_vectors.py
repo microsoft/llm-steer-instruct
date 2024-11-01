@@ -145,7 +145,7 @@ for instruction in instr_dirs.keys():
 
 # %%
 # =============================================================================
-# makeplot of cos sims across layers
+# make plot of cos sims across layers
 # =============================================================================
 instr = list(instr_dirs.keys())[2]
 
@@ -153,14 +153,17 @@ color1 = px.colors.qualitative.Plotly[2]
 color2 = px.colors.qualitative.Plotly[0]
 color3 = px.colors.qualitative.Plotly[1]
 
+instr_to_plot = ['language_ur', 'quotation', 'language_de', 'lowercase', 'json', 'quotations']
+
 for instr in instr_dirs.keys():
 
-    if 'language_ur' not in instr and 'quotation' not in instr:
-        continue
-        
-    print(f'Instruction: {instr}')
+    # if 'language_ur' not in instr and 'quotation' not in instr:
+        # continue
 
-    n_examples= 200
+    if not any([i in instr for i in instr_to_plot]):
+        continue
+
+    n_examples= 50
 
     cos_sims = []
     cos_sims_instr = []
@@ -206,6 +209,22 @@ for instr in instr_dirs.keys():
         # set title
         fig.update_layout(
             title=f'(b) "Urdu Language" Instr.')
+    elif 'lowercase' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(a) "Lowercase" Instruction')
+    elif 'json' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(b) "JSON" Instruction')
+    elif 'quotations' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(b) "Quotations" Instr.')
+    elif 'language_de' in instr:
+        # set title
+        fig.update_layout(
+            title=f'(c) "German Language" Instr.')
     else:
         # set title
         fig.update_layout(
@@ -225,7 +244,7 @@ for instr in instr_dirs.keys():
     ))
 
     # store the plot as pdf 
-    fig.write_image(f'./plots_for_paper/format/{model_name}_{instr}_cos_sim.pdf')
+    fig.write_image(f'./plots_for_paper/cosine_sims/{model_name}_{instr}_cos_sim.pdf')
 
     fig.show()
 

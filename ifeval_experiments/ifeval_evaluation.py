@@ -29,30 +29,6 @@ from utils.generation_utils import adjust_vectors, generate_with_hooks
 from time import time
 
 
-# def generate_with_hooks(
-#     model,
-#     toks,
-#     max_tokens_generated: int = 64,
-#     fwd_hooks = [],
-# ):
-
-#     all_toks = torch.zeros((toks.shape[0], toks.shape[1] + max_tokens_generated), dtype=torch.long, device=toks.device)
-#     all_toks[:, :toks.shape[1]] = toks
-
-#     with torch.no_grad():
-#         for i in range(max_tokens_generated):
-#             with model.hooks(fwd_hooks=fwd_hooks):
-#                 logits = model(all_toks[:, :-max_tokens_generated + i])
-#                 next_tokens = logits[:, -1, :].argmax(dim=-1) # greedy sampling (temperature=0)
-#                 if next_tokens[0] == model.tokenizer.eos_token_id or next_tokens[0] == 32007:
-#                     break
-#                 all_toks[:,-max_tokens_generated+i] = next_tokens
-
-#     # truncate the tensor to remove padding
-#     all_toks = all_toks[:, :toks.shape[1] + i]
-
-#     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
-
 def direction_ablation_hook(
     activation,
     hook,
@@ -123,64 +99,6 @@ def run_experiment(args: DictConfig):
 
     
     p_bar = tqdm.tqdm(total=total)
-
-    # for instruction_type in all_instructions:
-    #     # TODO for now, we are only considering one instruction type
-    #     if 'single_instr' in args.data_path:
-    #         instr_data_df = data_df[[[instruction_type] == l for l in data_df['instruction_id_list_for_eval'] ]]
-    #         instr_data_df.reset_index(inplace=True, drop=True)
-
-    #         if args.use_data_subset:
-    #             instr_data_df = instr_data_df.iloc[int(len(instr_data_df)*args.data_subset_ratio):]
-    #     else:
-    #         instr_data_df = data_df
-
-    #     if args.dry_run:
-    #         instr_data_df = instr_data_df.head(2)
-
-    #     if args.steering != 'none':
-    #         # load the stored representations
-    #         folder = f'{args.project_dir}/representations/{args.model_name}/{args.representations_folder}'
-    #         if args.use_data_subset:
-    #             folder += f'_subset_{args.data_subset_ratio}'
-    #         file = f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5'
-    #         # check if the file exists
-    #         if (not os.path.exists(file)) and 'language' in instruction_type:
-    #             print(f"File {file} does not exist")
-    #             avg_proj = 0
-    #             instr_dir = torch.zeros(model.cfg.d_model)
-    #         else:
-    #             results_df = pd.read_hdf(file, key='df')
-
-    #             max_length = min([x.shape[1] for x in results_df['last_token_rs_no_instr'].values])
-    #             hs_instr = results_df['last_token_rs'].values
-    #             hs_instr = torch.tensor([example_array[:, :max_length] for example_array in list(hs_instr)])
-    #             hs_no_instr = results_df['last_token_rs_no_instr'].values
-    #             hs_no_instr = torch.tensor([example_array[:, :max_length] for example_array in list(hs_no_instr)])
-
-    #             # compute the instrution vector
-    #             repr_diffs = hs_instr - hs_no_instr
-    #             mean_repr_diffs = repr_diffs.mean(dim=0)
-    #             # check where mean_repr_diffs has three dimensions
-    #             if len(mean_repr_diffs.shape) == 3:
-    #                 last_token_mean_diff = mean_repr_diffs[:, -1, :]
-    #             else:
-    #                 last_token_mean_diff = mean_repr_diffs
-
-    #             layer_idx = args.source_layer_idx
-    #             instr_dir = last_token_mean_diff[layer_idx] / last_token_mean_diff[layer_idx].norm()
-
-    #             if args.steering == 'adjust_rs':
-    #                 # average projection along the instruction direction
-    #                 # check if hs_instr has 4 dimensions
-    #                 if len(hs_instr.shape) == 4:
-    #                     proj = hs_instr[:, layer_idx, -1, :].to(device) @ instr_dir.to(device)
-    #                 else:
-    #                     proj = hs_instr[:, layer_idx, :].to(device) @ instr_dir.to(device)
-
-    #                 # get average projection along the instruction direction for each layer
-    #                 avg_proj = proj.mean()
-    #                 print(f'Average projection along the {instruction_type} direction for layer {layer_idx}: {avg_proj}')
 
     if args.steering != 'none':
         # load the pre-computed IVs 

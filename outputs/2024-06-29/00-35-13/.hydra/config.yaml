@@ -1,7 +1,0 @@
-device: cuda
-project_dir: /home/t-astolfo/t-astolfo/ifeval_experiments
-data_path: ../data/input_data.jsonl
-dry_run: false
-output_path: out/
-path_to_hf_token: ../hf_token.txt
-model_name: gpt2

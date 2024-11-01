@@ -1,8 +1,0 @@
-{"key": 1075, "prompt": "Can you help me make an advertisement for a new product? It's a diaper that's designed to be more comfortable for babies.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 1094, "prompt": "Please provide the names of 5 famous moms. Please, use any interesting or weird tone.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 1148, "prompt": "What are the advantages and disadvantages of having supernatural powers? Make it short.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 13, "prompt": "What is the history of NYC prospect park?", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 2404, "prompt": "Radcliffe was the only one who could get past the guards. What could be said about him?", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 2857, "prompt": "Write a rubric for performance review of a software engineer.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 321, "prompt": "Compose a startup pitch on a new app called Tipperary that helps people to find the average tip size for each restaurant.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
-{"key": 3223, "prompt": "List all facts about Lionel Messi.", "instruction_id_list": ["detectable_format:json_format"], "kwargs": [{}]}
