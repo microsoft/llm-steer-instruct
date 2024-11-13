@@ -19,12 +19,6 @@ import torch
 import plotly.express as px
 import sys
 import plotly.graph_objects as go
-from transformers import AutoTokenizer
-import einops
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import adjust_vectors
-import functools
-from transformer_lens import utils as tlutils
 from tqdm import tqdm
 
 # %%
@@ -92,12 +86,17 @@ for f in tqdm(files):
     repr_w_instr[f] = hs_instr
     repr_wo_instr[f] = hs_no_instr
 
+    if len(list(instr_dirs.keys())) >4:
+        break
+
 
 # %%
 # compute cosine similarity between all pairs of instructions
 instr_dirs_df = torch.stack(list(instr_dirs.values()))
-# cos_sim = torch.nn.functional.cosine_similarity(instr_dirs_df.unsqueeze(1), instr_dirs_df.unsqueeze(0), dim=2)
-cos_sim = instr_dirs_df @ instr_dirs_df.T / (instr_dirs_df.norm(dim=1).unsqueeze(1) @ instr_dirs_df.norm(dim=1).unsqueeze(0))
+layer_idx = 20
+instr_dirs_at_layer = instr_dirs_df[:, layer_idx]
+cos_sim = torch.nn.functional.cosine_similarity(instr_dirs_at_layer.unsqueeze(1), instr_dirs_at_layer.unsqueeze(0), dim=2)
+# cos_sim = instr_dirs_df @ instr_dirs_df.T / (instr_dirs_df.norm(dim=1).unsqueeze(1) @ instr_dirs_df.norm(dim=1).unsqueeze(0))
 # %%
 # make heatmap of cosine similarities
 fig = go.Figure(data=go.Heatmap(
@@ -117,6 +116,7 @@ fig.show()
 # =============================================================================
 # compute projection onto the vocabulary
 # =============================================================================
+from utils.model_utils import load_model_from_tl_name
 
 model_name = 'phi-3'
 
@@ -249,3 +249,4 @@ for instr in instr_dirs.keys():
     fig.show()
 
 # %%
+

@@ -350,6 +350,12 @@ for model_name in model_names:
             # set follow_all_instructions to the same value as in the entry with the same key in results_df_standard
             results_df_instr_plus_steering.at[i, 'follow_all_instructions'] = results_df_standard[results_df_standard.key == r.key].follow_all_instructions.values[0]
 
+    # print average follow_all_instructions for detectable_format:title
+    print(f'{model_name} - No Instr: {results_df[results_df.instruction_id_list.apply(lambda x: "detectable_format:title" in x)].follow_all_instructions.mean()}')
+    print(f'{model_name} - Steering: {results_df_steering[results_df_steering.instruction_id_list.apply(lambda x: "detectable_format:title" in x)].follow_all_instructions.mean()}')
+    print(f'{model_name} - Standard: {results_df_standard[results_df_standard.instruction_id_list.apply(lambda x: "detectable_format:title" in x)].follow_all_instructions.mean()}')
+    print(f'{model_name} - Instr + Steering: {results_df_instr_plus_steering[results_df_instr_plus_steering.instruction_id_list.apply(lambda x: "detectable_format:title" in x)].follow_all_instructions.mean()}')
+
 
     dfs[model_name] = {
         'results_df': results_df,
@@ -470,7 +476,7 @@ fig.update_layout(legend=dict(
 ))
 
 # store plot as pdf
-fig.write_image(f'./plots_for_paper/format/format_no_instr.pdf')
+# fig.write_image(f'./plots_for_paper/format/format_no_instr.pdf')
 fig.show()
 # %%
 # =============================================================================
@@ -543,10 +549,112 @@ fig.update_layout(legend=dict(
 ))
 
 # store plot as pdf
-fig.write_image(f'./plots_for_paper/format/format_instr.pdf')
+# fig.write_image(f'./plots_for_paper/format/format_instr.pdf')
 fig.show()
 # %%
+# =============================================================================
+# Show accuracy sliced for each instruction
 
-# %%
+labes_and_names = [('a', 'Phi-3'), ('b', 'Gemma 2 2B IT'), ('c', 'Mistral 7B IT'), ('d', 'Gemma 2 9B IT')]
+
+for model_idx, model_name in enumerate(model_names):
+    print(model_name)
+
+    results_df = dfs[model_name]['results_df']
+    results_df_steering = dfs[model_name]['results_df_steering']
+    results_df_standard = dfs[model_name]['results_df_standard']
+    results_df_instr_plus_steering = dfs[model_name]['results_df_instr_plus_steering']
+
+
+    all_instruct = list(set([ item for l in results_df.instruction_id_list for item in l]))
+
+    instr_corr = {instr: 0 for instr in all_instruct}
+    instr_corr_steering = {instr: 0 for instr in all_instruct}
+    instr_corr_standard = {instr: 0 for instr in all_instruct}
+    instr_corr_instr_plus_steering = {instr: 0 for instr in all_instruct}
+    instr_count = {instr: 0 for instr in all_instruct}
+
+
+    for i, row in results_df.iterrows():
+        instr, corr = row.instruction_id_list[0], row.follow_all_instructions
+        corr_steering = results_df_steering.iloc[i].follow_all_instructions
+        corr_standard = results_df_standard.iloc[i].follow_all_instructions
+        corr_instr_plus_steering = results_df_instr_plus_steering.iloc[i].follow_all_instructions
+
+        instr_count[instr] += 1
+        instr_corr[instr] += corr
+        instr_corr_steering[instr] += corr_steering
+        instr_corr_standard[instr] += corr_standard
+        instr_corr_instr_plus_steering[instr] += corr_instr_plus_steering
+
+
+    instr_acc = {instr: instr_corr[instr] / instr_count[instr] for instr in all_instruct}
+    instr_acc_steering = {instr: instr_corr_steering[instr] / instr_count[instr] for instr in all_instruct}
+    instr_acc_standard = {instr: instr_corr_standard[instr] / instr_count[instr] for instr in all_instruct}
+    instr_acc_instr_plus_steering = {instr: instr_corr_instr_plus_steering[instr] / instr_count[instr] for instr in all_instruct}
+
+    
+
+    # make histogram of instruction accuracies
+    df = pd.DataFrame({'instruction': list(instr_acc.keys()), 'Accuracy': list(instr_acc.values()), 'Setting': 'w/o Instr.'})
+    df = df.sort_values(by='instruction', ascending=False)
+    df_steering = pd.DataFrame({'instruction': list(instr_acc_steering.keys()), 'Accuracy': list(instr_acc_steering.values()), 'Setting': 'w/o Instr. + Steering'})
+    df_steering = df_steering.sort_values(by='instruction', ascending=False)
+    df_standard = pd.DataFrame({'instruction': list(instr_acc_standard.keys()), 'Accuracy': list(instr_acc_standard.values()), 'Setting': 'w/ Instr.  '})
+    df_standard = df_standard.sort_values(by='instruction', ascending=False)
+    df_instr_plus_steering = pd.DataFrame({'instruction': list(instr_acc_instr_plus_steering.keys()), 'Accuracy': list(instr_acc_instr_plus_steering.values()), 'Setting': 'w/ Instr. + Steering'})
+    df_instr_plus_steering = df_instr_plus_steering.sort_values(by='instruction', ascending=False)
+    df = pd.concat([df, df_steering, df_standard, df_instr_plus_steering])
+
+    # rename categories
+    new_names = { i: i.split(':')[1].replace('_', ' ').title() for i in all_instruct }
+    new_names['detectable_format:number_highlighted_sections'] = 'Highlight Text'
+    new_names['change_case:english_lowercase'] = 'Lowercase'
+    new_names['detectable_format:json_format'] = 'JSON Format'
+    new_names['change_case:capital_word_frequency'] = 'Capital Word Freq.'
+    new_names['language:response_language'] = 'Language'
+
+    df['instruction'] = df['instruction'].map(new_names)
+
+    fig = px.bar(df, x='instruction', y='Accuracy', color='Setting', barmode='group')
+    
+    # set title
+    label, pretty_name = labes_and_names[model_idx]
+
+    fig.update_layout(title_text=f'({label}) Accuracy of {pretty_name} on Format Instr.')
+    # change title font size
+    fig.update_layout(title_font_size=17)
+
+    # resize plot
+    fig.update_layout(width=450, height=300)
+
+    # incline x-axis labels
+    fig.update_xaxes(tickangle=45)
+    
+    # remove padding
+    fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+    # add y axis label
+    fig.update_layout(yaxis_title='Accuracy')
+    fig.update_layout(xaxis_title='')   
+
+    # move legend to the bottom
+    fig.update_layout(legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-1.3,
+        xanchor='right',
+        x=1
+    ))
+
+
+    fig.show()
+
+    # save plot as pdf
+    fig.write_image(f'./plots_for_paper/format_sliced/{model_name}.pdf')
+
+
+
+    # %%
 
 # %%
