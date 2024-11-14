@@ -68,10 +68,14 @@ for key, value in tqdm(list(result_dict.items())):
         tokens = tokenizer.tokenize(response)
         lengths.append(len(tokens))
         counter = Counter(tokens)
+        # remove '▁the' and ',' from the counter
+        counter.pop('▁the', None)
+        counter.pop(',', None)
+        counter.pop('.', None)
         # take the number of occurrences of the most common token
         most_common = counter.most_common(1)[0][1]
         # get most common token
-        if most_common > 50 and counter.most_common(1)[0][0] != '▁the':
+        if most_common > 50 and key == (26, 60):
             print(f'key: {key}')    
             print(f'Broken output: {response}')
             # print most common token

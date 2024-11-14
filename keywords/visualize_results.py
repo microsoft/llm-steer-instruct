@@ -213,8 +213,8 @@ from copy import deepcopy
 
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
-weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -200}, 'existence': {'phi-3': 60, 'gemma-2-2b-it': 120}}
-layers = {'forbidden': {'phi-3': 24, 'gemma-2-2b-it': 24}, 'existence': {'phi-3': 28, 'gemma-2-2b-it': 24}}
+weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -150}, 'existence': {'phi-3': 60, 'gemma-2-2b-it': 80}}
+layers = {'forbidden': {'phi-3': 28, 'gemma-2-2b-it': 24}, 'existence': {'phi-3': 28, 'gemma-2-2b-it': 22}}
 constraints = ['forbidden', 'existence']
 all_dfs = {}
 for model_name in model_names:
