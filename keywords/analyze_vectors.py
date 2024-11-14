@@ -38,7 +38,7 @@ all_words_df = pd.read_hdf(rep_file)
 # %%
 all_words_df.head()
 # %%
-layer_idx = 30
+layer_idx = 24
 mean_projections = []
 mean_projections_no_instr = []
 proj_deltas = []

@@ -97,7 +97,7 @@ def run_experiment(args: DictConfig):
     new_data_rows = []
     for i, r in data_df.iterrows():
         row = dict(r)
-        if args.constraint == 'exclude' :
+        if 'exclude' in args.constraint:
             keywords = r['likely_words'][:1]
         elif args.constraint == 'include':
             keywords = r['unlikely_words'][:1]
@@ -136,7 +136,7 @@ def run_experiment(args: DictConfig):
     for i in data_df.index:
         if args.constraint == 'include':
             keywords.extend(data_df.loc[i]['unlikely_words'])
-        elif args.constraint == 'exclude':
+        elif 'exclude' in args.constraint:
             keywords.extend(data_df.loc[i]['likely_words'])
         
     print(f'Keywords: {keywords}')
@@ -146,6 +146,8 @@ def run_experiment(args: DictConfig):
         file = f'{args.project_dir}/representations/{args.model_name}/include_validation_include_{args.n_examples}examples_hs.h5'
     elif args.constraint == 'exclude':
         file = f'{args.project_dir}/representations/{args.model_name}/include_validation_exclude_{args.n_examples}examples_hs.h5'
+    elif args.constraint == 'exclude_w_exclude_rep':
+            file = f'{args.project_dir}/representations/{args.model_name}/exclude_validation_exclude_{args.n_examples}examples_hs.h5'
     else:
         raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
     
@@ -194,7 +196,7 @@ def run_experiment(args: DictConfig):
                     if args.constraint == 'include':
                         # add the instruction to the example
                         phrasing = random.choice(phrasings_include)
-                    elif args.constraint == 'exclude':
+                    elif 'exclude' in args.constraint:
                         phrasing = random.choice(phrasings_exclude)
                     example += phrasing.format(r['word'])
 
@@ -242,7 +244,7 @@ def run_experiment(args: DictConfig):
 
 
     # write out_lines as jsonl
-    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}'
+    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}/{args.constraint}'
     folder += f'/n_examples{args.n_examples}_seed{args.seed}'
 
     os.makedirs(folder, exist_ok=True)
