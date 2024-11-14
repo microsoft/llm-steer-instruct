@@ -24,6 +24,7 @@ import json
 from transformers import AutoTokenizer
 from collections import Counter
 from eval.evaluation_main import test_instruction_following_loose
+import re
 
 # %%
 
