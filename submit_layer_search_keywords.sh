@@ -27,6 +27,6 @@ sbatch --output="${HOME}/bsub_logs/steering/keywords/search-${model_name}-instr-
     --gres=gpumem:30g \
     --mem-per-cpu=50G \
     --time=23:59:00 \
---wrap="python keywords/find_best_layer.py model_name=$model_name constraint=$constraint max_generation_length=$max_generation_length include_instruction=$include_instruction steering_weights=$steering_weights
+--wrap="python keywords/find_best_layer.py model_name=$model_name constraint=$constraint max_generation_length=$max_generation_length include_instruction=$include_instruction steering_weights=$steering_weights n_examples=$n_examples
 "
 
