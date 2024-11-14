@@ -138,6 +138,8 @@ def run_experiment(args: DictConfig):
         # load the pre-computed IVs 
         if args.specific_instruction == 'forbidden':
             file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'forbidden_w_forbidden_rep':
+            file = f'{args.project_dir}/representations/{args.model_name}/exclude_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence':
             if 'keyword_test' in args.data_path:
                 file = f'{args.project_dir}/representations/{args.model_name}/include_num_words110_{args.n_examples}examples_hs.h5'
@@ -145,6 +147,8 @@ def run_experiment(args: DictConfig):
                 file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence_validation' or args.specific_instruction == 'forbidden_validation':
             file = f'{args.project_dir}/representations/{args.model_name}/include_validation_include_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
+            file = f'{args.project_dir}/representations/{args.model_name}/exclude_validation_exclude_{args.n_examples}examples_hs.h5'
         else:
             raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
         results_df = pd.read_hdf(file)

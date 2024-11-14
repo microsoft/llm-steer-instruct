@@ -1,3 +1,4 @@
+# %%
 # =============================================================================
 # make t-SNE plot of instruction vectors
 # =============================================================================
@@ -132,7 +133,7 @@ colors = px.colors.qualitative.Plotly + px.colors.qualitative.Bold
 
 # Plot the results using Plotly
 fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction', title='t-SNE of Instruction Vectors', color_discrete_sequence=colors)
-fig.update_traces(marker=dict(opacity=0.7))
+fig.update_traces(marker=dict(opacity=0.7, size=5))
 
 # change title font size
 fig.update_layout(title_font_size=17)
@@ -146,7 +147,7 @@ fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 fig.show()
 
 # save plot as pdf
-# fig.write_image(f'./plots_for_paper/format/t-sne.pdf')
+fig.write_image(f'./plots_for_paper/format/t-sne.pdf')
 
 
 # %%

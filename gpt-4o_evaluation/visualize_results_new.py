@@ -54,7 +54,7 @@ for model_name in model_names:
             df = pd.DataFrame(results)
             runs[steering].append(df)
 
-    instr_to_drop = ['language:response_language']
+    instr_to_drop = ['language:response_language',] # 'detectable_format:constrained_response']
     # if model_name == 'phi':
         # instr_to_drop.append('detectable_format:multiple_sections')
     instr_to_drop_for_wo_steering = ['detectable_format:multiple_sections', 'detectable_format:title']
@@ -434,42 +434,113 @@ fig.show()
 # =============================================================================
 # Per-instruction quality score deltas
 # =============================================================================
-setting_pair_idx = 2
-run_idx = 0
+
+run_idx = 2
+
 model_name = 'phi'
-joined_df = joined_dfs[model_name][setting_pair_idx, run_idx]
+model_name = 'gemma-2-9b-it'
+# model_name = 'mistral-7b-instruct'
+qual_score_deltas_per_setting = []
 
-# compute the average quality score delta for each instruction
-instr_to_drop = 'language:response_language'
-filtered_df = joined_df[joined_df['instruction_id_list'].apply(lambda x: instr_to_drop not in x)]
 
-instr_ids = filtered_df['instruction_id_list'].apply(lambda x: x[0].split(':')[-1])
-filtered_df['instruction_id'] = instr_ids
+labes_and_names = [('a', 'Phi-3'), ('b', 'Gemma 2 2B IT'), ('c', 'Mistral 7B IT'), ('d', 'Gemma 2 9B IT')]
+setting_names = ['Steering w/o Instr.', 'Steering w/ Instr.', 'No Steering w/ vs. w/o Instr.']
 
-# make bar chart of the quality score deltas per instruction
-grouped_df = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).mean().reset_index()
-grouped_df_sem = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).sem().reset_index()
-fig = go.Figure()
-fig.add_trace(go.Bar(
-    x=grouped_df['instruction_id'],
-    y=grouped_df['qual_score_delta'],
-    error_y=dict(type='data', array=grouped_df_sem['qual_score_delta']),
-    name='Quality score delta'
-))
+for model_idx, model_name in enumerate(model_names):
+    # Combine results into a single DataFrame
+    combined_df = pd.DataFrame()
 
-fig.update_layout(
-    title='Quality score deltas per instruction',
-    yaxis_title='Quality score delta ',
-    barmode='group'
-)
+    for setting_pair_idx in range(len(pairs_of_setting)):
+        joined_df = joined_dfs[model_name][setting_pair_idx, run_idx]
 
-fig.show()
+        # Compute the average quality score delta for each instruction
+        instr_to_drop = 'language:response_language'
+        filtered_df = joined_df[joined_df['instruction_id_list'].apply(lambda x: instr_to_drop not in x)]
+
+        instr_ids = filtered_df['instruction_id_list'].apply(lambda x: x[0].split(':')[-1])
+        filtered_df['instruction_id'] = instr_ids
+
+        # Group by instruction_id and compute mean and SEM
+        grouped_df = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).mean().reset_index()
+        grouped_df_sem = filtered_df['qual_score_delta'].groupby(filtered_df['instruction_id']).sem().reset_index()
+
+        grouped_df['setting_pair_idx'] = setting_pair_idx
+        grouped_df['sem'] = grouped_df_sem['qual_score_delta']
+
+        combined_df = pd.concat([combined_df, grouped_df], ignore_index=True)
+
+    # Create a bar chart
+    fig = go.Figure()
+
+     # rename categories
+    new_names = { i: i.replace('_', ' ').title() for i in combined_df['instruction_id'].unique()}
+    new_names['number_highlighted_sections'] = 'Highlight Text'
+    new_names['english_lowercase'] = 'Lowercase'
+    new_names['json_format'] = 'JSON Format'
+    new_names['capital_word_frequency'] = 'Capital Word Freq.'
+    new_names['response_language'] = 'Language'
+    new_names['constrained_response'] = 'Constrained Resp.'
+
+    combined_df['instruction_id'] = combined_df['instruction_id'].apply(lambda x: new_names[x])
+
+    for setting_pair_idx in range(len(pairs_of_setting)):
+        setting_df = combined_df[combined_df['setting_pair_idx'] == setting_pair_idx]
+        fig.add_trace(go.Bar(
+            x=setting_df['instruction_id'],
+            y=setting_df['qual_score_delta']*-1,
+            error_y=dict(type='data', array=setting_df['sem'], width=0),
+            name=setting_names[setting_pair_idx],
+            marker_color=px.colors.qualitative.Plotly[3+setting_pair_idx]
+        ))
+
+    fig.update_layout(
+        title='Quality Score Deltas for Instruction IDs',
+        xaxis_title='Instruction ID',
+        yaxis_title='Quality Score Delta',
+        barmode='group'
+    )
+    # set title
+    label, pretty_name = labes_and_names[model_idx]
+
+    fig.update_layout(title_text=f'({label}) Qual. Score of {pretty_name} on Format Instr.')
+    # change title font size
+    fig.update_layout(title_font_size=16)
+
+    # resize plot
+    fig.update_layout(width=450, height=300)
+
+    # incline x-axis labels
+    fig.update_xaxes(tickangle=45)
+
+    # remove padding
+    fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+    # add y axis label
+    fig.update_layout(yaxis_title='Accuracy')
+    fig.update_layout(xaxis_title='')   
+
+    # move legend to the bottom
+    fig.update_layout(legend=dict(
+        title='Setting',
+        orientation='h',
+        yanchor='bottom',
+        y=-1.5,
+        xanchor='right',
+        x=0.8
+    ))
+
+    fig.show()
+
+    # save plot as pdf
+    fig.write_image(f'./plots_for_paper/quality_score_sliced/{model_name}.pdf')
+
+
 
 
 # %%
 # print some outputs
 model_name = 'mistral-7b-instruct'
-model_name = 'gemma-2-2b-it'
+model_name = 'gemma-2-9b-it'
 model_name = 'phi'
 setting_pair_idx = 1
 run_idx = 0
