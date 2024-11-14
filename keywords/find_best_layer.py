@@ -85,7 +85,7 @@ def run_experiment(args: DictConfig):
     device = args.device
     print(f"Using device: {device}")
 
-    transformer_cache_dir = None
+    transformer_cache_dir = args.transformers_cache_dir
 
     # load the data
     with open(args.data_path) as f:

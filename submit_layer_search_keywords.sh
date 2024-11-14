@@ -1,22 +1,22 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-2b-it"
+# model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
-gpu_req="rtx_4090:1"
+# gpu_req="rtx_4090:1"
 gpu_req="rtx_3090:1"
 
 # arguments
 dry_run=false
 
-constraint=include
+constraint=exclude_w_exclude_rep
 max_generation_length=256
 include_instruction=false
-steering_weights=[80,90,100,110,120,140]
-steering_weights=[240,250,260,270,280,290,300]
-specific_instruction=existence
-n_examples=20
+# steering_weights=[80,90,100,110,120,140]
+# steering_weights=[240,250,260,270,280,290,300]
+steering_weights=[30,40,50,70,90] # for the forbiddden rep
+n_examples=10
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 
