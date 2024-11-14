@@ -21,6 +21,9 @@ import sys
 import plotly.graph_objects as go
 from tqdm import tqdm
 import json
+from transformers import AutoTokenizer
+from collections import Counter
+from eval.evaluation_main import test_instruction_following_loose
 
 # %%
 
@@ -34,13 +37,14 @@ len(all_instructions)
 
 
 # %%
-model_name = 'gemma-2-9b'
+# model_name = 'gemma-2-9b'
+model_name = 'phi-3'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_no_instr'
+search_method = 'validation_accuracy_w_quality_check_no_instr'
 seed=42
-n_examples = 6
+n_examples = 8
 
 rows = []
 
@@ -57,16 +61,77 @@ if 'validation_accuracy' in search_method:
 
     validation_df = pd.DataFrame(results)
     optimal_layers = { instr: -1 for instr in all_instructions }
-                
+
+    if 'quality_check' in search_method:
+
+        with open('./hf_token.txt') as f:
+            hf_token = f.read()
+        if model_name == 'phi-3':
+            model_name_hf = 'microsoft/Phi-3-mini-4k-instruct'
+        elif model_name == 'gemma-2-2b-it':
+            model_name_hf = 'google/gemma-2-2b-it'
+        elif model_name == 'mistral-7b-instruct':
+            model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
+        tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)
+
+        broken_outputs = []
+        accuracy_with_quality_check = []
+        for i, r in validation_df.iterrows():
+            # compute accuracy
+
+            response  = r['response']
+            tokens = tokenizer.tokenize(response)
+            counter = Counter(tokens)
+            #remove '▁the' '▁' from the counter
+            if '▁the' in counter:
+                del counter['▁the']
+            if '▁' in counter:
+                del counter['▁']
+            # take the number of occurrences of the most common token
+            most_common = counter.most_common(1)[0][1]
+            # get most common token
+            if most_common > 50:
+                broken_outputs.append(1)
+            else:
+                broken_outputs.append(0)
+
+            # fix problem with capital word frequency
+            if r.single_instruction_id == 'change_case:capital_word_frequency' and r.layer == -1:
+                if 'less than' in r.prompt or 'at most' in r.prompt:
+                    relation = 'less than'
+                elif 'more than' in r.prompt or 'at least' in r.prompt:
+                    relation = 'at least'
+                # parse the last number in the prompt
+                num = int(re.findall(r'\d+', r.prompt)[-1])
+
+                new_kwargs = [{"capital_relation": relation,"capital_frequency": num}]
+                r.kwargs = new_kwargs
+                prompt_to_response = {}
+                prompt_to_response[r['prompt']] = r['response']
+                output = test_instruction_following_loose(r, prompt_to_response)
+                validation_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
+
+        validation_df['broken_output'] = broken_outputs
+                    
     for instr in all_instructions:
         if instr not in validation_df.single_instruction_id.unique():
             optimal_layers[instr] = -1
             continue
 
         instr_df = validation_df[validation_df.single_instruction_id == instr]
-        max_accuracy = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions.max()
-        optimal_layer = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean()[instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions == max_accuracy].index
-        optimal_layers[instr] = optimal_layer[0]
+
+        if 'quality_check' in search_method:
+            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'broken_output']].groupby('layer').mean()
+            # set follow_all_instructions to in df_group_by_layer when broken_output is > 0
+            df_group_by_layer.loc[df_group_by_layer.broken_output > 0, 'follow_all_instructions'] = 0
+            max_accuracy = df_group_by_layer.follow_all_instructions.max()
+            optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
+            optimal_layers[instr] = optimal_layer[0]
+
+        else:
+            max_accuracy = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions.max()
+            optimal_layer = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean()[instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions == max_accuracy].index
+            optimal_layers[instr] = optimal_layer[0]
 
 for instr in tqdm(all_instructions):
     # check if the file exists
@@ -174,7 +239,10 @@ df = pd.DataFrame(rows)
 if specific_layer is not None:
     df.to_hdf(f'{folder}/pre_computed_ivs_layer_{specific_layer}.h5', key='df', mode='w')
 elif 'validation_accuracy' in search_method:
-    df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5', key='df', mode='w')
+    if 'quality_check' in search_method:
+        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_no_instr.h5', key='df', mode='w')
+    else:
+        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5', key='df', mode='w')
 elif search_method == 'cosine_similarity':
     df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_cosine_similarity.h5', key='df', mode='w')
 else:

@@ -15,7 +15,7 @@ elif 'cluster' in os.getcwd():
 # %%
 dir = 'keywords/layer_search_out/'
 model_name = 'phi-3'
-model_name = 'gemma-2-2b-it'
+# model_name = 'gemma-2-2b-it'
 n_examples = 20
 seed = 42
 instr = 'no_instr'

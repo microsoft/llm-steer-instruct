@@ -19,7 +19,8 @@ from transformer_lens import utils as tlutils
 from collections import Counter
 
 # %%
-model_name = 'gemma-2-2b-it'
+model_name = 'phi-3'
+# model_name = 'gemma-2-2b-it'
 folder = f'./keywords/out/{model_name}/existence_validation/'
 file_name = 'out_gen_data.jsonl'
 subfolders = os.listdir(folder)
@@ -70,11 +71,12 @@ for key, value in tqdm(list(result_dict.items())):
         # take the number of occurrences of the most common token
         most_common = counter.most_common(1)[0][1]
         # get most common token
-        if most_common > 50:
-            # print(f'Broken output: {response}')
-            broken_outputs.append(1)
+        if most_common > 50 and counter.most_common(1)[0][0] != '▁the':
+            print(f'key: {key}')    
+            print(f'Broken output: {response}')
             # print most common token
-            # print(counter.most_common(1))
+            print(counter.most_common(1))
+            broken_outputs.append(1)
         else:
             broken_outputs.append(0)
     value['broken_output'] = broken_outputs
@@ -106,5 +108,34 @@ for layer in set(layers):
             print(f'Average length: {lengths_dict[(layer, weight)]}')
             print(f'Broken outputs: {broken_outputs_dict[(layer, weight)]}')
             print('---')
+
+# %%
+# make line plot of the accuracy values and broken outputs
+accuracies = []
+broken_outputs = []
+x_labels = []
+for (layer, weight), accuracy in accuracy_dict.items():
+    accuracies.append(accuracy)
+    broken_outputs.append(broken_outputs_dict[(layer, weight)])
+    x_labels.append(f'L{layer}_W{weight}')
+
+# sort the lists according to the x_labels
+x_labels, accuracies, broken_outputs = zip(*sorted(zip(x_labels, accuracies, broken_outputs)))
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_labels, y=accuracies, mode='lines+markers', name='Accuracy'))
+fig.add_trace(go.Scatter(x=x_labels, y=broken_outputs, mode='lines+markers', name='Broken Outputs'))
+fig.update_layout(xaxis_tickangle=-45)
+# add horizontal line at broken_outputs[(-1,-1)]
+fig.add_shape(type="line", x0=0, x1=len(x_labels), y0=broken_outputs[0], y1=broken_outputs[0], line=dict(color="red", width=1))
+
+fig.show()
+
+# %%
+# make scatter plot of the accuracy values and broken outputs
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=accuracies, y=broken_outputs, mode='markers', text=x_labels, name='Accuracy vs Broken Outputs'))
+fig.update_layout(xaxis_title='Accuracy', yaxis_title='Broken Outputs')
+fig.show()
 
 # %%

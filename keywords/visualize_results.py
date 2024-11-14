@@ -434,7 +434,7 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = True
+store = False
 fig.update_layout(title_text='(b) Word-Exclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)
@@ -576,7 +576,7 @@ fig.update_layout(legend=dict(
     x=0.85
 ))
 
-store = True
+store = False
 fig.update_layout(title_text='(a) Word-Inclusion Instructions')
 # move title up
 fig.update_layout(title_y=0.98)
