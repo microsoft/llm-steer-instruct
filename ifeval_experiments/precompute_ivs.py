@@ -38,14 +38,14 @@ len(all_instructions)
 
 
 # %%
-# model_name = 'gemma-2-9b'
+model_name = 'gemma-2-9b-it'
 model_name = 'phi-3'
 dry_run = False
 device = 'cpu'
 specific_layer = None
 search_method = 'validation_accuracy_w_quality_check_no_instr'
 seed=42
-n_examples = 8
+n_examples = 6
 
 rows = []
 
@@ -55,6 +55,7 @@ if 'validation_accuracy' in search_method:
         instr_included = 'no_instr'
     else:
         instr_included = 'instr'
+    print(f'INSTR: {instr_included}')
     folder = 'ifeval_experiments/layer_search_out'
     file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr_included}.jsonl'
     with open(file, 'r') as f:
@@ -241,7 +242,7 @@ if specific_layer is not None:
     df.to_hdf(f'{folder}/pre_computed_ivs_layer_{specific_layer}.h5', key='df', mode='w')
 elif 'validation_accuracy' in search_method:
     if 'quality_check' in search_method:
-        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_no_instr.h5', key='df', mode='w')
+        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_{instr_included}.h5', key='df', mode='w')
     else:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5', key='df', mode='w')
 elif search_method == 'cosine_similarity':

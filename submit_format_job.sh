@@ -1,18 +1,19 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-2b"
+model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
-gpu_req="rtx_4090:1"
-gpu_req="rtx_3090:1"
+gpu_req="v100:1"
+# gpu_req="rtx_4090:1"
+# gpu_req="rtx_3090:1"
 
 # arguments
 dry_run=false
 
 source_layer_idx=-1
 steering=adjust_rs
-include_instructions=true
+include_instructions=false
 cross_model_steering=false
 nonparametric_only=true
 

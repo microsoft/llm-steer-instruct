@@ -11,7 +11,7 @@ def load_model_from_tl_name(model_name, device='cuda', cache_dir=None, hf_token=
     hf_model_name = tl_name_to_hf_name(model_name)
     print(f"Loading model from {hf_model_name}")
 
-    tokenizer = AutoTokenizer.from_pretrained(hf_model_name, trust_remote_code=True, cache_dir=cache_dir, token=hf_token, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(hf_model_name, trust_remote_code=True, cache_dir=cache_dir, token=hf_token)
 
     if hf_model:
         model = AutoModelForCausalLM.from_pretrained(hf_model_name, token=hf_token, cache_dir=cache_dir, local_files_only=True)
