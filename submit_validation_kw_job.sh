@@ -24,7 +24,8 @@ elif [[ "$specific_instruction" == "forbidden_validation" ]]; then
 
 elif [[ "$specific_instruction" == "forbidden_validation_w_forbidden_rep" ]]; then
     data_path=./data/keyword_test_exclusion_likely.jsonl
-    steering_weights_phi=( 30 40 50 70 90)
+    # steering_weights_phi=( 30 40 50 70 90)
+    steering_weights_phi=( 100 120 150 200)
 fi
 
 if [[ "$model_name" == "phi-3" ]]; then

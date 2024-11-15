@@ -39,14 +39,14 @@ len(all_instructions)
 
 # %%
 model_name = 'gemma-2-9b-it'
-model_name = 'phi-3'
-model_name = 'mistral-7b-instruct'
+# model_name = 'phi-3'
+# model_name = 'mistral-7b-instruct'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_quality_check_no_instr'
+search_method = 'validation_accuracy_w_quality_check'
 seed=42
-n_examples = 8
+n_examples = 6
 
 rows = []
 
@@ -73,6 +73,8 @@ if 'validation_accuracy' in search_method:
             model_name_hf = 'microsoft/Phi-3-mini-4k-instruct'
         elif model_name == 'gemma-2-2b-it':
             model_name_hf = 'google/gemma-2-2b-it'
+        elif model_name == 'gemma-2-9b-it':
+            model_name_hf = 'google/gemma-2-9b-it'
         elif model_name == 'mistral-7b-instruct':
             model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
         tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)

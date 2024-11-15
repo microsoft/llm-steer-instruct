@@ -3,13 +3,14 @@ import os
 import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/keywords')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    sys.path.append('/home/t-astolfo/t-astolfo')
-    os.chdir('/home/t-astolfo/t-astolfo')
-
-    print('We\'re on the sandbox machine')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/keywords')
+    print('We\'re on a sandbox machine')
 
 import numpy as np
 import torch
@@ -103,7 +104,7 @@ def compute_representations(args: DictConfig):
     model_name = args.model_name
     with open('hf_token.txt') as f:
         hf_token = f.read()
-    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=None, hf_token=hf_token)
+    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir, hf_token=hf_token)
     #model = AutoModelForCausalLM.from_pretrained(model_name)
     #tokenizer = AutoTokenizer.from_pretrained(model_name)
     model.to(args.device)

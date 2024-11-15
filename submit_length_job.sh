@@ -15,13 +15,16 @@ dry_run=false
 source_layer_idx=12
 steering_weight=20
 steering_weights=[$steering_weight]
-steering=add_vector_conciseness
-steering=none
+# steering=add_vector_conciseness
+steering=add_vector_length_specific
+# steering=none
 include_instructions=true
+length_rep_file=6sentences_50examples_hs.h5
 
 constraint_type=at_most
+# constraint_type=exactly
 
-n_examples=200
+n_examples=20
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 
@@ -32,6 +35,6 @@ sbatch --output="${HOME}/bsub_logs/steering/length/${model_name}-${steering}-L${
     --gres=gpumem:20g \
     --mem-per-cpu=50G \
     --time=23:59:00 \
---wrap="python length_constraints/evaluate_length_constraints.py model_name=$model_name source_layer_idx=$source_layer_idx steering_weights=$steering_weights steering=$steering  n_examples=$n_examples include_instructions=$include_instructions constraint_type=$constraint_type dry_run=$dry_run
+--wrap="python length_constraints/evaluate_length_constraints.py model_name=$model_name source_layer_idx=$source_layer_idx steering_weights=$steering_weights steering=$steering  n_examples=$n_examples include_instructions=$include_instructions constraint_type=$constraint_type dry_run=$dry_run length_rep_file=$length_rep_file
 "
 

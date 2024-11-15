@@ -14,19 +14,18 @@ dry_run=false
 data_path=./data/ifeval_single_keyword_include.jsonl
 # data_path=./data/keyword_test_inclusion_likely.jsonl
 # data_path=./data/keyword_test_exclusion_likely.jsonl
-# data_path=./data/ifeval_single_keyword_exclude.jsonl
+data_path=./data/ifeval_single_keyword_exclude.jsonl
 
-source_layer_idx=28
-steering_weight=40
+source_layer_idx=24
+steering_weight=-200
 steering=add_vector
 # steering=0
-include_instructions=false
+include_instructions=true
 
 specific_instruction=existence
 # specific_instruction=existence_validation
 # specific_instruction=forbidden_validation
-max_generation_length=256
-# specific_instruction=forbidden
+specific_instruction=forbidden
 n_examples=20
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
