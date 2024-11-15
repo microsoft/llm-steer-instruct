@@ -21,14 +21,14 @@ model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 model_name='gemma-2-2b-it'
 # model_name='gemma-2-9b-it'
-# model_name = 'phi-3'
+model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
 n_examples = 8
 seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
 # instr = 'no_instr_lowercase'
-# instr = 'no_instr'
+instr = 'no_instr'
 
 file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
 with open(file, 'r') as f:
@@ -154,6 +154,12 @@ for i, r in results_df.iterrows():
         #     # print most common token
         #     print(counter.most_common(1))
         broken_outputs.append(0)
+    if r.layer == 36 and r.single_instruction_id == 'detectable_format:title':
+        print(f'prompt: {r.prompt}')
+        print(f'response: {r.response}')
+        print(f'broken: {broken_outputs[-1]}')
+        print(counter.most_common(1))
+        print('-----------------')
 
     # fix problem with capital word frequency
     if r.single_instruction_id == 'change_case:capital_word_frequency' and r.layer == -1:

@@ -299,7 +299,7 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_standard = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1' if model_name == 'gemma-2-9b-it' or model_name == 'mistral-7b-instruct' else 'instr_plus_adjust_rs_-1_quality_check'
+    mode = 'instr_plus_adjust_rs_-1_quality_check'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()

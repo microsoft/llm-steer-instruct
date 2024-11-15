@@ -541,7 +541,7 @@ for model_idx, model_name in enumerate(model_names):
 # print some outputs
 model_name = 'mistral-7b-instruct'
 model_name = 'gemma-2-9b-it'
-model_name = 'phi'
+# model_name = 'phi'
 setting_pair_idx = 1
 run_idx = 0
 joined_df = joined_dfs[model_name][setting_pair_idx, run_idx]
