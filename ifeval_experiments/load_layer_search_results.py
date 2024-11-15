@@ -19,9 +19,9 @@ import re
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='gemma-2-2b-it'
+# model_name='gemma-2-2b-it'
 # model_name='gemma-2-9b-it'
-model_name = 'phi-3'
+# model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
 n_examples = 8
 seed = 42

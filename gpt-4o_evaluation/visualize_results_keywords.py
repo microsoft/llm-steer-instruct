@@ -17,6 +17,7 @@ import json
 import pandas as pd
 
 folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_inclusion'
+# folder = 'gpt-4o_evaluation/30-09-2024_gpt-4o_eval/30-09-2024_gpt-4o_eval/keyword_exclusion'
 folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_exclusion'
 # folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/length/1-5sentences_100examples'
 setting_dfs = {}
@@ -42,6 +43,7 @@ qual_score_sett2_dict = {}
 
 pairs_of_setting_incl = [(1,0), (3,4), (1,3)]
 pairs_of_setting_excl = [(5,2), (3,6), (5,3)]
+# pairs_of_setting_excl = [(2,1), (6,7), (1,6)]
 # pairs_of_setting = [(1,0), (1,2), (2,3)]
 
 if 'inclusion' in folder:

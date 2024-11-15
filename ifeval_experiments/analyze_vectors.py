@@ -34,7 +34,7 @@ df = pd.read_hdf(rep_dir + files[0])
 # max_length = min([x.shape[1] for x in results_df['last_token_rs_no_instr'].values])
 # %%
 # load pred_computed_ivs
-file = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr/pre_computed_ivs_best_layer_validation_no_instr.h5'
+file = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr/pre_computed_ivs_best_layer_validation_quality_check_no_instr.h5'
 df_ivs = pd.read_hdf(file)
 best_layers_dict = {r.instruction.replace(':', '_') : r.max_diff_layer_idx for r in df_ivs.itertuples()}
 

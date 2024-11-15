@@ -21,7 +21,8 @@ from collections import Counter
 # %%
 model_name = 'phi-3'
 # model_name = 'gemma-2-2b-it'
-folder = f'./keywords/out/{model_name}/existence_validation/'
+folder = f'./keywords/out/{model_name}/forbidden_validation/'
+folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
 file_name = 'out_gen_data.jsonl'
 subfolders = os.listdir(folder)
 result_dict = {}
@@ -75,11 +76,11 @@ for key, value in tqdm(list(result_dict.items())):
         # take the number of occurrences of the most common token
         most_common = counter.most_common(1)[0][1]
         # get most common token
-        if most_common > 50 and key == (26, 60):
-            print(f'key: {key}')    
-            print(f'Broken output: {response}')
-            # print most common token
-            print(counter.most_common(1))
+        if most_common > 50:
+            # print(f'key: {key}')    
+            # print(f'Broken output: {response}')
+            # # print most common token
+            # print(counter.most_common(1))
             broken_outputs.append(1)
         else:
             broken_outputs.append(0)

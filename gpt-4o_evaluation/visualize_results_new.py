@@ -54,10 +54,10 @@ for model_name in model_names:
             df = pd.DataFrame(results)
             runs[steering].append(df)
 
-    instr_to_drop = ['language:response_language',] # 'detectable_format:constrained_response']
+    instr_to_drop = ['language:response_language',] # 'detectable_format:constrained_response', ]
     # if model_name == 'phi':
         # instr_to_drop.append('detectable_format:multiple_sections')
-    instr_to_drop_for_wo_steering = ['detectable_format:multiple_sections', 'detectable_format:title']
+    # instr_to_drop_for_wo_steering = ['detectable_format:multiple_sections', 'detectable_format:title']
 
     len_df = len(runs[steering_settings[1]][0]) - len(runs[steering_settings[1]][0][runs[steering_settings[1]][0]['instruction_id_list'].apply(lambda x: any([instr in x for instr in instr_to_drop]))])
 
@@ -532,7 +532,7 @@ for model_idx, model_name in enumerate(model_names):
     fig.show()
 
     # save plot as pdf
-    fig.write_image(f'./plots_for_paper/quality_score_sliced/{model_name}.pdf')
+    # fig.write_image(f'./plots_for_paper/quality_score_sliced/{model_name}.pdf')
 
 
 
