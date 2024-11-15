@@ -1,7 +1,6 @@
+# %%
 import os
 os.chdir('/Users/alestolfo/workspace/llm-steer-instruct')
-
-# %%
 import json
 import pandas as pd
 import plotly.express as px
@@ -181,4 +180,20 @@ fig.add_trace(go.Scatter(x=list(avg_broken_outputs_instr.values()), y=list(avg_s
 fig.add_trace(go.Scatter(x=list(avg_broken_outputs_no_instr.values()), y=list(avg_scores_no_instr.values()), mode='markers', name='Without instructions'))
 fig.update_layout(title='Broken outputs vs quality scores', xaxis_title='Broken outputs', yaxis_title='Quality scores')
 fig.show()
+# %%
+# make two line plots: one for avg qual score and one for avg accuracy, weigth as x, avg qual score as y for instr
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=list(avg_scores_instr.keys()), y=list(avg_scores_instr.values()), mode='lines+markers', name='Quality score'))
+fig.add_trace(go.Scatter(x=list(avg_accuracy_instr.keys()), y=list(avg_accuracy_instr.values()), mode='lines+markers', name='Accuracy'))
+fig.update_layout(title='Average quality score and accuracy per setting with instructions', xaxis_title='Weight', yaxis_title='Value')
+fig.show()
+
+# %%
+# make two line plots: one for avg qual score and one for avg accuracy, weigth as x, avg qual score as y for no_instr
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=list(avg_scores_no_instr.keys()), y=list(avg_scores_no_instr.values()), mode='lines+markers', name='Quality score'))
+fig.add_trace(go.Scatter(x=list(avg_accuracy_no_instr.keys()), y=list(avg_accuracy_no_instr.values()), mode='lines+markers', name='Accuracy'))
+fig.update_layout(title='Average quality score and accuracy per setting without instructions', xaxis_title='Weight', yaxis_title='Value')
+fig.show()
+
 # %%

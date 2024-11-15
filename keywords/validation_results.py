@@ -22,7 +22,7 @@ from collections import Counter
 model_name = 'phi-3'
 # model_name = 'gemma-2-2b-it'
 folder = f'./keywords/out/{model_name}/forbidden_validation/'
-folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
+# folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
 file_name = 'out_gen_data.jsonl'
 subfolders = os.listdir(folder)
 result_dict = {}
@@ -134,13 +134,54 @@ fig.update_layout(xaxis_tickangle=-45)
 # add horizontal line at broken_outputs[(-1,-1)]
 fig.add_shape(type="line", x0=0, x1=len(x_labels), y0=broken_outputs[0], y1=broken_outputs[0], line=dict(color="red", width=1))
 
+task = 'Inclusion' if 'existence' in folder else 'Exclusion'
+# add title and labels
+fig.update_layout(title=f'Accuracy and Broken Outputs for {model_name} on Keyword {task}', xaxis_title='Layer-Weight Combination', yaxis_title='Value')
+
+
 fig.show()
 
 # %%
+
+# Find the index of the point with broken_output value 0 and the largest accuracy
+max_accuracy_idx = None
+max_accuracy = -float('inf')
+for i, (accuracy, broken_output) in enumerate(zip(accuracies, broken_outputs)):
+    if broken_output == 0 and accuracy > max_accuracy:
+        max_accuracy = accuracy
+        max_accuracy_idx = i
+
 # make scatter plot of the accuracy values and broken outputs
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=accuracies, y=broken_outputs, mode='markers', text=x_labels, name='Accuracy vs Broken Outputs'))
-fig.update_layout(xaxis_title='Accuracy', yaxis_title='Broken Outputs')
+
+# Add all points
+fig.add_trace(go.Scatter(
+    x=accuracies,
+    y=broken_outputs,
+    mode='markers',
+    text=x_labels,
+    name='Accuracy vs Broken Outputs'
+))
+
+# Highlight the point with broken_output value 0 and the largest accuracy
+if max_accuracy_idx is not None:
+    fig.add_trace(go.Scatter(
+        x=[accuracies[max_accuracy_idx]],
+        y=[broken_outputs[max_accuracy_idx]],
+        mode='markers',
+        marker=dict(color='red', size=9),
+        text=[x_labels[max_accuracy_idx]],
+        name='Max Accuracy with 0 Broken Outputs'
+    ))
+
+# add title and labels
+fig.update_layout(
+    title=f'Accuracy vs Broken Outputs for {model_name} on Keyword {task}',
+    xaxis_title='Accuracy',
+    yaxis_title='Broken Outputs'
+)
+
 fig.show()
 
 # %%
+

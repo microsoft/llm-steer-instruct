@@ -46,7 +46,7 @@ for model_name in model_names:
             df = pd.DataFrame(results)
             runs[steering].append(df)
 
-    instr_to_drop = ['language:response_language'] 
+    instr_to_drop = ['language:response_language', 'detectable_format:constrained_response']
 
     len_df = len(runs[steering_settings[1]][0]) - len(runs[steering_settings[1]][0][runs[steering_settings[1]][0]['instruction_id_list'].apply(lambda x: any([instr in x for instr in instr_to_drop]))])
 
