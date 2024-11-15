@@ -10,7 +10,8 @@ gpu_req="rtx_3090:1"
 source_layer_indices_phi=( 24 26 28 )
 source_layer_indices_gemma=( 22 24 )
 
-specific_instruction=existence_validation
+# specific_instruction=existence_validation
+specific_instruction=forbidden_validation_w_forbidden_rep
 if [[ "$specific_instruction" == "existence_validation" ]]; then
     data_path=./data/keyword_test_inclusion_likely.jsonl
     steering_weights_phi=( 40 60 80 100 )
@@ -20,6 +21,10 @@ elif [[ "$specific_instruction" == "forbidden_validation" ]]; then
     data_path=./data/keyword_test_exclusion_likely.jsonl
     steering_weights_phi=( -60 -80 -100 -120 -150)
     steering_weights_gemma=(-120 -150 -200 -250 )
+
+elif [[ "$specific_instruction" == "forbidden_validation_w_forbidden_rep" ]]; then
+    data_path=./data/keyword_test_exclusion_likely.jsonl
+    steering_weights_phi=( 30 40 50 70 90)
 fi
 
 if [[ "$model_name" == "phi-3" ]]; then

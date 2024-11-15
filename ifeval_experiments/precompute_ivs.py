@@ -40,12 +40,13 @@ len(all_instructions)
 # %%
 model_name = 'gemma-2-9b-it'
 model_name = 'phi-3'
+model_name = 'mistral-7b-instruct'
 dry_run = False
 device = 'cpu'
 specific_layer = None
 search_method = 'validation_accuracy_w_quality_check_no_instr'
 seed=42
-n_examples = 6
+n_examples = 8
 
 rows = []
 

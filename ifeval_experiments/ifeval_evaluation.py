@@ -211,6 +211,8 @@ def run_experiment(args: DictConfig):
             folder += '_all_layers'
     elif args.steering != 'none':
         folder += f'/instr_plus_{args.steering}_{args.source_layer_idx}'
+        if 'quality_check' in file:
+            folder += '_quality_check'
         if args.steering == 'add_vector':
             folder += f'_{args.steering_weight}'
         if args.apply_to_all_layers:
