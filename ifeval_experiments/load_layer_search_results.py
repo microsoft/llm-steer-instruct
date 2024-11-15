@@ -19,7 +19,7 @@ import re
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-# model_name='gemma-2-2b-it'
+model_name='gemma-2-2b-it'
 # model_name='gemma-2-9b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
@@ -28,7 +28,7 @@ seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
 # instr = 'no_instr_lowercase'
-instr = 'no_instr'
+# instr = 'no_instr'
 
 file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr}.jsonl'
 with open(file, 'r') as f:
