@@ -18,13 +18,13 @@ steering_weights=[$steering_weight]
 # steering=add_vector_conciseness
 steering=add_vector_length_specific
 # steering=none
-include_instructions=true
+include_instructions=false
 length_rep_file=6sentences_50examples_hs.h5
 
 constraint_type=at_most
 # constraint_type=exactly
 
-n_examples=20
+n_examples=50
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 

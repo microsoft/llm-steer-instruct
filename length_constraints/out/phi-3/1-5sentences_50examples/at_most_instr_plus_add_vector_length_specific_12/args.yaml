@@ -16,7 +16,7 @@ n_examples: 50
 steering_weights:
 - 20
 length_rep_file: 6sentences_50examples_hs.h5
-steering: none
+steering: add_vector_length_specific
 source_layer_idx: 12
 apply_to_all_layers: false
 representations_folder: ./representations
