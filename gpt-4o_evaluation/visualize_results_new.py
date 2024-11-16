@@ -57,7 +57,7 @@ for model_name in model_names:
     instr_to_drop = ['language:response_language',] # 'detectable_format:constrained_response', ]
     # if model_name == 'phi':
         # instr_to_drop.append('detectable_format:multiple_sections')
-    # instr_to_drop_for_wo_steering = ['detectable_format:multiple_sections', 'detectable_format:title']
+    #instr_to_drop_for_wo_steering = ['detectable_format:multiple_sections', 'detectable_format:title', 'detectable_format:number_bullet_lists', 'detectable_format:json_format', ]
 
     len_df = len(runs[steering_settings[1]][0]) - len(runs[steering_settings[1]][0][runs[steering_settings[1]][0]['instruction_id_list'].apply(lambda x: any([instr in x for instr in instr_to_drop]))])
 

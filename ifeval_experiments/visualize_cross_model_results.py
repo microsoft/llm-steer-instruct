@@ -20,7 +20,7 @@ from eval.evaluation_main import test_instruction_following_loose
 import plotly
 # %%
 overall_accuracies = {}
-model_names = ['gemma-2-2b' , 'gemma-2-9b']
+model_names = ['gemma-2-2b', 'gemma-2-9b']
 for model_name in model_names:
     single_instr = 'single_instr/all_base_x_all_instr'
     mode = 'no_instr'
@@ -164,7 +164,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-# setting = '<b>w/</b> Instr.'
+setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])
@@ -275,17 +275,20 @@ fig.update_layout(width=300, height=250)
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
-# save plot as pdf
-if setting == '<b>w/o</b> Instr.':
-    fig.write_image(f'./plots_for_paper/cross-model/no_instr.pdf')
-else:
-    fig.write_image(f'./plots_for_paper/cross-model/instr.pdf')
+store=False
 
-# save as png
-if setting == '<b>w/o</b> Instr.':
-    fig.write_image(f'./plots_for_paper/cross-model/no_instr.png', scale=5)
-else:
-    fig.write_image(f'./plots_for_paper/cross-model/instr.png', scale=5)
+if store:
+    # save plot as pdf
+    if setting == '<b>w/o</b> Instr.':
+        fig.write_image(f'./plots_for_paper/cross-model/no_instr.pdf')
+    else:
+        fig.write_image(f'./plots_for_paper/cross-model/instr.pdf')
+
+    # save as png
+    if setting == '<b>w/o</b> Instr.':
+        fig.write_image(f'./plots_for_paper/cross-model/no_instr.png', scale=5)
+    else:
+        fig.write_image(f'./plots_for_paper/cross-model/instr.png', scale=5)
 
 fig.show()
 
@@ -299,14 +302,18 @@ all_categories = [i.split(':')[0] for i in all_instruct]
 # %%
 category_corr = {cat: 0 for cat in all_categories}
 category_corr_steering = {cat: 0 for cat in all_categories}
+category_corr_steering_cross = {cat: 0 for cat in all_categories}
 category_corr_standard = {cat: 0 for cat in all_categories}
 category_corr_instr_plus_steering = {cat: 0 for cat in all_categories}
+category_corr_instr_plus_steering_cross = {cat: 0 for cat in all_categories}
 category_count = {cat: 0 for cat in all_categories}
 
 instr_corr = {instr: 0 for instr in all_instruct}
 instr_corr_steering = {instr: 0 for instr in all_instruct}
+instr_corr_steering_cross = {instr: 0 for instr in all_instruct}
 instr_corr_standard = {instr: 0 for instr in all_instruct}
 instr_corr_instr_plus_steering = {instr: 0 for instr in all_instruct}
+instr_corr_instr_plus_steering_cross = {instr: 0 for instr in all_instruct}
 instr_count = {instr: 0 for instr in all_instruct}
 
 
@@ -316,29 +323,38 @@ for i, row in results_df.iterrows():
         category_count[category] += 1
         category_corr[category] += corr
         corr_steering = results_df_steering.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
+        corr_steering_cross = results_df_steering_cross.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
         corr_standard = results_df_standard.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
         corr_instr_plus_steering = results_df_instr_plus_steering.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
+        corr_instr_plus_steering_cross = results_df_instr_plus_steering_cross.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
         category_corr_steering[category] += corr_steering
+        category_corr_steering_cross[category] += corr_steering_cross
         category_corr_standard[category] += corr_standard
         category_corr_instr_plus_steering[category] += corr_instr_plus_steering
+        category_corr_instr_plus_steering_cross[category] += corr_instr_plus_steering_cross
 
         instr_count[instr] += 1
         instr_corr[instr] += corr
         instr_corr_steering[instr] += corr_steering
+        instr_corr_steering_cross[instr] += corr_steering_cross
         instr_corr_standard[instr] += corr_standard
         instr_corr_instr_plus_steering[instr] += corr_instr_plus_steering
+        instr_corr_instr_plus_steering_cross[instr] += corr_instr_plus_steering_cross
 
 
 category_acc = {cat: category_corr[cat] / category_count[cat] for cat in all_categories}
 category_acc_steering = {cat: category_corr_steering[cat] / category_count[cat] for cat in all_categories}
+category_acc_steering_cross = {cat: category_corr_steering_cross[cat] / category_count[cat] for cat in all_categories}
 category_acc_standard = {cat: category_corr_standard[cat] / category_count[cat] for cat in all_categories}
 category_acc_instr_plus_steering = {cat: category_corr_instr_plus_steering[cat] / category_count[cat] for cat in all_categories}
+category_acc_instr_plus_steering_cross = {cat: category_corr_instr_plus_steering_cross[cat] / category_count[cat] for cat in all_categories}
 
 instr_acc = {instr: instr_corr[instr] / instr_count[instr] for instr in all_instruct}
 instr_acc_steering = {instr: instr_corr_steering[instr] / instr_count[instr] for instr in all_instruct}
+instr_acc_steering_cross = {instr: instr_corr_steering_cross[instr] / instr_count[instr] for instr in all_instruct}
 instr_acc_standard = {instr: instr_corr_standard[instr] / instr_count[instr] for instr in all_instruct}
 instr_acc_instr_plus_steering = {instr: instr_corr_instr_plus_steering[instr] / instr_count[instr] for instr in all_instruct}
-
+instr_acc_instr_plus_steering_cross = {instr: instr_corr_instr_plus_steering_cross[instr] / instr_count[instr] for instr in all_instruct}
 
 # make histogram of category accuracie
 df = pd.DataFrame({'Category': list(category_acc.keys()), 'Accuracy': list(category_acc.values()), 'Setting': '<b>w/o</b> Instr.'})
@@ -346,12 +362,13 @@ df_steering = pd.DataFrame({'Category': list(category_acc_steering.keys()), 'Acc
 df_steering_cross = pd.DataFrame({'Category': list(category_acc_steering_cross.keys()), 'Accuracy': list(category_acc_steering_cross.values()), 'Setting': '<b>w/o</b> Instr. + Cross Steering'})
 df_standard = pd.DataFrame({'Category': list(category_acc_standard.keys()), 'Accuracy': list(category_acc_standard.values()), 'Setting': '<b>w/</b> Instr.'})
 df_instr_plus_steering = pd.DataFrame({'Category': list(category_acc_instr_plus_steering.keys()), 'Accuracy': list(category_acc_instr_plus_steering.values()), 'Setting': '<b>w/</b> Instr. + Steering'})
-df = pd.concat([df, df_steering, df_standard, df_instr_plus_steering])
+df_instr_plus_steering_cross = pd.DataFrame({'Category': list(category_acc_instr_plus_steering_cross.keys()), 'Accuracy': list(category_acc_instr_plus_steering_cross.values()), 'Setting': '<b>w/</b> Instr. + Cross Steering'})
+df = pd.concat([df, df_steering, df_steering_cross, df_standard, df_instr_plus_steering, df_instr_plus_steering_cross])
 fig = px.bar(df, x='Category', y='Accuracy', color='Setting', barmode='group')
 # set title
 fig.update_layout(title_text=f'Accuracy of {model_name} on IFEval (single-instruction only)')
 # remove legend
-fig.update_layout(showlegend=False)
+fig.update_layout(showlegend=True)
 # resize plot
 #fig.update_layout(width=1000, height=600)
 fig.show()
@@ -362,11 +379,15 @@ df = pd.DataFrame({'instruction': list(instr_acc.keys()), 'Accuracy': list(instr
 df = df.sort_values(by='instruction', ascending=False)
 df_steering = pd.DataFrame({'instruction': list(instr_acc_steering.keys()), 'Accuracy': list(instr_acc_steering.values()), 'Setting': '<b>w/o</b> Instr. + Steering'})
 df_steering = df_steering.sort_values(by='instruction', ascending=False)
+df_steering_cross = pd.DataFrame({'instruction': list(instr_acc_steering_cross.keys()), 'Accuracy': list(instr_acc_steering_cross.values()), 'Setting': '<b>w/o</b> Instr. + Cross Steering'})
+df_steering = df_steering.sort_values(by='instruction', ascending=False)
 df_standard = pd.DataFrame({'instruction': list(instr_acc_standard.keys()), 'Accuracy': list(instr_acc_standard.values()), 'Setting': '<b>w/</b> Instr.'})
 df_standard = df_standard.sort_values(by='instruction', ascending=False)
 df_instr_plus_steering = pd.DataFrame({'instruction': list(instr_acc_instr_plus_steering.keys()), 'Accuracy': list(instr_acc_instr_plus_steering.values()), 'Setting': '<b>w/</b> Instr. + Steering'})
 df_instr_plus_steering = df_instr_plus_steering.sort_values(by='instruction', ascending=False)
-df = pd.concat([df, df_steering, df_standard, df_instr_plus_steering])
+df_instr_plus_steering_cross = pd.DataFrame({'instruction': list(instr_acc_instr_plus_steering_cross.keys()), 'Accuracy': list(instr_acc_instr_plus_steering_cross.values()), 'Setting': '<b>w/</b> Instr. + Cross Steering'})
+df_instr_plus_steering = df_instr_plus_steering.sort_values(by='instruction', ascending=False)
+df = pd.concat([df, df_steering, df_steering_cross, df_standard, df_instr_plus_steering, df_instr_plus_steering_cross])
 
 fig = px.bar(df, x='instruction', y='Accuracy', color='Setting', barmode='group')
 # set title
@@ -374,7 +395,7 @@ fig.update_layout(title_text=f'Accuracy of {model_name} on IFEval (single-instru
 # tilt the x-axis labels
 fig.update_xaxes(tickangle=45)
 # remove legend
-fig.update_layout(showlegend=False)
+fig.update_layout(showlegend=True)
 fig.show()
 
 # %%
@@ -535,7 +556,9 @@ overall_accuracy = [
 # filtered_df = results_df_instr_plus_steering[results_df_instr_plus_steering.instruction_id_list.apply(lambda x: 'detectable_format:json_format' in x)]
 # filtered_df = results_df_standard[results_df_standard.instruction_id_list.apply(lambda x: 'detectable_format:json_format' in x)]
 # filtered_df = results_df_steering[results_df_steering.instruction_id_list.apply(lambda x: 'detectable_format:json_format' in x)]
-filtered_df = results_df_steering[results_df_steering.instruction_id_list.apply(lambda x: 'detectable_format:json_format' in x)]
+
+df = results_df_steering_cross
+filtered_df = df[df.instruction_id_list.apply(lambda x: 'change_case:english_lowercase' in x)]
 
 # %%
 for i, row in filtered_df.iterrows():

@@ -163,7 +163,7 @@ def run_experiment(args: DictConfig):
         if args.source_layer_idx == -1:
             instr_included = 'instr' if args.include_instructions else 'no_instr'
             # use best layer
-            file = f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5'
+            file = f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_{instr_included}.h5'
         else:
             file = f'{folder}/pre_computed_ivs_layer_{args.source_layer_idx}.h5'
         pre_computed_ivs = pd.read_hdf(file, key='df')
@@ -301,6 +301,8 @@ def run_experiment(args: DictConfig):
         folder += '_w_length_instr'
     if args.steering != 'none':
         folder += f'/{args.steering}_{args.source_layer_idx}'
+        if 'quality_check' in file:
+            folder += '_quality_check'
         if args.steering == 'add_vector':
             folder += f'_{args.steering_weight}'
     else:
