@@ -3,13 +3,13 @@
 model_name="phi-3"
 # model_name="gemma-2-2b-it"
 model_name="mistral-7b-instruct"
-model_name="gemma-2-9b-it"
+model_name="gemma-2-9b"
 
 gpu_req="a100_80gb:1"
 # gpu_req="v100:1"
 # gpu_req="a100-pcie-40gb:1"
 # gpu_req="rtx_4090:1"
-#  gpu_req="rtx_3090:1"
+# gpu_req="rtx_3090:1"
 
 # arguments
 dry_run=false
@@ -17,7 +17,7 @@ dry_run=false
 source_layer_idx=-1
 steering=adjust_rs
 include_instructions=true
-cross_model_steering=false
+cross_model_steering=true
 nonparametric_only=true
 
 if [ "$include_instructions" = true ]; then
