@@ -2,8 +2,8 @@
 
 model_name="phi-3"
 # model_name="gemma-2-2b-it"
-model_name="mistral-7b-instruct"
-model_name="gemma-2-9b"
+# model_name="mistral-7b-instruct"
+model_name="gemma-2-2b"
 
 gpu_req="a100_80gb:1"
 # gpu_req="v100:1"
