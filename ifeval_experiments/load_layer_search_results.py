@@ -14,16 +14,17 @@ import numpy as np
 from eval.evaluation_main import test_instruction_following_loose
 from collections import Counter
 import re
-
+import torch
+from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 model_name='gemma-2-2b'
 # model_name='gemma-2-9b-it'
-# model_name = 'phi-3'
+model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 10
+n_examples = 8
 seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
@@ -129,10 +130,37 @@ elif model_name == 'mistral-7b-instruct':
     model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
 tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)
 
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+
+device = 'mps'
+perplexity_model = GPT2LMHeadModel.from_pretrained('gpt2')
+perplexity_model.to(device)
+perplexity_tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+def compute_perplexity(text):
+    # Tokenize the input text
+    inputs = tokenizer(text, return_tensors='pt')
+    input_ids = inputs['input_ids'].to(device)
+
+    # Compute the log probabilities
+    with torch.no_grad():
+        outputs = perplexity_model(input_ids, labels=input_ids)
+        loss = outputs.loss
+        log_likelihood = -loss.item() * input_ids.size(1)
+
+    # Compute the perplexity
+    perplexity = torch.exp(torch.tensor(log_likelihood / input_ids.size(1)))
+    return perplexity.item()
+
+
+
 # %%
 
 broken_outputs = []
 accuracy_with_quality_check = []
+perplexities = []
+
+p_bar = tqdm(total=len(results_df))
 for i, r in results_df.iterrows():
     # compute accuracy
 
@@ -175,6 +203,12 @@ for i, r in results_df.iterrows():
         # update follow_all_instructions
         results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
 
+    # compute perplexity
+    perplexities.append(compute_perplexity(response))
+    p_bar.update(1)
+
+
+results_df['perplexity'] = perplexities
 results_df['broken_output'] = broken_outputs
 
 # %%
@@ -216,6 +250,25 @@ optimal_layers_df['new_optimal_layer'] = list(new_optimal_layers.values())
 # add column with difference between optimal_layer and new_optimal_layer
 optimal_layers_df['diff'] = optimal_layers_df.optimal_layer - optimal_layers_df.new_optimal_layer
 optimal_layers_df
+
+# %%
+# make scatter plot of perplexity vs broken_output
+fig = px.scatter(results_df, x='perplexity', y='broken_output', hover_data=['layer', 'follow_all_instructions'])
+fig.show()
+
+# compute correlation between perplexity and broken_output
+results_df[['perplexity', 'broken_output']].corr()
+
+#%% 
+# sort df by perplexity
+sorted_results_df = results_df.sort_values(by='perplexity', ascending=False)
+# print top 10 highest perplexity that are not broken
+for i, r in sorted_results_df.iterrows():
+    if r.broken_output == 1 and r.perplexity < 0.1 :
+        print(f'Perplexity: {r.perplexity} | Broken output: {r.broken_output}\nPrompt: {r.prompt} \nResponse: {r.response}\n======================\n')
+    
+    
+
 
 # %%
 # =============================================================================
