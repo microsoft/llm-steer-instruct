@@ -14,8 +14,8 @@ dry_run=false
 source_layer_idx=-1
 steering=adjust_rs
 
-include_instructions=true
-include_length_instr=true
+include_instructions=false
+include_length_instr=false
 
 nonparametric_only=true
 
@@ -34,13 +34,13 @@ fi
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
 
-sbatch --output="${HOME}/bsub_logs/steering/format/${model_name}-${steering}-instr-${include_instructions}-cross-${cross_model_steering}" \
+sbatch --output="${HOME}/bsub_logs/steering/composition/${model_name}-${steering}-instr-${include_instructions}-${include_length_instr}" \
     --job-name="f-${model_name}" \
     -n 4 \
     --gpus=1 \
     --gpus="${gpu_req}" \
     --mem-per-cpu=25G \
     --time=23:59:00 \
---wrap="python composition/nonpar_plus_length.py model_name=$model_name data_path=$data_path source_layer_idx=$source_layer_idx steering=$steering  nonparametric_only=$nonparametric_only cross_model_steering=$cross_model_steering dry_run=$dry_run max_generation_length=$max_generation_length include_length_instr=$include_length_instr
+--wrap="python composition/nonpar_plus_length.py model_name=$model_name data_path=$data_path source_layer_idx=$source_layer_idx steering=$steering  nonparametric_only=$nonparametric_only dry_run=$dry_run max_generation_length=$max_generation_length include_length_instr=$include_length_instr include_instructions=$include_instructions
 "
 

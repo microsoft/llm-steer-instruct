@@ -1,16 +1,16 @@
 # %%
 import os
+import sys
 if 'Users' in os.getcwd():
     os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
+    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
     print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
+elif 'cluster' in os.getcwd():
+    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
+    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/ifeval_experiments')
     print('We\'re on a sandbox machine')
-
-import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
-sys.path.append('/home/t-astolfo/t-astolfo/ifeval_experiments')
 
 import numpy as np
 import torch
@@ -79,15 +79,13 @@ def direction_projection_hook(
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
+    # os.chdir(args.project_dir)
 
     random.seed(args.seed)
 
     # Some environment variables
     device = args.device
     print(f"Using device: {device}")
-
-    transformer_cache_dir = None
 
     # load the data
     with open(args.data_path) as f:
@@ -136,7 +134,7 @@ def run_experiment(args: DictConfig):
     else:
         hf_model = True
         print('Using HF model')
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     out_lines = []
@@ -175,8 +173,8 @@ def run_experiment(args: DictConfig):
         raise ValueError('Only single_instr is supported for now')
     
     # load length representations
-    file = f'{args.project_dir}/{args.length_representations_folder}/{args.model_name}/{args.length_rep_file}'
-    results_df = pd.read_hdf(file, key='df')
+    length_file = f'{args.project_dir}/../{args.length_representations_folder}/{args.model_name}/{args.length_rep_file}'
+    results_df = pd.read_hdf(length_file, key='df')
     
     results_df = results_df.sort_values(by='length_constraint')
     
