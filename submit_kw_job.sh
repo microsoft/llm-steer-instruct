@@ -20,7 +20,7 @@ source_layer_idx=24
 steering_weight=80
 steering=add_vector
 # steering=0
-include_instructions=true
+include_instructions=false
 
 specific_instruction=existence
 # specific_instruction=existence_validation
