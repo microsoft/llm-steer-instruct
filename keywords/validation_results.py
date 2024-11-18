@@ -26,7 +26,7 @@ model_name = 'phi-3'
 folder = f'./keywords/out/{model_name}/forbidden_validation/'
 # folder = f'./keywords/out/{model_name}/existence_validation/'
 # folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
-file_name = 'out_gen_data.jsonl'
+file_name = 'out_gen_data_perplexity.jsonl'
 subfolders = os.listdir(folder)
 result_dict = {}
 paths_dict = {}
@@ -94,7 +94,7 @@ def compute_perplexity(text):
 # =============================================================================
 
 skip = False
-if 'perplexity' in result_dict[(-1, -1)].columns:
+if 'perplexity' in list(result_dict.values())[0].columns:
     skip = True
 
 if not skip:
@@ -103,7 +103,7 @@ if not skip:
     lengths_dict = {}
     perplexitiy_dict = {}
 
-    total = len(result_dict) * len(result_dict[(-1, -1)])
+    total = len(result_dict) * len(list(result_dict.values())[0])
     p_bar = tqdm(total=total)
 
     for key, value in list(result_dict.items()):
@@ -151,19 +151,24 @@ if not skip:
 
 
 # %%
+accuracy_dict = {}
+broken_outputs_dict = {}
+lengths_dict = {}
+low_perplexity_dict = {}
+for key, value in list(result_dict.items()):
+    value['low_perplexity'] = value['perplexity'] < 2.5
+    low_perplexity_dict[key] = value['low_perplexity'].mean()
+    accuracy_dict[key] = value['follow_all_instructions'].mean()
+    broken_outputs_dict[key] = value['broken_output'].mean()
+    lengths_dict[key] = value['length'].mean()
+# %%
 accuracy_dict
 # %%
 broken_outputs_dict
 # %%
 lengths_dict
 # %%
-low_perplexity_dict = {}
-for key, value in list(result_dict.items()):
-    value['low_perplexity'] = value['perplexity'] < 2.5
-    low_perplexity_dict[key] = value['low_perplexity'].mean()
-# %%
 low_perplexity_dict
-
 # %%
 df = result_dict[(-1, -1)]
 filtered_df = df[df.broken_output == 1]   
@@ -274,7 +279,7 @@ fig.add_trace(go.Scatter(
     y=perplexities,
     mode='markers',
     text=x_labels,
-    name='Accuracy vs Broken Outputs'
+    name='Validation Runs'
 ))
 
 # Highlight the point with broken_output value 0 and the largest accuracy
@@ -285,17 +290,52 @@ if max_accuracy_idx is not None:
         mode='markers',
         marker=dict(color='red', size=9),
         text=[x_labels[max_accuracy_idx]],
-        name='Max Accuracy with 0 Broken Outputs'
+        name='Run with Max Accuracy with 0 Low-Perplexity Outputs'
     ))
+
+pretty_model_name = 'Phi-3' if model_name == 'phi-3' else 'Gemma'
+main_title = 'Validation Acc. vs Low Perplexity:' if model_name == 'phi-3' else 'Validation Acc. vs Low Perpl.:'
 
 # add title and labels
 fig.update_layout(
-    title=f'Accuracy vs Broken Outputs for {model_name} on Keyword {task}',
+    title=f'{main_title} {pretty_model_name} on {task}',
     xaxis_title='Accuracy',
-    yaxis_title='Broken Outputs'
+    yaxis_title='Fract. of Low-perpl. Outputs'
 )
 
+# make title smaller
+fig.update_layout(title_font_size=16)
+
+# add label to the red point
+if max_accuracy_idx is not None:
+    fig.add_annotation(
+        x=accuracies[max_accuracy_idx],
+        y=perplexities[max_accuracy_idx],
+        text=x_labels[max_accuracy_idx].replace('_', ', ').replace('W', 'c='),
+        showarrow=True,
+        arrowhead=1
+    )
+
+# resize plot
+fig.update_layout(width=450, height=275)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-.65,
+    xanchor='right',
+    x=1
+))
+
+# showlegend=False
 fig.show()
+
+# save the plot as pdf
+fig.write_image(f'./plots_for_paper/keywords/validation/{model_name}_{task}.pdf')
 
 # %%
 # make scatter plot of the low perplexity values and broken outputs
@@ -327,4 +367,118 @@ for i, r in filtered_df.iterrows():
     print(f'Perplexity: {r["perplexity"]}')
     print(r['response'])
     print('---')
+# %%
+# =============================================================================
+# Plot for paper: subtracting inclusion vector vs adding exclusion vector
+# =============================================================================
+
+model_name = 'phi-3'
+# model_name = 'gemma-2-2b-it'
+folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
+file_name = 'out_gen_data_perplexity.jsonl'
+subfolders = os.listdir(folder)
+result_dict_exclusion = {}
+paths_dict = {}
+for subfolder in subfolders:
+    print(subfolder)
+    if 'adjust' in subfolder:
+        continue
+    if subfolder == 'no_instr' :
+        layer = -1
+        weight = -1
+    else:
+        layer = subfolder.split('_')[2]
+        weight = subfolder.split('_')[5]
+    print(os.listdir(folder + subfolder))
+    if file_name not in os.listdir(folder + subfolder):
+        print(f'{subfolder} does not have the file {file_name}')
+        continue
+    with open(folder + subfolder + f'/{file_name}' ) as f:
+        results = [json.loads(line) for line in f]
+    results_df = pd.DataFrame(results)
+    result_dict_exclusion[(int(layer), int(weight))] = results_df
+    paths_dict[(int(layer), int(weight))] = folder + subfolder + f'/{file_name}'
+
+# %%
+accuracy_dict_exclusion = {}
+broken_outputs_dict_exclusion = {}
+lengths_dict_exclusion = {}
+low_perplexity_dict_exclusion = {}
+
+for key, value in list(result_dict_exclusion.items()):
+    value['low_perplexity'] = value['perplexity'] < 2.5
+    low_perplexity_dict_exclusion[key] = value['low_perplexity'].mean()
+    accuracy_dict_exclusion[key] = value['follow_all_instructions'].mean()
+    broken_outputs_dict_exclusion[key] = value['broken_output'].mean()
+    lengths_dict_exclusion[key] = value['length'].mean()
+
+
+# %%
+# make scatter plot of the accuracy values and low perplexity for low_perplexity_dict_exclusion and low_perplexity_dict
+
+
+fig = go.Figure()
+
+# Add all points
+fig.add_trace(go.Scatter(
+    x=accuracies,
+    y=perplexities,
+    mode='markers',
+    text=x_labels,
+    name='Subtraction of Inclusion Vector',
+    marker=dict(color=plotly.colors.qualitative.Plotly[2])
+))
+
+# Add all points for exclusion
+accuracies_exclusion = []
+broken_outputs_exclusion = []
+perplexities_exclusion = []
+x_labels_exclusion = []
+for (layer, weight), accuracy in accuracy_dict_exclusion.items():
+    accuracies_exclusion.append(accuracy)
+    broken_outputs_exclusion.append(broken_outputs_dict_exclusion[(layer, weight)])
+    perplexities_exclusion.append(low_perplexity_dict_exclusion[(layer, weight)])
+    x_labels_exclusion.append(f'L{layer}_W{weight}')
+
+fig.add_trace(go.Scatter(
+    x=accuracies_exclusion,
+    y=perplexities_exclusion,
+    mode='markers',
+    text=x_labels_exclusion,
+    name='Addition of Exclusion Vector'
+))
+
+# add title and labels
+fig.update_layout(
+    title=f'Validation Acc. vs Low Perplexity: Phi-3 on Exclusion',
+    xaxis_title='Accuracy',
+    yaxis_title='Fract. of Low-perpl. Outputs'
+)
+
+# make title smaller
+fig.update_layout(title_font_size=16)
+
+# resize plot
+fig.update_layout(width=450, height=275)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+# move legend to the bottom
+fig.update_layout(legend=dict(
+    orientation='h',
+    yanchor='bottom',
+    y=-.65,
+    xanchor='right',
+    x=.75
+))
+
+# showlegend=False
+
+# store the plot as pdf
+fig.write_image(f'./plots_for_paper/keywords/validation/add_exclusion_vs_subtract_inclusion.pdf')
+
+fig.show()
+
+
 # %%
