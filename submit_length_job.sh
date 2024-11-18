@@ -16,13 +16,14 @@ source_layer_idx=12
 steering_weight=20
 steering_weights=[$steering_weight]
 # steering=add_vector_conciseness
-steering=add_vector_length_specific
+# steering=add_vector_length_specific
+steering=adjust_rs_length_specific
 # steering=none
 include_instructions=false
 length_rep_file=6sentences_50examples_hs.h5
 
-constraint_type=at_most
-# constraint_type=exactly
+# constraint_type=at_most
+constraint_type=exactly
 
 n_examples=50
 #   --gpus="${gpu_req}" \
