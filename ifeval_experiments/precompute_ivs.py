@@ -45,7 +45,7 @@ model_name = 'gemma-2-9b'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_quality_check_no_instr'
+search_method = 'validation_accuracy_w_perplexity_no_instr'
 seed=42
 n_examples = 6
 
@@ -53,13 +53,18 @@ rows = []
 
 if 'validation_accuracy' in search_method:
 
+    if 'perplexity' in search_method:
+        w_perplexity = '_with_perplexity'
+    else:
+        w_perplexity = ''
+
     if 'no_instr' in search_method:
         instr_included = 'no_instr'
     else:
         instr_included = 'instr'
     print(f'INSTR: {instr_included}')
     folder = 'ifeval_experiments/layer_search_out'
-    file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{instr_included}.jsonl'
+    file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr_included}.jsonl'
     with open(file, 'r') as f:
         results = [json.loads(line) for line in f]
 
@@ -116,7 +121,8 @@ if 'validation_accuracy' in search_method:
                 validation_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
 
         validation_df['broken_output'] = broken_outputs
-                    
+
+        
     for instr in all_instructions:
         if instr not in validation_df.single_instruction_id.unique():
             optimal_layers[instr] = -1
@@ -128,6 +134,17 @@ if 'validation_accuracy' in search_method:
             df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'broken_output']].groupby('layer').mean()
             # set follow_all_instructions to in df_group_by_layer when broken_output is > 0
             df_group_by_layer.loc[df_group_by_layer.broken_output > 0, 'follow_all_instructions'] = 0
+            max_accuracy = df_group_by_layer.follow_all_instructions.max()
+            optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
+            optimal_layers[instr] = optimal_layer[0]
+        
+        elif 'perplexity' in search_method:
+            # add boolean column that is true when perplexity is greater than 0.1
+            instr_df['large_perplexity'] = instr_df.perplexity > 0.1
+
+            # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
+            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'large_perplexity']].groupby('layer').mean()
+            df_group_by_layer.loc[df_group_by_layer.large_perplexity > 0, 'follow_all_instructions'] = 0
             max_accuracy = df_group_by_layer.follow_all_instructions.max()
             optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
             optimal_layers[instr] = optimal_layer[0]
@@ -245,6 +262,8 @@ if specific_layer is not None:
 elif 'validation_accuracy' in search_method:
     if 'quality_check' in search_method:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_{instr_included}.h5', key='df', mode='w')
+    elif 'perplexity' in search_method:
+        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_{instr_included}.h5', key='df', mode='w')
     else:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5', key='df', mode='w')
 elif search_method == 'cosine_similarity':

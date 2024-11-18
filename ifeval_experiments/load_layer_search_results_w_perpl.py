@@ -18,18 +18,17 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'mistral-7b-instruct'
+model_name = 'gemma-2-9b-it'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='gemma-2-2b'
+# model_name='gemma-2-2b'
 # model_name='gemma-2-9b-it'
-model_name = 'phi-3'
+# model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 8
+n_examples = 6
 seed = 42
-instr = 'instr_detectable_format:multiple_sections'
-instr = 'instr'
+# instr = 'instr'
 # instr = 'no_instr_lowercase'
-# instr = 'no_instr'
+instr = 'no_instr'
 
 w_perplexity = '_with_perplexity'
 
@@ -38,175 +37,18 @@ with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
 results_df = pd.DataFrame(results)
-# %%
-
-results_df[['layer', 'follow_all_instructions']].groupby('layer').mean()
 
 # %%
-# =============================================================================
-# get instruction-specific optimal layer
-# =============================================================================
-
 all_instructions = results_df.single_instruction_id.unique()
 
-optimal_layers = { instr: -1 for instr in all_instructions }
-
-for instr in all_instructions:
-    instr_df = results_df[results_df.single_instruction_id == instr]
-    max_accuracy = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions.max()
-    optimal_layer = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean()[instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions == max_accuracy].index
-    print(f'Instruction: {instr} | Optimal layer: {optimal_layer}')
-    optimal_layers[instr] = optimal_layer[0]
-# %%
-optimal_layers
-# %%
-# compute mean of column follow_all_instructions using optimal layer
-accuracy_values = []
-for instr in all_instructions:
-    instr_df = results_df[results_df.single_instruction_id == instr]
-    optimal_layer = optimal_layers[instr]
-    accuracy_values.append(instr_df[instr_df.layer == optimal_layer].follow_all_instructions.mean())
-# %%
-sum(accuracy_values) / len(accuracy_values)
-# %%
-# plot distribution of optimal layers
-optimal_layers_values = list(optimal_layers.values())
-fig = px.histogram(x=optimal_layers_values, nbins=30)
-fig.show()
-# %%
-# print instructions for which the optimal layer is -1
-instrs_no_optimal_layer = []
-for instr in optimal_layers:
-    if optimal_layers[instr] == -1:
-        print(instr)
-        instrs_no_optimal_layer.append(instr)
-
-# %%
-# print some outputs
-#instr = instrs_no_optimal_layer[2]
-instr = [i for i in all_instructions if 'title' in i][0]
-instr_df = results_df[results_df.single_instruction_id == instr]
-instr_df = instr_df[instr_df.layer == 23]
-for i, r in instr_df.iterrows():
-    print(f"uid: {r.uid} | layer: {r.layer} | follow_all_instructions: {r.follow_all_instructions}")
-    print(f'Prompt: {r.prompt}')
-    print(f'Response: {r.response}')
-    print('-----------------------')
-# %%
-# =============================================================================
-# plot accuracy per layer
-# =============================================================================
-
-
-# make line plot of the accuracy per layer
-# instruction = all_instructions[2]
-
-fig = go.Figure()
-for instruction in all_instructions:
-    if 'language' in instruction:
-        continue
-    layer_accuracy = results_df[results_df.single_instruction_id == instruction][['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions
-    fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name=instruction))
-
-# add title
-fig.update_layout(title_text='Layer Selection: Accuracy per Layer')
-
-# add axis labels
-fig.update_xaxes(title_text='Layer')
-fig.update_yaxes(title_text='Accuracy')
-fig.show()
-# %%
-# =============================================================================
-# check for broken outputs
-# =============================================================================
-from transformers import AutoTokenizer
-with open('./hf_token.txt') as f:
-    hf_token = f.read()
-if model_name == 'phi-3':
-    model_name_hf = 'microsoft/Phi-3-mini-4k-instruct'
-elif model_name == 'gemma-2-2b-it':
-    model_name_hf = 'google/gemma-2-2b-it'
-elif model_name == 'gemma-2-9b-it':
-    model_name_hf = 'google/gemma-2-9b-it'
-elif model_name == 'mistral-7b-instruct':
-    model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
-tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)
-
-
-# %%
-
-broken_outputs = []
-accuracy_with_quality_check = []
-perplexities = []
-
-p_bar = tqdm(total=len(results_df))
-for i, r in results_df.iterrows():
-    # compute accuracy
-
-    response  = r['response']
-    tokens = tokenizer.tokenize(response)
-    counter = Counter(tokens)
-    #remove '▁the' '▁' from the counter
-    if '▁the' in counter:
-        del counter['▁the']
-    if '▁' in counter:
-        del counter['▁']
-    # take the number of occurrences of the most common token
-    most_common = counter.most_common(1)[0][1]
-    # get most common token
-    if most_common > 50:
-        broken_outputs.append(1)
-    else:
-        # if r.single_instruction_id == 'detectable_format:multiple_sections' and r.layer == 8:
-        #     print(f'layer: {r.layer}')    
-        #     print(f'Broken output: {response}')
-        #     # print most common token
-        #     print(counter.most_common(1))
-        broken_outputs.append(0)
-
-    # fix problem with capital word frequency
-    if r.single_instruction_id == 'change_case:capital_word_frequency' and r.layer == -1:
-        if 'less than' in r.prompt or 'at most' in r.prompt:
-            relation = 'less than'
-        elif 'more than' in r.prompt or 'at least' in r.prompt:
-            relation = 'at least'
-        # parse the last number in the prompt
-        num = int(re.findall(r'\d+', r.prompt)[-1])
-
-        new_kwargs = [{"capital_relation": relation,"capital_frequency": num}]
-        r.kwargs = new_kwargs
-        prompt_to_response = {}
-        prompt_to_response[r['prompt']] = r['response']
-        output = test_instruction_following_loose(r, prompt_to_response)
-        # print(f'=============\nchanging follow_all_instructions from {r.follow_all_instructions} to {output.follow_all_instructions}\nfor output:{r.response}\nkargs: {r.kwargs}')
-        # update follow_all_instructions
-        results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
-
-    p_bar.update(1)
-
-
-results_df['perplexity'] = perplexities
-results_df['broken_output'] = broken_outputs
-
-# %%
-# for each instruction, make a line plot of accuracy and avg broken output per layer
-for instruction in all_instructions:
-    if 'language' in instruction:
-        continue
-    fig = go.Figure()
-    layer_accuracy = results_df[results_df.single_instruction_id == instruction][['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions
-    fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name='accuracy'))
-    layer_broken_output = results_df[results_df.single_instruction_id == instruction][['layer', 'broken_output']].groupby('layer').mean().broken_output
-    fig.add_trace(go.Scatter(x=layer_broken_output.index, y=layer_broken_output, mode='lines+markers', name='broken_output'))
-    fig.update_layout(title_text=f' Accuracy and Broken Output  for {instruction}')
-    fig.update_xaxes(title_text='Layer')
-
-    fig.show()
+# add boolean column that is true when perplexity is greater than 0.1
+results_df['large_perplexity'] = results_df.perplexity > 0.1
 
 # %%
 # get update optimal layers for each instruction
 optimal_layers = { instr: -1 for instr in all_instructions }
 new_optimal_layers = { instr: -1 for instr in all_instructions }
+new_optimal_layers_perpl = { instr: -1 for instr in all_instructions }
 for instr in all_instructions:
     instr_df = results_df[results_df.single_instruction_id == instr]
     df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'broken_output']].groupby('layer').mean()
@@ -219,14 +61,40 @@ for instr in all_instructions:
     max_accuracy = df_group_by_layer.follow_all_instructions.max()
     optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
     new_optimal_layers[instr] = optimal_layer[0]
-# %%
+
+    # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
+    df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'large_perplexity']].groupby('layer').mean()
+    df_group_by_layer.loc[df_group_by_layer.large_perplexity > 0, 'follow_all_instructions'] = 0
+    max_accuracy = df_group_by_layer.follow_all_instructions.max()
+    optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
+    new_optimal_layers_perpl[instr] = optimal_layer[0]
+    
+
 # make df with two columns: optimal_layer and new_optimal_layer
 optimal_layers_df = pd.DataFrame(list(optimal_layers.items()), columns=['instruction', 'optimal_layer'])
 optimal_layers_df['new_optimal_layer'] = list(new_optimal_layers.values())
+optimal_layers_df['new_optimal_layer_perpl'] = list(new_optimal_layers_perpl.values())
 
 # add column with difference between optimal_layer and new_optimal_layer
-optimal_layers_df['diff'] = optimal_layers_df.optimal_layer - optimal_layers_df.new_optimal_layer
+optimal_layers_df['diff'] = optimal_layers_df.new_optimal_layer - optimal_layers_df.new_optimal_layer_perpl
 optimal_layers_df
+
+# %%
+# for each instruction, make a line plot of accuracy and avg broken output and perplexity per layer
+for instruction in all_instructions:
+    if 'language' in instruction:
+        continue
+    fig = go.Figure()
+    layer_accuracy = results_df[results_df.single_instruction_id == instruction][['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions
+    fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name='accuracy'))
+    layer_broken_output = results_df[results_df.single_instruction_id == instruction][['layer', 'broken_output']].groupby('layer').mean().broken_output
+    fig.add_trace(go.Scatter(x=layer_broken_output.index, y=layer_broken_output, mode='lines+markers', name='broken_output'))
+    layer_perplexity = results_df[results_df.single_instruction_id == instruction][['layer', 'large_perplexity']].groupby('layer').mean().large_perplexity
+    fig.add_trace(go.Scatter(x=layer_perplexity.index, y=layer_perplexity, mode='lines+markers', name='large_perplexity_ratio'))
+    fig.update_layout(title_text=f' Accuracy and Broken Output  for {instruction}')
+    fig.update_xaxes(title_text='Layer')
+
+    fig.show()
 
 # %%
 # make scatter plot of perplexity vs broken_output
@@ -241,8 +109,9 @@ results_df[['perplexity', 'broken_output']].corr()
 sorted_results_df = results_df.sort_values(by='perplexity', ascending=False)
 # print top 10 highest perplexity that are not broken
 for i, r in sorted_results_df.iterrows():
-    if r.broken_output == 1 and r.perplexity < 0.1 :
-        print(f'Perplexity: {r.perplexity} | Broken output: {r.broken_output}\nPrompt: {r.prompt} \nResponse: {r.response}\n======================\n')
+    #if r.broken_output == 1 and r.perplexity < 0.1 :
+    if r.single_instruction_id == 'detectable_format:multiple_sections' and r.layer == 28:
+        print(f'Perplexity: {r.perplexity} | Broken output: {r.broken_output} | Layer {r.layer}\nPrompt: {r.prompt} \nResponse: {r.response}\n======================\n')
     
     
 
