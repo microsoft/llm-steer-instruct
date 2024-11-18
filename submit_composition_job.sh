@@ -15,7 +15,7 @@ source_layer_idx=-1
 steering=adjust_rs
 
 include_instructions=true
-include_length_instr=false
+
 
 nonparametric_only=true
 
@@ -31,7 +31,8 @@ else
     max_generation_length=2048
 fi
 
-include_instructions=false
+include_instructions=true
+include_length_instr=true
 
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \

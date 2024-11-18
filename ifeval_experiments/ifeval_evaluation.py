@@ -110,7 +110,7 @@ def run_experiment(args: DictConfig):
         if args.source_layer_idx == -1:
             instr_included = 'no_instr' if 'no_instr' in args.data_path else 'instr' 
             # use best layer
-            file = f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_{instr_included}.h5'
+            file = f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_{instr_included}.h5'
         else:
             file = f'{folder}/pre_computed_ivs_layer_{args.source_layer_idx}.h5'
         pre_computed_ivs = pd.read_hdf(file, key='df')
@@ -205,6 +205,8 @@ def run_experiment(args: DictConfig):
         folder += f'/{args.steering}_{args.source_layer_idx}'
         if 'quality_check' in file:
             folder += '_quality_check'
+        elif 'perplexity' in file:
+            folder += '_perplexity'
         if args.steering == 'add_vector':
             folder += f'_{args.steering_weight}'
         if args.apply_to_all_layers:
@@ -213,6 +215,8 @@ def run_experiment(args: DictConfig):
         folder += f'/instr_plus_{args.steering}_{args.source_layer_idx}'
         if 'quality_check' in file:
             folder += '_quality_check'
+        elif 'perplexity' in file:
+            folder += '_perplexity'
         if args.steering == 'add_vector':
             folder += f'_{args.steering_weight}'
         if args.apply_to_all_layers:
