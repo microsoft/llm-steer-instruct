@@ -42,8 +42,13 @@ def compute_perplexity(text):
 
     # Compute the log probabilities
     with torch.no_grad():
-        outputs = perplexity_model(input_ids, labels=input_ids)
-        loss = outputs.loss  # This is the average negative log-likelihood per token
+        try:
+            outputs = perplexity_model(input_ids, labels=input_ids)
+            loss = outputs.loss  # This is the average negative log-likelihood per token
+        except Exception as e:
+            print(f'Error in computing perplexity for text: {text}')
+            print(f'Error: {e}')
+            loss = torch.tensor(0.0)
 
         print
 
@@ -65,8 +70,9 @@ seed = 42
 
 
 model_names = ['phi-3', 'mistral-7b-instruct', 'gemma-2-2b-it', 'gemma-2-9b-it', ]
+model_names = ['gemma-2-2b', 'gemma-2-9b']
 settings = ['instr', 'no_instr', ]
-n_examples_dict = {'phi-3' : 8, 'mistral-7b-instruct': 8, 'gemma-2-2b-it': 8, 'gemma-2-9b-it': 6}
+n_examples_dict = {'phi-3' : 8, 'mistral-7b-instruct': 8, 'gemma-2-2b-it': 8, 'gemma-2-9b-it': 6, 'gemma-2-2b': 10, 'gemma-2-9b': 6}
 
 all_dfs = {}
 all_paths = {}
@@ -96,10 +102,8 @@ for model_name in model_names:
             hf_token = f.read()
         if model_name == 'phi-3':
             model_name_hf = 'microsoft/Phi-3-mini-4k-instruct'
-        elif model_name == 'gemma-2-2b-it':
-            model_name_hf = 'google/gemma-2-2b-it'
-        elif model_name == 'gemma-2-9b-it':
-            model_name_hf = 'google/gemma-2-9b-it'
+        if 'gemma' in model_name:
+            model_name_hf = f'google/{model_name}'
         elif model_name == 'mistral-7b-instruct':
             model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
         tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)
