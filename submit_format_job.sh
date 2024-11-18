@@ -16,7 +16,9 @@ dry_run=false
 
 source_layer_idx=-1
 steering=adjust_rs
+
 include_instructions=true
+
 cross_model_steering=false
 nonparametric_only=true
 
@@ -26,11 +28,17 @@ else
     data_path='./data/input_data_single_instr_no_instr.jsonl'
 fi
 
-if [ "$model_name"=mistral-7b-instruct ]; then
+max_generation_length=2048
+
+if [ "$model_name" = mistral-7b-instruct ]; then
     max_generation_length=1024
 else
     max_generation_length=2048
 fi
+
+echo $model_name
+echo $include_instructions
+echo $max_generation_length
 
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
