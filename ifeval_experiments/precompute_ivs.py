@@ -140,11 +140,11 @@ if 'validation_accuracy' in search_method:
         
         elif 'perplexity' in search_method:
             # add boolean column that is true when perplexity is greater than 0.1
-            instr_df['large_perplexity'] = instr_df.perplexity > 0.1
+            instr_df['low_perplexity'] = instr_df.perplexity < 2.5
 
             # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
-            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'large_perplexity']].groupby('layer').mean()
-            df_group_by_layer.loc[df_group_by_layer.large_perplexity > 0, 'follow_all_instructions'] = 0
+            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
+            df_group_by_layer.loc[df_group_by_layer.low_perplexity > 0, 'follow_all_instructions'] = 0
             max_accuracy = df_group_by_layer.follow_all_instructions.max()
             optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
             optimal_layers[instr] = optimal_layer[0]

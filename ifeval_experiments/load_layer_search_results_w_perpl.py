@@ -20,13 +20,13 @@ from tqdm import tqdm
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'gemma-2-9b-it'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-# model_name='gemma-2-2b'
-# model_name='gemma-2-9b-it'
+model_name='mistral-7b-instruct'
+# model_name='gemma-2-2b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 6
+n_examples = 8
 seed = 42
-# instr = 'instr'
+instr = 'instr'
 # instr = 'no_instr_lowercase'
 instr = 'no_instr'
 
@@ -41,8 +41,8 @@ results_df = pd.DataFrame(results)
 # %%
 all_instructions = results_df.single_instruction_id.unique()
 
-# add boolean column that is true when perplexity is greater than 0.1
-results_df['large_perplexity'] = results_df.perplexity > 0.1
+# add boolean column that is true when perplexity is low
+results_df['low_perplexity'] = results_df.perplexity < 2.5
 
 # %%
 # get update optimal layers for each instruction
@@ -63,8 +63,8 @@ for instr in all_instructions:
     new_optimal_layers[instr] = optimal_layer[0]
 
     # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
-    df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'large_perplexity']].groupby('layer').mean()
-    df_group_by_layer.loc[df_group_by_layer.large_perplexity > 0, 'follow_all_instructions'] = 0
+    df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
+    df_group_by_layer.loc[df_group_by_layer.low_perplexity > 0, 'follow_all_instructions'] = 0
     max_accuracy = df_group_by_layer.follow_all_instructions.max()
     optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
     new_optimal_layers_perpl[instr] = optimal_layer[0]
@@ -77,7 +77,14 @@ optimal_layers_df['new_optimal_layer_perpl'] = list(new_optimal_layers_perpl.val
 
 # add column with difference between optimal_layer and new_optimal_layer
 optimal_layers_df['diff'] = optimal_layers_df.new_optimal_layer - optimal_layers_df.new_optimal_layer_perpl
-optimal_layers_df
+optimal_layers_df_no_language = optimal_layers_df[~optimal_layers_df.instruction.str.contains('language')]
+optimal_layers_df_no_language
+
+
+
+#%%
+optimal_layers_df_language = optimal_layers_df[optimal_layers_df.instruction.str.contains('language')]
+optimal_layers_df_language
 
 # %%
 # for each instruction, make a line plot of accuracy and avg broken output and perplexity per layer
@@ -89,8 +96,8 @@ for instruction in all_instructions:
     fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name='accuracy'))
     layer_broken_output = results_df[results_df.single_instruction_id == instruction][['layer', 'broken_output']].groupby('layer').mean().broken_output
     fig.add_trace(go.Scatter(x=layer_broken_output.index, y=layer_broken_output, mode='lines+markers', name='broken_output'))
-    layer_perplexity = results_df[results_df.single_instruction_id == instruction][['layer', 'large_perplexity']].groupby('layer').mean().large_perplexity
-    fig.add_trace(go.Scatter(x=layer_perplexity.index, y=layer_perplexity, mode='lines+markers', name='large_perplexity_ratio'))
+    layer_perplexity = results_df[results_df.single_instruction_id == instruction][['layer', 'low_perplexity']].groupby('layer').mean().low_perplexity
+    fig.add_trace(go.Scatter(x=layer_perplexity.index, y=layer_perplexity, mode='lines+markers', name='low_perplexity_ratio'))
     fig.update_layout(title_text=f' Accuracy and Broken Output  for {instruction}')
     fig.update_xaxes(title_text='Layer')
 
@@ -109,8 +116,10 @@ results_df[['perplexity', 'broken_output']].corr()
 sorted_results_df = results_df.sort_values(by='perplexity', ascending=False)
 # print top 10 highest perplexity that are not broken
 for i, r in sorted_results_df.iterrows():
-    #if r.broken_output == 1 and r.perplexity < 0.1 :
-    if r.single_instruction_id == 'detectable_format:multiple_sections' and r.layer == 28:
+    # if  r.perplexity > 6 and r.broken_output == 1:
+    # change_case:english_capital
+    # detectable_format:json_format
+    if r.single_instruction_id == 'language:response_language_ur' and r.layer == 28:
         print(f'Perplexity: {r.perplexity} | Broken output: {r.broken_output} | Layer {r.layer}\nPrompt: {r.prompt} \nResponse: {r.response}\n======================\n')
     
     

@@ -7,7 +7,7 @@ if 'Users' in os.getcwd():
     sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
     print('We\'re on the local machine')
 import json
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import pandas as pd
 import plotly.express as px
@@ -27,23 +27,28 @@ from tqdm import tqdm
 
 
 device = 'mps'
-perplexity_model = GPT2LMHeadModel.from_pretrained('openai-community/gpt2')
+perplexity_model = AutoModelForCausalLM.from_pretrained('openai-community/gpt2')
 perplexity_model.to(device)
-perplexity_tokenizer = GPT2Tokenizer.from_pretrained('openai-community/gpt2')
+perplexity_tokenizer = AutoTokenizer.from_pretrained('openai-community/gpt2')
 
 def compute_perplexity(text):
     # Tokenize the input text
-    inputs = tokenizer(text, return_tensors='pt')
+    inputs = perplexity_tokenizer(text, return_tensors='pt')
     input_ids = inputs['input_ids'].to(device)
+
+    # if longer than 1024 tokens, take the last 1024 tokens
+    if input_ids.shape[1] > 1024:
+        input_ids = input_ids[:, -1024:]
 
     # Compute the log probabilities
     with torch.no_grad():
         outputs = perplexity_model(input_ids, labels=input_ids)
-        loss = outputs.loss
-        log_likelihood = -loss.item() * input_ids.size(1)
+        loss = outputs.loss  # This is the average negative log-likelihood per token
+
+        print
 
     # Compute the perplexity
-    perplexity = torch.exp(torch.tensor(log_likelihood / input_ids.size(1)))
+    perplexity = torch.exp(loss)
     return perplexity.item()
 
 # %%
