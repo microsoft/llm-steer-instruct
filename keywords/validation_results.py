@@ -22,7 +22,7 @@ import numpy as np
 
 # %%
 model_name = 'phi-3'
-model_name = 'gemma-2-2b-it'
+# model_name = 'gemma-2-2b-it'
 folder = f'./keywords/out/{model_name}/forbidden_validation/'
 # folder = f'./keywords/out/{model_name}/existence_validation/'
 # folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'

@@ -23,7 +23,7 @@ os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/length_constraints')
 n_examples = 40
 constraint_type= 'exactly'
 n_sent_max = 5
-n_examples = 20
+n_examples = 50
 output_path = './out'
 model_name = 'phi-3'
 source_layer_idx = 12
