@@ -92,6 +92,7 @@ def compute_perplexity(text):
 # =============================================================================
 # compute perplexity for each response. Skip if the perplexity is already computed
 # =============================================================================
+skip = False
 
 skip = False
 if 'perplexity' in list(result_dict.values())[0].columns:
@@ -107,6 +108,12 @@ if not skip:
     p_bar = tqdm(total=total)
 
     for key, value in list(result_dict.items()):
+        # check if the perplexity is already computed
+        if 'perplexity' in value.columns:
+            print(f'Perplexity already computed for {key}')
+            continue
+
+
         accuracy_dict[key] = value['follow_all_instructions'].mean()
         broken_outputs = []
         lengths = []
