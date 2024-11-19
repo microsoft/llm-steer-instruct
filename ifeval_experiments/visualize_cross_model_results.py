@@ -35,14 +35,14 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_quality_check'
+    mode = 'adjust_rs_-1_quality_check' if model_name == 'gemma-2-9b' else 'adjust_rs_-1_perplexity'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_steering = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_quality_check_cross_model'
+    mode = 'adjust_rs_-1_quality_check_cross_model' if model_name == 'gemma-2-9b' else 'adjust_rs_-1_perplexity_cross_model'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -56,14 +56,14 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_standard = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_quality_check' #if model_name == 'gemma-2-9b' else 'instr_plus_adjust_rs_-1'
+    mode = 'instr_plus_adjust_rs_-1_quality_check' if model_name == 'gemma-2-9b' else 'instr_plus_adjust_rs_-1_perplexity'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_instr_plus_steering = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_quality_check_cross_model' 
+    mode = 'instr_plus_adjust_rs_-1_quality_check_cross_model' if model_name == 'gemma-2-9b' else 'instr_plus_adjust_rs_-1_perplexity_cross_model'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -164,7 +164,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-setting = '<b>w/</b> Instr.'
+# setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])

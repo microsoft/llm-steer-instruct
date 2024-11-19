@@ -103,6 +103,8 @@ new_names['english_lowercase'] = 'Lowercase'
 new_names['json_format'] = 'JSON Format'
 new_names['capital_word_frequency'] = 'Capital Word Freq.'
 new_names['Response Language'] = 'Language'
+new_names['english_capital'] = 'Capitalize'
+new_names['constrained_response'] = 'Constrained Resp.'
 
 per_example_vectors = {}
 for k, v in repr_w_instr.items():
@@ -130,16 +132,17 @@ df_tsne = pd.DataFrame(tsne_results, columns=['t-SNE component 1', 't-SNE compon
 df_tsne['Instruction'] = labels
 
 colors = px.colors.qualitative.Plotly + px.colors.qualitative.Bold
+# %%
 
 # Plot the results using Plotly
-fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction', title='t-SNE of Instruction Vectors', color_discrete_sequence=colors)
+fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction', title='t-SNE of Format Instruction Vectors', color_discrete_sequence=colors)
 fig.update_traces(marker=dict(opacity=0.7, size=5))
 
 # change title font size
 fig.update_layout(title_font_size=17)
 
 # resize plot
-fig.update_layout(width=500, height=300)
+fig.update_layout(width=500, height=325)
 
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))

@@ -20,7 +20,7 @@ model_name = 'phi-3'
 
 folder = f'./nonpar_plus_length_out/{model_name}/all_base_x_all_instr'
 setting = 'instr_w_length_instr'
-steering = 'adjust_rs_quality_check_-1_conciseness_L12_w20'
+steering = 'adjust_rs_perplexity_-1_conciseness_L12_w20'
 
 path = f'{folder}/{setting}/{steering}/out.jsonl'
 
@@ -42,7 +42,7 @@ data = [json.loads(line) for line in lines]
 df_no_steering_plus_instr = pd.DataFrame(data)
 
 setting = 'no_instr'
-steering = 'adjust_rs_-1_quality_check_conciseness_L12_w20'
+steering = 'adjust_rs_-1_perplexity_conciseness_L12_w20'
 
 path = f'{folder}/{setting}/{steering}/out.jsonl'
 
