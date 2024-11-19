@@ -8,16 +8,17 @@ gpu_req="rtx_4090:1"
 gpu_req="rtx_3090:1"
 
 source_layer_indices_phi=( 24 26 28 )
-source_layer_indices_gemma=( 22 24 )
+# source_layer_indices_gemma=( 22 24 )
+source_layer_indices_gemma=( 23 )
 
-specific_instruction=existence_validation
+specific_instruction=forbidden_validation
 # specific_instruction=forbidden_validation_w_forbidden_rep
 
 if [[ "$specific_instruction" == "existence_validation" ]]; then
     data_path=./data/keyword_test_inclusion_likely.jsonl
     steering_weights_phi=( 40 60 80 100 )
     # steering_weights_gemma=( 60 80 100 120 )
-    steering_weights_gemma=( 140 160 180 )
+    steering_weights_gemma=( 60 80 100 120 140 160 180 )
 
 elif [[ "$specific_instruction" == "forbidden_validation" ]]; then
     data_path=./data/keyword_test_exclusion_likely.jsonl
