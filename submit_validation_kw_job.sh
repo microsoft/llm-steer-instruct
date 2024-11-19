@@ -15,7 +15,8 @@ specific_instruction=forbidden_validation_w_forbidden_rep
 if [[ "$specific_instruction" == "existence_validation" ]]; then
     data_path=./data/keyword_test_inclusion_likely.jsonl
     steering_weights_phi=( 40 60 80 100 )
-    steering_weights_gemma=( 60 80 100 120 )
+    # steering_weights_gemma=( 60 80 100 120 )
+    steering_weights_gemma=( 140 160 180 )
 
 elif [[ "$specific_instruction" == "forbidden_validation" ]]; then
     data_path=./data/keyword_test_exclusion_likely.jsonl

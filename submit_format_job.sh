@@ -29,13 +29,13 @@ else
     data_path='./data/input_data_single_instr_no_instr.jsonl'
 fi
 
-max_generation_length=2048
-
 if [ "$model_name" = mistral-7b-instruct ]; then
     max_generation_length=1024
 else
     max_generation_length=2048
 fi
+
+max_generation_length=1024
 
 echo $model_name
 echo $include_instructions

@@ -25,14 +25,14 @@ else
     data_path='./data/input_data_single_instr_no_instr.jsonl'
 fi
 
-if [ "$model_name"=mistral-7b-instruct ]; then
+if [ "$model_name" = mistral-7b-instruct ]; then
     max_generation_length=1024
 else
     max_generation_length=2048
 fi
 
-include_instructions=true
-include_length_instr=true
+include_instructions=false
+include_length_instr=false
 
 #   --gpus="${gpu_req}" \
 #--gres=gpumem:25g \
