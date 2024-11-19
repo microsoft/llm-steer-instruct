@@ -213,7 +213,7 @@ from copy import deepcopy
 
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
-weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -120}, 'existence': {'phi-3': 100, 'gemma-2-2b-it': 80}}
+weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -120}, 'existence': {'phi-3': 100, 'gemma-2-2b-it': 100}}
 layers = {'forbidden': {'phi-3': 28, 'gemma-2-2b-it': 22}, 'existence': {'phi-3': 24, 'gemma-2-2b-it': 24}}
 constraints = ['forbidden', 'existence']
 all_dfs = {}
@@ -231,8 +231,8 @@ for model_name in model_names:
         #     all_dfs[constraint_type][model_name] = deepcopy(all_dfs[constraint_type]['phi-3'])
         #     continue
 
-        if model_name == 'gemma-2-2b-it' and constraint_type == 'existence':
-            weight = 100
+        # if model_name == 'gemma-2-2b-it' and constraint_type == 'existence':
+            # weight = 100
         file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
         with open(file, 'r') as f:
             results = [json.loads(line) for line in f]
