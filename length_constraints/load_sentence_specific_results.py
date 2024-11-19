@@ -23,7 +23,7 @@ os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/length_constraints')
 n_examples = 40
 constraint_type= 'exactly'
 n_sent_max = 5
-n_examples = 50
+n_examples = 100
 output_path = './out'
 model_name = 'phi-3'
 source_layer_idx = 12
@@ -196,16 +196,23 @@ fig.show()
 no_steering_color = plotly.colors.qualitative.Plotly[5]  # Custom color for No Steering
 steering_color = plotly.colors.qualitative.Plotly[0]  # Custom color for Steering
 
+
 # Make bar chart with accuracy per length constraint, one column for no steering and one for steering
 fig = go.Figure()
 first = True
 for length_constraint in results_df_no_steering['length_constraint'].unique():
+
+    if length_constraint != 4:
+        asterisk ='*'
+    else:
+        asterisk = ''
+        
     # No steering
     lengths_no_steering = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['correct']
     acc_no_steering = lengths_no_steering.mean()
     sem_no_steering = lengths_no_steering.sem()  # Calculate standard error of the mean
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}*'], 
+        x=[f'{length_constraint+1}{asterisk}'], 
         y=[acc_no_steering], 
         name='Std. Inference', 
         marker_color=no_steering_color,
@@ -215,7 +222,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     ))
 
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}*'], 
+        x=[f'{length_constraint+1}{asterisk}'], 
         y=[0], 
         name='yyy', 
         marker_color=steering_color,
@@ -228,7 +235,7 @@ for length_constraint in results_df_no_steering['length_constraint'].unique():
     acc_steering = lengths_steering.mean()
     sem_steering = lengths_steering.sem()  # Calculate standard error of the mean
     fig.add_trace(go.Bar(
-        x=[f'{length_constraint+1}*'], 
+        x=[f'{length_constraint+1}{asterisk}'], 
         y=[acc_steering],
         name='Steering', 
         marker_color=steering_color,
@@ -276,7 +283,7 @@ fig.update_layout(legend=dict(
 ))
 
 # add label for x axis
-fig.update_layout(xaxis_title='Max. # of Sentences')
+fig.update_layout(xaxis_title='# of Sentences')
 fig.update_layout(yaxis_title='Accuracy')
 
 # change title font size
@@ -286,13 +293,13 @@ fig.update_layout(title_font_size=16)
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
 # modify ymin
-fig.update_layout(yaxis=dict(range=[0.5, 0.9]))
+fig.update_layout(yaxis=dict(range=[0.5, 0.95]))
 
 # reshape figure
 fig.update_layout(width=300, height=250)
 
 # save the plot as pdf
-# fig.write_image('../plots_for_paper/length/accuracy_per_length_constraint.pdf')
+fig.write_image('../plots_for_paper/length/exact_constraints.pdf')
 
 fig.show()
 
@@ -422,6 +429,10 @@ length_constraint = 3
 lengths1 = results_df_no_steering[results_df_no_steering['length_constraint'] == length_constraint]['length']
 lengths2 = results_df_steering[results_df_steering['length_constraint'] == length_constraint]['length']
 
+# remove outliers
+lengths1 = lengths1[lengths1 < 20]
+lengths2 = lengths2[lengths2 < 20]
+
 color1 = plotly.colors.qualitative.Plotly[5]
 color2 = plotly.colors.qualitative.Plotly[0]
 
@@ -458,13 +469,13 @@ fig.update_layout(title=f'(c) Length: Pre- vs. Post-Steering',
 fig.add_shape(
     dict(
         type="line",
-        x0=length_constraint+1.5,
+        x0=length_constraint+1,
         y0=0,
-        x1=length_constraint+1.5,
-        y1=0.63,
+        x1=length_constraint+1,
+        y1=0.9,
         line=dict(
             color="black",
-            width=2,
+            width=0.5,
             dash="dash",
         ),
     )
@@ -474,7 +485,7 @@ fig.update_layout(
     annotations=[
         dict(
             x=length_constraint + 1.6,
-            y=0.55,
+            y=0.8,
             xref="x",
             yref="y",
             text=f'Length constraint: {length_constraint + 1}',
@@ -504,7 +515,7 @@ fig.update_layout(title_font_size=16)
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 # store the plot as pdf
-# fig.write_image(f'../plots_for_paper/length/length_distribution_constraint_{length_constraint}.pdf')
+fig.write_image(f'../plots_for_paper/length/length_distribution_exact_constraint_{length_constraint}.pdf')
 
 fig.show()
 
@@ -583,7 +594,7 @@ output_path = './out'
 model_name = 'phi-3'
 # model_name = 'gemma-2-9b'
 n_sent_max = 5
-n_examples = 20
+n_examples = 50
 include_instructions = False
 steering = 'add_vector_length_specific'
 # steering = 'none'
@@ -644,7 +655,7 @@ colors = plotly.colors.qualitative.Plotly
 
 # filter data: remove outliers larger than 150
 # for i, d in enumerate(data):
-    # data[i] = d[d < 150]
+#     data[i] = d[d < 150]
 
 # Creating the KDE plot
 kde_fig = ff.create_distplot(data, 

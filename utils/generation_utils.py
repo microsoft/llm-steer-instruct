@@ -1,6 +1,7 @@
 import torch
 from tqdm import tqdm
 
+
 def cot_inference(model, tokenizer, problem, device, use_qa_pattern=False):
     """
     zero-shot chain-of-thought inference using the two-stage prompt method proposed by Kojima et al. (2022)
@@ -137,3 +138,29 @@ def direction_projection_hook(
 ):
     adjusted_activations = adjust_vectors(activation.squeeze(), direction, value_along_direction)
     return adjusted_activations.unsqueeze(0)
+
+
+def compute_perplexity(text, device='cuda', perplexity_model=None, perplexity_tokenizer=None):
+    # Tokenize the input text
+    inputs = perplexity_tokenizer(text, return_tensors='pt')
+    input_ids = inputs['input_ids'].to(device)
+
+    # if longer than 1024 tokens, take the last 1024 tokens
+    if input_ids.shape[1] > 1024:
+        input_ids = input_ids[:, -1024:]
+
+    # Compute the log probabilities
+    with torch.no_grad():
+        try:
+            outputs = perplexity_model(input_ids, labels=input_ids)
+            loss = outputs.loss  # This is the average negative log-likelihood per token
+        except Exception as e:
+            print(f'Error in computing perplexity for text: {text}')
+            print(f'Error: {e}')
+            loss = torch.tensor(0.0)
+
+        print
+
+    # Compute the perplexity
+    perplexity = torch.exp(loss)
+    return perplexity.item()
