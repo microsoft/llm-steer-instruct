@@ -16,9 +16,9 @@ elif 'cluster' in os.getcwd():
     sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/ifeval_experiments')
     print('We\'re on a sandbox machine')
 
+from sklearn.manifold import TSNE
 import pandas as pd
 import numpy as np
-from sklearn.manifold import TSNE
 import os
 import plotly.express as px
 import sys
@@ -124,7 +124,7 @@ for key, vectors in per_example_vectors.items():
 all_vectors = np.concatenate(all_vectors, axis=0)
 
 # Perform t-SNE
-tsne = TSNE(n_components=2, perplexity=50, learning_rate=200, n_iter=1000, init='pca', random_state=42, verbose=1)
+tsne = TSNE(n_components=2, perplexity=1000, learning_rate=200, n_iter=1000, init='pca', random_state=42, verbose=1)
 tsne_results = tsne.fit_transform(all_vectors)
 
 # Create a DataFrame for Plotly
@@ -135,7 +135,7 @@ colors = px.colors.qualitative.Plotly + px.colors.qualitative.Bold
 # %%
 
 # Plot the results using Plotly
-fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction', title='t-SNE of Format Instruction Vectors', color_discrete_sequence=colors)
+fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction', title='(a) t-SNE of Format Instruction Vectors', color_discrete_sequence=colors)
 fig.update_traces(marker=dict(opacity=0.7, size=5))
 
 # change title font size

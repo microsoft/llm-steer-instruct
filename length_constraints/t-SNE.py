@@ -41,6 +41,8 @@ repr_w_instr = {}
 repr_wo_instr = {}
 
 for length_constraint in df.length_constraint.unique():
+    if length_constraint == 5:
+        continue
     length_specific_df = df[df.length_constraint == length_constraint]
 
     hs_instr = length_specific_df['last_token_rs'].values
@@ -125,7 +127,7 @@ for key, vectors in per_example_vectors.items():
 all_vectors = np.concatenate(all_vectors, axis=0)
 
 # Perform t-SNE
-tsne = TSNE(n_components=2, perplexity=1600, learning_rate=200, n_iter=1000, init='pca', random_state=42, verbose=1)
+tsne = TSNE(n_components=2, perplexity=1600, learning_rate=200, n_iter=1000, init='pca', random_state=41, verbose=1)
 tsne_results = tsne.fit_transform(all_vectors)
 
 # Create a DataFrame for Plotly
@@ -141,7 +143,7 @@ color_scale = px.colors.sequential.YlOrRd
 
 # Plot the results using Plotly with a continuous color scale
 fig = px.scatter(df_tsne, x='t-SNE component 1', y='t-SNE component 2', color='Instruction_numeric',
-                 title='t-SNE of Length Instruction Vectors', color_continuous_scale=color_scale, labels={'Instruction_numeric': 'Instruction'})
+                 title='(b) t-SNE of Length Instruction Vectors', color_continuous_scale=color_scale, labels={'Instruction_numeric': 'Instruction'})
 
 fig.update_traces(marker=dict(opacity=.8, size=5))
 
@@ -161,12 +163,37 @@ fig.update_coloraxes(colorbar=dict(
 ))
 
 # Add an arrow from (1, -0.5) to (-2.5, -0.5)
+# fig.add_annotation(
+#     dict(
+#         ax=1.5,
+#         ay=-3.5,
+#         x=-2.7,
+#         y=-3.5,
+#         xref="x",
+#         yref="y",
+#         axref="x",
+#         ayref="y",
+#         showarrow=True,
+#         arrowhead=2,
+#         arrowsize=1,
+#         arrowwidth=2,
+#         arrowcolor="black",
+#         text="Longer<br>Outputs", 
+#         font=dict(size=12, color="black"),
+#         align="center",
+#         textangle=0,
+#         height=50,
+#         borderpad=0,
+#         valign="middle",
+#     )
+# )
+
 fig.add_annotation(
     dict(
-        ax=1.5,
-        ay=-3.5,
-        x=-2.7,
-        y=-3.5,
+        ax=-3,
+        ay=-1.25,
+        x=0,
+        y=1.5,
         xref="x",
         yref="y",
         axref="x",
@@ -189,7 +216,7 @@ fig.add_annotation(
 fig.show()
 
 # save plot as pdf
-fig.write_image(f'./plots_for_paper/length/t-sne.pdf')
+fig.write_image(f'./plots_for_paper/length/t-sne2.pdf')
 
 
 # %%
