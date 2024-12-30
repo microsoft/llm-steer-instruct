@@ -74,11 +74,17 @@ def compute_representations(args: DictConfig):
 
         all_instructions = list(set([ item for l in data_df.instruction_id_list for item in l]))
 
+    if args.nonparametric_only:
+        # filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
+        filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
+        joined_df = joined_df[joined_df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
+
+
     # load tokenizer and model
     model_name = args.model_name
     with open(args.path_to_hf_token) as f:
         hf_token = f.read()
-    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, hf_token=hf_token)
+    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, hf_token=hf_token, cache_dir=args.transformers_cache_dir)
 
     model.to(args.device)
 
@@ -133,7 +139,7 @@ def compute_representations(args: DictConfig):
         if args.dry_run:
             break
 
-        folder = f'./representations/{model_name}/single_instr'
+        folder = f'./ifeval_experiments/representations/{model_name}/single_instr'
         if args.use_data_subset:
             folder += f'_subset_{args.data_subset_ratio}'
         if 'all_base_x_all_instructions' in args.data_path:
