@@ -1,23 +1,14 @@
 # %%
 import os
-if 'Users' in os.getcwd():
-    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
-    print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
-    print('We\'re on a sandbox machine')
-
+if 'ifeval_experiments' in os.getcwd():
+    os.chdir('..')
 import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
-sys.path.append('/home/t-astolfo/t-astolfo/ifeval_experiments')
+sys.path.append(os.getcwd())
+sys.path.append('./ifeval_experiments')
 
 import numpy as np
 import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import if_inference
@@ -34,13 +25,9 @@ from eval.evaluation_main import test_instruction_following_loose
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
-
     # Some environment variables
     device = args.device
     print(f"Using device: {device}")
-
-    transformer_cache_dir = None
 
     # load the data
     with open(args.data_path) as f:
@@ -64,7 +51,7 @@ def run_experiment(args: DictConfig):
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     if args.dry_run:

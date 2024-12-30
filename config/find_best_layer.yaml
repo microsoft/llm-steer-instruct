@@ -1,9 +1,8 @@
 device: 'cuda'
-project_dir: '/home/t-astolfo/t-astolfo/ifeval_experiments'
-data_path: '../data/all_base_x_all_instructions_filtered.jsonl'
+data_path: './data/all_base_x_all_instructions_filtered.jsonl'
 dry_run: False
-output_path: 'layer_search_out/'
-path_to_hf_token: '../hf_token.txt'
+output_path: 'ifeval_experiments/layer_search_out/'
+path_to_hf_token: './hf_token.txt'
 nonparametric_only: False
 
 model_name: 'phi-3'
