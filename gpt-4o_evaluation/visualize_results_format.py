@@ -15,6 +15,7 @@ import json
 import pandas as pd
 
 folder = 'gpt-4o_evaluation/16-11-2024_quality_check/format'
+folder = 'gpt-4o_evaluation/format_perplexity'
 model_name = 'phi'
 model_name = 'gemma-2-2b-it'
 # model_name = 'mistral-7b-instruct'
@@ -34,7 +35,8 @@ for model_name in model_names:
         std_setting = 'standard'
 
     # Define the steering settings
-    steering_settings = ['no_instr', 'adjust_rs_-1_quality_check', std_setting, 'instr_plus_adjust_rs_-1_quality_check']
+    steering_settings = ['no_instr', 'adjust_rs_-1_perplexity', std_setting, 'instr_plus_adjust_rs_-1_perplexity']
+    # steering_settings = ['no_instr', 'adjust_rs_-1_quality_check', std_setting, 'instr_plus_adjust_rs_-1_quality_check']
 
     runs = {k: [] for k in steering_settings}
 
@@ -42,7 +44,7 @@ for model_name in model_names:
     for steering in steering_settings:
         path = f'{folder}/{model_name}/{steering}/'
         print(f'Path: {path}')
-        new_path = os.path.join(path, 'output', 'answer_post_processing_output', 'transformed_data.jsonl')
+        new_path = os.path.join(path, 'outputs', 'answer_post_processing_output', 'transformed_data.jsonl')
         with open(new_path, 'r') as file:
             results = [json.loads(line) for line in file]
         df = pd.DataFrame(results)
@@ -260,7 +262,7 @@ fig.add_shape(
 fig.show()
 
 # store plot as pdf
-# plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas.pdf')
+# plotly.io.write_image(fig, './plots_for_paper/quality_score_deltas_perpl.pdf')
 
 # %%
 # =============================================================================
@@ -489,7 +491,7 @@ for model_idx, model_name in enumerate(model_names):
     # set title
     label, pretty_name = labes_and_names[model_idx]
 
-    fig.update_layout(title_text=f'({label}) Qual. Score of {pretty_name} on Format Instr.')
+    fig.update_layout(title_text=f'({label}) Qual. Scores of {pretty_name} on Format Instr.')
     # change title font size
     fig.update_layout(title_font_size=16)
 
@@ -503,7 +505,7 @@ for model_idx, model_name in enumerate(model_names):
     fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
     # add y axis label
-    fig.update_layout(yaxis_title='Accuracy')
+    fig.update_layout(yaxis_title='Avg. Qual. Score Delta')
     fig.update_layout(xaxis_title='')   
 
     # move legend to the bottom
@@ -519,7 +521,7 @@ for model_idx, model_name in enumerate(model_names):
     fig.show()
 
     # save plot as pdf
-    # fig.write_image(f'./plots_for_paper/quality_score_sliced/{model_name}.pdf')
+    fig.write_image(f'./plots_for_paper/quality_score_sliced_perpl/{model_name}.pdf')
 
 
 
@@ -527,7 +529,7 @@ for model_idx, model_name in enumerate(model_names):
 # %%
 # print some outputs
 model_name = 'mistral-7b-instruct'
-model_name = 'gemma-2-9b-it'
+model_name = 'gemma-2-2b-it'
 # model_name = 'phi'
 setting_pair_idx = 1
 run_idx = 0

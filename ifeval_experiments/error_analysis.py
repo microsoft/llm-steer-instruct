@@ -40,7 +40,7 @@ results_df = pd.DataFrame(results)
 # results_df_steering = pd.DataFrame(results)
 
 
-mode = 'adjust_rs_-1'
+mode = 'adjust_rs_-1_perplexity'
 path_to_results = f'./ifeval_experiments/out/phi-3/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
 with open(path_to_results) as f:
     results = f.readlines()
@@ -57,7 +57,7 @@ with open(path_to_results) as f:
     results = [json.loads(r) for r in results]
 results_df_standard = pd.DataFrame(results)
 
-mode = 'instr_plus_adjust_rs_-1'
+mode = 'instr_plus_adjust_rs_-1_perplexity'
 path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
 with open(path_to_results) as f:
     results = f.readlines()
@@ -393,7 +393,7 @@ fig.update_layout(legend=dict(
 ))
 
 # Save the figure as a PDF (optional)
-fig.write_image(f'./plots_for_paper/accuracy_per_category_{model_name}_radar.pdf')
+# fig.write_image(f'./plots_for_paper/accuracy_per_category_{model_name}_radar_perpl.pdf')
 
 fig.show()
 

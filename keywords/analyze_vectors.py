@@ -29,16 +29,16 @@ from tqdm import tqdm
 
 # %%
 model_name = 'phi-3'
-# model_name = 'gemma-2-2b-it'
+model_name = 'gemma-2-2b-it'
 rep_file = f'./keywords/representations/{model_name}/include_validation_include_20examples_hs.h5'
-rep_file = f'./keywords/representations/{model_name}/exclude_validation_exclude_10examples_hs.h5'
+# rep_file = f'./keywords/representations/{model_name}/exclude_validation_exclude_20examples_hs.h5'
 device = 'cpu'
 all_words_df = pd.read_hdf(rep_file)
 
 # %%
 all_words_df.head()
 # %%
-layer_idx = 30
+layer_idx = 24
 mean_projections = []
 mean_projections_no_instr = []
 proj_deltas = []

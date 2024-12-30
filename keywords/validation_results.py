@@ -22,9 +22,9 @@ import numpy as np
 
 # %%
 model_name = 'phi-3'
-model_name = 'gemma-2-2b-it'
+# model_name = 'gemma-2-2b-it'
 folder = f'./keywords/out/{model_name}/forbidden_validation/'
-folder = f'./keywords/out/{model_name}/existence_validation/'
+# folder = f'./keywords/out/{model_name}/existence_validation/'
 # folder = f'./keywords/out/{model_name}/forbidden_validation_w_forbidden_rep/'
 file_name = 'out_gen_data_perplexity.jsonl'
 subfolders = os.listdir(folder)
@@ -46,6 +46,7 @@ for subfolder in subfolders:
         continue
     with open(folder + subfolder + f'/{file_name}' ) as f:
         results = [json.loads(line) for line in f]
+    # file_name = 'out_gen_data_perplexity.jsonl'
     results_df = pd.DataFrame(results)
     result_dict[(int(layer), int(weight))] = results_df
     paths_dict[(int(layer), int(weight))] = folder + subfolder + f'/{file_name}'
@@ -92,11 +93,13 @@ def compute_perplexity(text):
 # =============================================================================
 # compute perplexity for each response. Skip if the perplexity is already computed
 # =============================================================================
-skip = False
+
 
 skip = False
 if 'perplexity' in list(result_dict.values())[0].columns:
     skip = True
+
+skip = False
 
 if not skip:
     accuracy_dict = {}
@@ -163,7 +166,7 @@ broken_outputs_dict = {}
 lengths_dict = {}
 low_perplexity_dict = {}
 for key, value in list(result_dict.items()):
-    value['low_perplexity'] = value['perplexity'] < 2.5
+    value['low_perplexity'] = value['perplexity'] < 4
     low_perplexity_dict[key] = value['low_perplexity'].mean()
     accuracy_dict[key] = value['follow_all_instructions'].mean()
     broken_outputs_dict[key] = value['broken_output'].mean()

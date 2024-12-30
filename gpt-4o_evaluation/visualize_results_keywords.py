@@ -17,9 +17,14 @@ import json
 import pandas as pd
 
 folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_inclusion'
-# folder = 'gpt-4o_evaluation/30-09-2024_gpt-4o_eval/30-09-2024_gpt-4o_eval/keyword_exclusion'
-folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_exclusion'
+folder = 'gpt-4o_evaluation/30-09-2024_gpt-4o_eval/30-09-2024_gpt-4o_eval/keyword_exclusion'
+folder = 'gpt-4o_evaluation/16-11-2024_quality_check/keyword/phi_existence'
+# folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/keyword_exclusion'
 # folder = 'gpt-4o_evaluation/29-09-2024_gpt4o_eval/29-09-2024_gpt4o_eval/length/1-5sentences_100examples'
+# folder = 'gpt-4o_evaluation/keywords_perplexity/phi-3/existence'
+# folder = 'gpt-4o_evaluation/keywords_perplexity/gemma-2-2b-it/existence'
+# folder = 'gpt-4o_evaluation/keywords_perplexity/phi-3/forbidden'
+# folder = 'gpt-4o_evaluation/keywords_perplexity/gemma-2-2b-it/forbidden'
 setting_dfs = {}
 settings = []
 
@@ -41,20 +46,32 @@ qual_score_deltas_dict = {}
 qual_score_sett1_dict = {}
 qual_score_sett2_dict = {}
 
-pairs_of_setting_incl = [(1,0), (3,4), (1,3)]
-pairs_of_setting_excl = [(5,2), (3,6), (5,3)]
+# for perpl
+# pairs_of_setting_incl = [(3,0), (2,1), (3,2)]
+# pairs_of_setting_excl = [(3,2), (1,0), (3,1)]
+
+index_of_sett1 = settings.index('no_instr')
+# get index of folder with 'instr_plus' in the name
+index_of_sett4 = [i for i, s in enumerate(settings) if 'instr_plus' in s][0]
+# get index of folder with 'add_vector' in the name
+index_of_sett2 = [i for i, s in enumerate(settings) if 'add_vector' in s and 'instr' not in s][0]
+index_of_sett3 = settings.index('standard')
+
+
+pairs_of_setting = [(index_of_sett1, index_of_sett2), (index_of_sett3, index_of_sett4), (index_of_sett1, index_of_sett3)]
+
+
+# previous
+# pairs_of_setting_incl = [(1,0), (3,4), (1,3)]
+# pairs_of_setting_excl = [(5,2), (3,6), (5,3)]
+
 # pairs_of_setting_excl = [(2,1), (6,7), (1,6)]
 # pairs_of_setting = [(1,0), (1,2), (2,3)]
 
-if 'inclusion' in folder:
-    pairs_of_setting = pairs_of_setting_incl
-elif 'exclusion' in folder:
-    pairs_of_setting = pairs_of_setting_excl
-else:
-    raise ValueError('Folder name must contain either "inclusion" or "exclusion"')
+
 
 for pair in pairs_of_setting:
-    print(f'sett1 : {settings[pair[0]]}, sett2: {settings[pair[1]]}')
+    print(f'sett: {settings[pair[0]]}, sett2: {settings[pair[1]]}')
 
 
 # %%
@@ -164,9 +181,9 @@ fig.add_trace(go.Bar(
     showlegend=show_legend
 ))
 
-if 'inclusion' in folder:
+if 'inclusion'  in folder or 'existence' in folder:
     title='(b) Word Inclusion'
-elif 'exclusion' in folder:
+elif 'exclusion' in folder or 'forbidden' in folder:
     title='(c) Word Exclusion'
 
 fig.update_layout(
@@ -224,10 +241,10 @@ fig.add_shape(
 fig.show()
 
 # store plot as pdf
-if 'inclusion' in folder:
-    plotly.io.write_image(fig, './plots_for_paper/quality_score/word_inclusion.pdf')
-elif 'exclusion' in folder:
-    plotly.io.write_image(fig, './plots_for_paper/quality_score/word_exclusion.pdf')
+# if 'inclusion' in folder or 'existence' in folder:
+#     plotly.io.write_image(fig, './plots_for_paper/quality_score/word_inclusion.pdf')
+# elif 'exclusion' in folder or 'forbidden' in folder:
+#     plotly.io.write_image(fig, './plots_for_paper/quality_score/word_exclusion.pdf')
 
 # %%
 # =============================================================================
@@ -239,7 +256,7 @@ fig = go.Figure()
 
 setting_names = ['Steering<br><b>w/o</b> Instr.', 'Steering<br><b>w/</b> Instr.', 'No Steering<br> w/ vs. w/o Instr.']
 
-setting_idx = 1
+setting_idx = 2
 
 length_constr_df = joined_dfs[setting_idx, 0]
 scores = length_constr_df['qual_score_delta'].values
@@ -262,7 +279,8 @@ fig.add_trace(go.Histogram(
     histnorm='percent',
     name=setting_names[setting_idx],
     marker_color=color,
-    showlegend=False
+    showlegend=False,
+    nbinsx=20
 ))
 
 fig.update_layout(
@@ -299,14 +317,14 @@ fig.add_shape(
         x0=scores.mean(),
         y0=0,
         x1=scores.mean(),
-        y1=60,
+        y1=70,
         line=dict(color=line_color, width=2, dash='dash')
     )
 )
 
 # set y axis range
 fig.update_layout(
-    yaxis=dict(range=[0, 60])
+    yaxis=dict(range=[0, 70])
 )
 
 # set y ticks
@@ -317,7 +335,7 @@ fig.update_layout(
 # add horizontal text at the mean
 fig.add_annotation(
     x=scores.mean()-0.30,
-    y=55,
+    y=60,
     text=f'Mean: {scores.mean():.2f}',
     showarrow=False,
     arrowhead=1,
@@ -349,7 +367,7 @@ for pair in [(0,1), (1,2), (0,2)]:
     print(f'Setting pair: {pair}')
     print(f'p-value: {res.pvalue}')
 
-# %%
+ # %%
 # Make histogram of the quality score deltas 
 fig = go.Figure()
 

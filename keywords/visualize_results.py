@@ -213,8 +213,8 @@ from copy import deepcopy
 
 # load the dataframes
 model_names = ['phi-3', 'gemma-2-2b-it']
-weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -120}, 'existence': {'phi-3': 100, 'gemma-2-2b-it': 100}}
-layers = {'forbidden': {'phi-3': 28, 'gemma-2-2b-it': 22}, 'existence': {'phi-3': 24, 'gemma-2-2b-it': 24}}
+weights = {'forbidden' : {'phi-3': -100, 'gemma-2-2b-it': -120}, 'existence': {'phi-3': 40, 'gemma-2-2b-it': 80}}
+layers = {'forbidden': {'phi-3': 28, 'gemma-2-2b-it': 22}, 'existence': {'phi-3': 28, 'gemma-2-2b-it': 24}}
 constraints = ['forbidden', 'existence']
 all_dfs = {}
 for model_name in model_names:
@@ -442,7 +442,7 @@ fig.update_layout(title_text='(b) Word-Exclusion Instructions')
 fig.update_layout(title_y=0.98)
 if store:
     
-    fig.write_image('plots_for_paper/keywords/exclusion.pdf')
+    fig.write_image('plots_for_paper/keywords/exclusion_perpl.pdf')
     # store plot as pdf
     # if 'Steering' in settings:
     #     fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')
@@ -486,7 +486,7 @@ color4 = scale[6]
 color = color1
 #color = px.colors.qualitative.Plotly[index]
 
-model_labels = ['Phi-3*', 'Gemma 2B IT*']
+model_labels = ['Phi-3', 'Gemma 2B IT']
 
 # Add traces for df_forbidden
 for i, setting in enumerate(settings):
@@ -584,7 +584,7 @@ fig.update_layout(title_text='(a) Word-Inclusion Instructions')
 fig.update_layout(title_y=0.98)
 if store:
     
-    fig.write_image('plots_for_paper/keywords/inclusion.pdf')
+    fig.write_image('plots_for_paper/keywords/inclusion_perpl.pdf')
     # store plot as pdf
     # if 'Steering' in settings:
     #     fig.update_layout(title_text='(a) Accuracy <b>w/o</b> Text Instructions')

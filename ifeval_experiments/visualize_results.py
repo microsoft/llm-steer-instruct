@@ -475,7 +475,7 @@ fig.update_layout(legend=dict(
 ))
 
 # store plot as pdf
-# fig.write_image(f'./plots_for_paper/format/format_no_instr.pdf')
+fig.write_image(f'./plots_for_paper/format/format_no_instr_perpl.pdf')
 fig.show()
 # %%
 # =============================================================================
@@ -497,7 +497,7 @@ color = px.colors.qualitative.Plotly[index]
 
 model_labels_dict = {
     'phi-3': 'Phi-3*',
-    'gemma-2-2b-it': 'Gemma 2<br>2B IT*',
+    'gemma-2-2b-it': 'Gemma 2<br>2B IT',
     'mistral-7b-instruct': 'Mistral<br>7B Instr.',
     'gemma-2-9b-it': 'Gemma 2<br>9B IT'
 }
@@ -548,7 +548,7 @@ fig.update_layout(legend=dict(
 ))
 
 # store plot as pdf
-# fig.write_image(f'./plots_for_paper/format/format_instr.pdf')
+fig.write_image(f'./plots_for_paper/format/format_instr_perpl.pdf')
 fig.show()
 # %%
 # =============================================================================
@@ -650,7 +650,7 @@ for model_idx, model_name in enumerate(model_names):
     fig.show()
 
     # save plot as pdf
-    # fig.write_image(f'./plots_for_paper/format_sliced/{model_name}.pdf')
+    fig.write_image(f'./plots_for_paper/format_sliced_perpl/{model_name}.pdf')
 
 
 

@@ -18,21 +18,21 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'gemma-2-9b-it'
+model_name = 'gemma-2-2b-it'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='mistral-7b-instruct'
+# model_name='mistral-7b-instruct'
 # model_name='gemma-2-2b-it'
-# model_name = 'phi-3'
+model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
 n_examples = 8
 seed = 42
-instr = 'instr'
-# instr = 'no_instr_lowercase'
-# instr = 'no_instr'
+instr_present = 'instr'
+# instr_present = 'no_instr_lowercase'
+instr_present = 'no_instr'
 
 w_perplexity = '_with_perplexity'
 
-file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr}.jsonl'
+file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr_present}.jsonl'
 with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
@@ -88,18 +88,63 @@ optimal_layers_df_language
 
 # %%
 # for each instruction, make a line plot of accuracy and avg broken output and perplexity per layer
+
+color1= px.colors.qualitative.Plotly[2]
+color2= px.colors.qualitative.Plotly[6]
+
+pretty_instruction_names = {'detectable_format:multiple_sections': 'Multiple Sect.', 'detectable_format:title': 'Title', 'change_case:english_capital': 'English Capital', 'detectable_format:json_format': 'JSON Format', 'change_case:english_lowercase' : 'Lowercase'}
+
 for instruction in all_instructions:
     if 'language' in instruction:
         continue
+    # if 'lowercase' in instruction or 'multiple_sections' in instruction:
+    #     pass
+    # else:
+    #     continue
     fig = go.Figure()
     layer_accuracy = results_df[results_df.single_instruction_id == instruction][['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions
-    fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name='accuracy'))
-    layer_broken_output = results_df[results_df.single_instruction_id == instruction][['layer', 'broken_output']].groupby('layer').mean().broken_output
-    fig.add_trace(go.Scatter(x=layer_broken_output.index, y=layer_broken_output, mode='lines+markers', name='broken_output'))
+    fig.add_trace(go.Scatter(x=layer_accuracy.index, y=layer_accuracy, mode='lines+markers', name='Accuracy', line=dict(color=color1)))
+    # layer_broken_output = results_df[results_df.single_instruction_id == instruction][['layer', 'broken_output']].groupby('layer').mean().broken_output
+    # fig.add_trace(go.Scatter(x=layer_broken_output.index, y=layer_broken_output, mode='lines+markers', name='broken_output'))
     layer_perplexity = results_df[results_df.single_instruction_id == instruction][['layer', 'low_perplexity']].groupby('layer').mean().low_perplexity
-    fig.add_trace(go.Scatter(x=layer_perplexity.index, y=layer_perplexity, mode='lines+markers', name='low_perplexity_ratio'))
-    fig.update_layout(title_text=f' Accuracy and Broken Output  for {instruction}')
-    fig.update_xaxes(title_text='Layer')
+    fig.add_trace(go.Scatter(x=layer_perplexity.index, y=layer_perplexity, mode='lines+markers', name='Fraction of Low-perplexity Outputs', line=dict(color=color2)))
+    
+    if 'gemma' in model_name and 'json' in instruction:
+        letter = '(c) '
+    elif model_name == 'phi-3' and 'multiple' in instruction:
+        letter = '(a) '
+    elif model_name == 'phi-3' and 'lowercase' in instruction:
+        letter = '(b) '
+    else:
+        letter = ''
+    prett_name = pretty_instruction_names.get(instruction, instruction)
+    fig.update_layout(title_text=f'{letter}Accuracy vs. Low Perpl.: {prett_name}')
+    # make title smaller
+    fig.update_layout(title=dict(font=dict(size=15)))
+
+    fig.update_xaxes(title_text='Layer Index')
+    fig.update_yaxes(title_text='Value')
+
+    # resize plot
+    fig.update_layout(width=350, height=250)
+
+    # remove padding
+    fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
+    # move legend to the bottom
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=-.65,
+        xanchor="right",
+        x=.85
+    ))
+
+    if 'gemma' in model_name and 'json' in instruction:
+        # save plot as pdf 
+        fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
+    elif model_name == 'phi-3' and ( 'multiple' in instruction or 'lowercase' in instruction):
+        fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
 
     fig.show()
 
@@ -200,7 +245,7 @@ for model_name in model_names:
     for setting_idx, setting in enumerate(settings):
         n_examples = n_examples_dict[model_name][0]
         print(f'Processing {model_name} | {setting} | {n_examples} examples | seed {seed}')
-        file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}/out_{setting}.jsonl'
+        file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{setting}.jsonl'
         with open(file, 'r') as f:
             results = [json.loads(line) for line in f]
 
@@ -216,10 +261,17 @@ for model_name in model_names:
         all_instructions = results_df.single_instruction_id.unique()
         optimal_layers = { instr: -1 for instr in all_instructions }
 
+        # add boolean column that is true when perplexity is low
+        results_df['low_perplexity'] = results_df.perplexity < 2.5
+
+
         for instr in all_instructions:
             instr_df = results_df[results_df.single_instruction_id == instr]
-            max_accuracy = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions.max()
-            optimal_layer = instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean()[instr_df[['layer', 'follow_all_instructions']].groupby('layer').mean().follow_all_instructions == max_accuracy].index
+            # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
+            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
+            df_group_by_layer.loc[df_group_by_layer.low_perplexity > 0, 'follow_all_instructions'] = 0
+            max_accuracy = df_group_by_layer.follow_all_instructions.max()
+            optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
             optimal_layers[instr] = optimal_layer[0]
 
             instr_df = results_df[results_df.single_instruction_id == instr]
@@ -232,9 +284,9 @@ best_layer_df = pd.DataFrame(best_layer_rows)
 best_layer_df.head()
 
 # %%
-# make optimal_layer entries -1 for detectable_format:multiple_sections and detectable_format:title in the no_instr setting
-best_layer_df.loc[(best_layer_df.instruction == 'detectable_format:multiple_sections') & (best_layer_df.setting == 'no_instr'), 'optimal_layer'] = -1
-best_layer_df.loc[(best_layer_df.instruction == 'detectable_format:title') & (best_layer_df.setting == 'no_instr'), 'optimal_layer'] = -1
+# # make optimal_layer entries -1 for detectable_format:multiple_sections and detectable_format:title in the no_instr setting
+# best_layer_df.loc[(best_layer_df.instruction == 'detectable_format:multiple_sections') & (best_layer_df.setting == 'no_instr'), 'optimal_layer'] = -1
+# best_layer_df.loc[(best_layer_df.instruction == 'detectable_format:title') & (best_layer_df.setting == 'no_instr'), 'optimal_layer'] = -1
 
 # %%
 # make table where every row is an instruction and every column is a model_name_setting

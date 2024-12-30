@@ -14,10 +14,11 @@ import os
 import json
 import pandas as pd
 
-folder = 'gpt-4o_evaluation/gpt_4o_evals-2'
-model_names = ['phi', 'gemma-2-2b-it', 'mistral-7b-instruct', 'gemma-2-9b-it']
+folder = 'gpt-4o_evaluation/format_perplexity'
+model_names = ['phi-3', 'gemma-2-2b-it', 'mistral-7b-instruct', 'gemma-2-9b-it']
 
 results_rows = []
+
 
 for model_name in model_names:
     if model_name == 'gemma-2-9b-it':
@@ -26,27 +27,22 @@ for model_name in model_names:
         std_setting = 'standard'
 
     # Define the steering settings
-    steering_settings = ['no_instr', 'adjust_rs_-1', std_setting, 'instr_plus_adjust_rs_-1']
-
-    if model_name == 'phi':
-        sep = '_'
-        steering_settings = ['no_instr_no_steering', 'no_instr_steering', 'instr_no_steering', 'instr_steering']
-    else:
-        sep = '-'
+    steering_settings = ['no_instr', 'adjust_rs_-1_perplexity', std_setting, 'instr_plus_adjust_rs_-1_perplexity']
+    # steering_settings = ['no_instr', 'adjust_rs_-1_quality_check', std_setting, 'instr_plus_adjust_rs_-1_quality_check']
 
     runs = {k: [] for k in steering_settings}
 
     # Load the results
     for steering in steering_settings:
-        path = f'{folder}/{model_name}{sep}{steering}_gpt4o/'
-        for f in os.listdir(path):
-            new_path = os.path.join(path, f, 'answer_post_processing_output', 'transformed_data.jsonl')
-            with open(new_path, 'r') as file:
-                results = [json.loads(line) for line in file]
-            df = pd.DataFrame(results)
-            runs[steering].append(df)
+        path = f'{folder}/{model_name}/{steering}/'
+        print(f'Path: {path}')
+        new_path = os.path.join(path, 'outputs', 'answer_post_processing_output', 'transformed_data.jsonl')
+        with open(new_path, 'r') as file:
+            results = [json.loads(line) for line in file]
+        df = pd.DataFrame(results)
+        runs[steering].append(df)
 
-    instr_to_drop = ['language:response_language', 'detectable_format:constrained_response']
+    instr_to_drop = ['language:response_language']
 
     len_df = len(runs[steering_settings[1]][0]) - len(runs[steering_settings[1]][0][runs[steering_settings[1]][0]['instruction_id_list'].apply(lambda x: any([instr in x for instr in instr_to_drop]))])
 
@@ -105,11 +101,11 @@ for model_name in model_names:
 
                 qual_score = partial_score/sum(are_valid)
 
-                if model_name == 'phi' and sett_idx == 1 and r.instruction_id_list[0] in ['detectable_content:multiple_sections', 'detectable_format:json_format', 'detectable_format:number_bullet_lists']:
-                    # set qual score as the same as in results_rows[-1]
-                    print('i: ', i)
-                    print(f"len of results_rows[-1]['qual_scores'] {len(results_rows[-1]['qual_scores'])}")
-                    qual_score = results_rows[-1]['qual_scores'][i]
+                # if model_name == 'phi' and sett_idx == 1 and r.instruction_id_list[0] in ['detectable_content:multiple_sections', 'detectable_format:json_format', 'detectable_format:number_bullet_lists']:
+                #     # set qual score as the same as in results_rows[-1]
+                #     print('i: ', i)
+                #     print(f"len of results_rows[-1]['qual_scores'] {len(results_rows[-1]['qual_scores'])}")
+                #     qual_score = results_rows[-1]['qual_scores'][i]
 
                 qual_scores.append(qual_score)
 
@@ -165,27 +161,42 @@ for model_name in model_names:
 df = pd.DataFrame(aggregate_results)
 
 # Define a color mapping for each setting_idx
-color_mapping = { i: px.colors.qualitative.Plotly[i] for i in range(4)}
+color_mapping = { i: px.colors.qualitative.Plotly[3+i] for i in range(4)}
+
+sett_dict = {0: 'w/o Instr.', 1: 'w/o Instr. + Steering', 2: 'w/ Instr.', 3: 'w/ Instr. + Steering'}
+
+pretty_model_names = ['Phi-3', 'Gemma 2 2B IT', 'Mistral 7B Instr.', 'Gemma 2 9B IT']
 
 # Create a bar chart
 fig = go.Figure()
 
 for setting_idx in range(4):
     setting_df = df[df['setting_idx'] == setting_idx]
+    pretty_model_name = [pretty_model_names[i] for i in setting_df['model_name'].apply(lambda x: model_names.index(x))]
     fig.add_trace(go.Bar(
-        x=setting_df['model_name'],
+        x=pretty_model_name,
         y=setting_df['overall_mean_score'],
         error_y=dict(type='data', array=setting_df['overall_se'], width=0),
-        name=f'Setting {setting_idx}',
+        name=sett_dict[setting_idx],
         marker_color=color_mapping[setting_idx]
     ))
 
 fig.update_layout(
-    title='Quality Score Deltas for Different Models and Settings',
+    title='Quality Score for Format Instructions',
     xaxis_title='Model Name',
-    yaxis_title='Quality Score Delta',
+    yaxis_title='Avg. Quality Score',
     barmode='group'
 )
 
+# resize plot
+fig.update_layout(width=600, height=300)
+
+# remove padding
+fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+
 fig.show()
+
+# save the figure
+plotly.io.write_image(fig, './plots_for_paper/quality_scores_perpl.pdf')
+
 # %%
