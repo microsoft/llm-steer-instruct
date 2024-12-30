@@ -1,11 +1,10 @@
 device: 'cuda'
-project_dir: '/home/t-astolfo/t-astolfo/ifeval_experiments'
-data_path: '../data/all_base_x_all_instructions_filtered.jsonl'
+data_path: './data/all_base_x_all_instructions_filtered.jsonl'
 #data_no_instr_path: '../data/input_data_no_instr.jsonl'
 data_no_instr_path: null
 dry_run: False
 output_path: 'out/'
-path_to_hf_token: '../hf_token.txt'
+path_to_hf_token: './hf_token.txt'
 transformers_cache_dir: null
 
 model_name: 'gpt2'
