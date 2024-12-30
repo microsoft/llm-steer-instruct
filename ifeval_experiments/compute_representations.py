@@ -1,22 +1,13 @@
 # %%
 import os
-if 'Users' in os.getcwd():
-    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
-    print('We\'re on the local machine')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
-    print('We\'re on the sandbox machine')
+if 'ifeval_experiments' in os.getcwd():
+    os.chdir('..')
 
 import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
+sys.path.append(os.getcwd())
 
-import numpy as np
 import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import if_inference
@@ -44,8 +35,6 @@ def extract_representation(model, tokenizer, problem, device, num_final_tokens=8
 @hydra.main(config_path='../config', config_name='compute_representations')
 def compute_representations(args: DictConfig):
     print(OmegaConf.to_yaml(args))
-    
-    os.chdir(args.project_dir)
 
     if 'all_base_x_all_instructions' in args.data_path:
         with open(args.data_path) as f:
@@ -100,7 +89,6 @@ def compute_representations(args: DictConfig):
         p_bar = tqdm.tqdm(total=len(joined_df[joined_df['instruction_id_list'].apply(lambda x: len(x) == 1)]))
 
     for instruction_type in all_instructions:
-        # TODO for now, we are only considering one instruction type
         instr_data_df = joined_df[[[instruction_type] == l for l in joined_df['instruction_id_list'] ]]
         instr_data_df.reset_index(inplace=True, drop=True)
 
@@ -116,17 +104,16 @@ def compute_representations(args: DictConfig):
         # Run the model on each input
         for i, r in instr_data_df.iterrows():
             row = dict(r)
-            example = r.prompt
-            example = row['prompt']
-            example_no_instr = row['prompt_no_instr']
 
-            # apply the chat template for phi-3 TODO change for different models
-            # example = f'<|user|>\n{example}<|end|>\n<|assistant|>'
-            # example_no_instr = f'<|user|>\n{example_no_instr}<|end|>\n<|assistant|>'
-            messages = [{"role": "user", "content": example}]
-            example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-            messages_no_instr = [{"role": "user", "content": example_no_instr}]
-            example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
+            if 'gemma' in model_name and '-it' not in model_name:
+                print('Using no-IT Gemma: not using chat template')
+                example = f'Q: {row["prompt"]}\nA:'
+                example_no_instr = f'Q: {row["prompt_no_instr"]}\nA:'
+            else:
+                messages = [{"role": "user", "content": row['prompt']}]
+                example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
+                messages_no_instr = [{"role": "user", "content": row['prompt_no_instr']}]
+                example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
 
             out1 = if_inference(model, tokenizer, example, args.device, max_new_tokens=args.max_generation_length)
             last_token_rs = extract_representation(model, tokenizer, example, args.device, num_final_tokens)
@@ -142,6 +129,9 @@ def compute_representations(args: DictConfig):
             p_bar.update(1)
 
         df = pd.DataFrame(rows)
+
+        if args.dry_run:
+            break
 
         folder = f'./representations/{model_name}/single_instr'
         if args.use_data_subset:
