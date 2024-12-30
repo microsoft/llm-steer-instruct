@@ -1,7 +1,7 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-2b-it"
+# model_name="gemma-2-2b-it"
 
 gpu_req="a100_80gb:1"
 gpu_req="rtx_4090:1"
@@ -16,11 +16,11 @@ data_path=./data/ifeval_single_keyword_include.jsonl
 # data_path=./data/keyword_test_exclusion_likely.jsonl
 # data_path=./data/ifeval_single_keyword_exclude.jsonl
 
-source_layer_idx=24
-steering_weight=80
+source_layer_idx=26
+steering_weight=40
 steering=add_vector
 # steering=0
-include_instructions=false
+include_instructions=true
 
 specific_instruction=existence
 # specific_instruction=existence_validation
