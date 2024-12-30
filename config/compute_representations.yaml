@@ -1,0 +1,23 @@
+device: 'cuda'
+data_path: './data/all_base_x_all_instructions_filtered.jsonl'
+#data_no_instr_path: '../data/input_data_no_instr.jsonl'
+data_no_instr_path: null
+dry_run: False
+output_path: 'out/'
+path_to_hf_token: './hf_token.txt'
+transformers_cache_dir: null
+
+model_name: 'gpt2'
+max_generation_length: 512
+use_data_subset: False
+data_subset_ratio: 0.7
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
