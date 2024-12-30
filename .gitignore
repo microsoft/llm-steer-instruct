@@ -6,6 +6,8 @@ packages-microsoft*
 format/representations/
 length/representations/
 keywords/representations/
+format/representations/
+length/representations/
 .vscode/
 stored_hs
 .DS_Store
