@@ -115,6 +115,16 @@ def compute_representations(args: DictConfig):
                 messages_no_instr = [{"role": "user", "content": row['prompt_no_instr']}]
                 example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
 
+            if 'gemma' in model_name and '-it' not in model_name:
+                print('Using no-IT Gemma: not using chat template')
+                example = f'Q: {row["prompt"]}\nA:'
+                example_no_instr = f'Q: {row["prompt_no_instr"]}\nA:'
+            else:
+                messages = [{"role": "user", "content": row['prompt']}]
+                example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
+                messages_no_instr = [{"role": "user", "content": row['prompt_no_instr']}]
+                example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
+
             out1 = if_inference(model, tokenizer, example, args.device, max_new_tokens=args.max_generation_length)
             last_token_rs = extract_representation(model, tokenizer, example, args.device, num_final_tokens)
             row['output'] = out1

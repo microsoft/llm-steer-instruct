@@ -1,5 +1,6 @@
 device: 'cuda'
 data_path: './data/all_base_x_all_instructions_filtered.jsonl'
+data_path: './data/all_base_x_all_instructions_filtered.jsonl'
 #data_no_instr_path: '../data/input_data_no_instr.jsonl'
 data_no_instr_path: null
 dry_run: False
