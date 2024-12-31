@@ -2,7 +2,7 @@
 
 model_name="phi-3"
 # model_name="mistral-7b-instruct"
-model_name="gemma-2-9b"
+model_name="gemma-2-2b"
 
 gpu_req="a100_80gb:1"
 # gpu_req="v100:1"
@@ -36,7 +36,7 @@ else
     max_generation_length=2048
 fi
 
-max_generation_length=1024
+#max_generation_length=1024
 
 echo $model_name
 echo $include_instructions
