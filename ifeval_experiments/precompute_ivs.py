@@ -139,7 +139,7 @@ if 'validation_accuracy' in search_method:
             optimal_layers[instr] = optimal_layer[0]
         
         elif 'perplexity' in search_method:
-            # add boolean column that is true when perplexity is greater than 0.1
+            # add boolean column that is true when perplexity is low
             instr_df['low_perplexity'] = instr_df.perplexity < 2.5
 
             # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0

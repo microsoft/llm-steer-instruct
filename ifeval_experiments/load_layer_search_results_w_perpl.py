@@ -18,13 +18,13 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'gemma-2-2b-it'
+model_name = 'gemma-2-2b'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 # model_name='mistral-7b-instruct'
 # model_name='gemma-2-2b-it'
-model_name = 'phi-3'
+# model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 8
+n_examples = 10
 seed = 42
 instr_present = 'instr'
 # instr_present = 'no_instr_lowercase'
@@ -140,11 +140,11 @@ for instruction in all_instructions:
         x=.85
     ))
 
-    if 'gemma' in model_name and 'json' in instruction:
-        # save plot as pdf 
-        fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
-    elif model_name == 'phi-3' and ( 'multiple' in instruction or 'lowercase' in instruction):
-        fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
+    # if 'gemma' in model_name and 'json' in instruction:
+    #     # save plot as pdf 
+    #     fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
+    # elif model_name == 'phi-3' and ( 'multiple' in instruction or 'lowercase' in instruction):
+    #     fig.write_image(f'./plots_for_paper/format/validation/{model_name}_{instr_present}_{instruction.split(":")[-1]}.pdf')
 
     fig.show()
 
