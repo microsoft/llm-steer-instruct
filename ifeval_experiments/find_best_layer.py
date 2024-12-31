@@ -51,11 +51,11 @@ def run_experiment(args: DictConfig):
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
 
     if args.dry_run:
-        data_df = data_df.head(5)
+        data_df = data_df.head(2)
 
     out_lines = []
 
@@ -96,7 +96,7 @@ def run_experiment(args: DictConfig):
 
 
         if args.dry_run:
-            instr_data_df = instr_data_df.head(2)
+            instr_data_df = instr_data_df.head(1)
 
         if args.steering != 'none':
             # load the stored representations
@@ -217,6 +217,7 @@ def run_experiment(args: DictConfig):
     # write out_lines as jsonl
     folder = f'{args.output_path}/{args.model_name}'
     folder += f'/n_examples{args.n_examples_per_instruction}_seed{args.seed}'
+    folder += '_cross_model' if args.cross_model_steering else ''
 
     os.makedirs(folder, exist_ok=True)
     out_path = f'{folder}/out'
