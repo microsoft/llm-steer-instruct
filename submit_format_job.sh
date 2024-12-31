@@ -1,9 +1,8 @@
 #!/bin/bash
 
 model_name="phi-3"
-model_name="gemma-2-2b"
 # model_name="mistral-7b-instruct"
-model_name="gemma-2-9b"
+model_name="gemma-2-2b"
 
 gpu_req="a100_80gb:1"
 # gpu_req="v100:1"
@@ -17,9 +16,9 @@ dry_run=false
 source_layer_idx=-1
 steering=adjust_rs
 
-include_instructions=true
+include_instructions=false
 
-cross_model_steering=true
+cross_model_steering=false
 
 nonparametric_only=true
 
@@ -29,13 +28,13 @@ else
     data_path='./data/input_data_single_instr_no_instr.jsonl'
 fi
 
+max_generation_length=1024
+
 if [ "$model_name" = mistral-7b-instruct ]; then
     max_generation_length=1024
 else
     max_generation_length=2048
 fi
-
-max_generation_length=1024
 
 echo $model_name
 echo $include_instructions

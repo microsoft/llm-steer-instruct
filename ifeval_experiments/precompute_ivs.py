@@ -33,21 +33,31 @@ with open('./data/input_data_single_instr.jsonl') as f:
     data = f.readlines()
     data = [json.loads(d) for d in data]
 input_data_df = pd.DataFrame(data)
-all_instructions = input_data_df['instruction_id_list_for_eval'].apply(lambda x: x[0]).unique()
+all_instructions = list(input_data_df['instruction_id_list_for_eval'].apply(lambda x: x[0]).unique())
 len(all_instructions)
 
 
 # %%
 model_name = 'gemma-2-9b-it'
-model_name = 'gemma-2-9b'
+model_name = 'gemma-2-2b'
 # model_name = 'phi-3'
 # model_name = 'mistral-7b-instruct'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_perplexity'
+search_method = 'validation_accuracy_w_perplexity_no_instr'
 seed=42
-n_examples = 6
+n_examples = 10
+
+nonparametric_only = True
+
+if nonparametric_only:
+    # filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
+    filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
+    all_instructions = list(filter(lambda x: any([f in x for f in filters]), all_instructions))
+
+print(all_instructions)
+
 
 rows = []
 
