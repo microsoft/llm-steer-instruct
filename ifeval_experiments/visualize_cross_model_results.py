@@ -123,6 +123,7 @@ for model_name in model_names:
         for i, row in df.iterrows():
             if 'Q:' in row['response']:
                 row['response'] = row['response'].split('Q:')[0]
+                print('TRUNCATED RESPONSE')
 
 
             # compute accuracy
@@ -135,15 +136,16 @@ for model_name in model_names:
 
         return pd.DataFrame(new_rows)
 
-    results_df = truncate_responses(results_df)
+    #results_df = truncate_responses(results_df)
     results_df_steering = truncate_responses(results_df_steering)
-    results_df_steering_cross = truncate_responses(results_df_steering_cross)
-    results_df_standard = truncate_responses(results_df_standard)
-    results_df_instr_plus_steering = truncate_responses(results_df_instr_plus_steering)
-    results_df_instr_plus_steering_cross = truncate_responses(results_df_instr_plus_steering_cross)
+    #results_df_steering_cross = truncate_responses(results_df_steering_cross)
+    #results_df_standard = truncate_responses(results_df_standard)
+    #results_df_instr_plus_steering = truncate_responses(results_df_instr_plus_steering)
+    #results_df_instr_plus_steering_cross = truncate_responses(results_df_instr_plus_steering_cross)
 
 
     # print overall accuracy
+    print('After truncating responses')
     print(f'Overall accuracy: {results_df.follow_all_instructions.mean()}')
     print(f'Overall accuracy steering: {results_df_steering.follow_all_instructions.mean()}')
     print(f'Overall accuracy steering cross: {results_df_steering_cross.follow_all_instructions.mean()}')

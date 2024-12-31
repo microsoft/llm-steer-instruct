@@ -154,7 +154,20 @@ if 'validation_accuracy' in search_method:
 
             # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
             df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
-            df_group_by_layer.loc[df_group_by_layer.low_perplexity > 0, 'follow_all_instructions'] = 0
+            if model_name == 'gemma-2-9b' or model_name == 'gemma-2-2b':
+                baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
+            else:
+                baseline_low_perplexity = 0
+
+            # get accuracy for layer -1
+            accuracy_layer_minus_1 = df_group_by_layer.loc[-1, 'follow_all_instructions']
+
+            df_group_by_layer.loc[df_group_by_layer.low_perplexity > baseline_low_perplexity, 'follow_all_instructions'] = 0
+
+            # restore accuracy for layer -1
+            df_group_by_layer.loc[-1, 'follow_all_instructions'] = accuracy_layer_minus_1
+
+            df_group_by_layer.loc[df_group_by_layer.low_perplexity > baseline_low_perplexity, 'follow_all_instructions'] = 0
             max_accuracy = df_group_by_layer.follow_all_instructions.max()
             optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
             optimal_layers[instr] = optimal_layer[0]
