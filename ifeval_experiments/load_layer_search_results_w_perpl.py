@@ -18,13 +18,13 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'gemma-2-9b'
+model_name = 'gemma-2-2b'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 # model_name='mistral-7b-instruct'
 # model_name='gemma-2-2b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 6
+n_examples = 10
 seed = 42
 instr_present = 'instr'
 # instr_present = 'no_instr_lowercase'
@@ -62,9 +62,21 @@ for instr in all_instructions:
     optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
     new_optimal_layers[instr] = optimal_layer[0]
 
-    # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
+    # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with low_perplexity > 0
     df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
-    df_group_by_layer.loc[df_group_by_layer.low_perplexity > 0, 'follow_all_instructions'] = 0
+    
+    # get baseline low_perplexity as the df_group_by_layer.low_perplexity for layer -1
+    baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
+    # baseline_low_perplexity = 0
+
+    # get accuracy for layer -1
+    accuracy_layer_minus_1 = df_group_by_layer.loc[-1, 'follow_all_instructions']
+
+    df_group_by_layer.loc[df_group_by_layer.low_perplexity > baseline_low_perplexity, 'follow_all_instructions'] = 0
+
+    # restore accuracy for layer -1
+    df_group_by_layer.loc[-1, 'follow_all_instructions'] = accuracy_layer_minus_1
+
     max_accuracy = df_group_by_layer.follow_all_instructions.max()
     optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
     new_optimal_layers_perpl[instr] = optimal_layer[0]

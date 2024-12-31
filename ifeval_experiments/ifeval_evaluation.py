@@ -74,7 +74,7 @@ def run_experiment(args: DictConfig):
         print(f'Steering is none, using HF model: {args.hf_model}')
         hf_model = args.hf_model
     else:
-        print('Steering is not none, using HF model')
+        print('Steering is not none')
         hf_model = False
     model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
     model.to(device)
@@ -152,7 +152,11 @@ def run_experiment(args: DictConfig):
 
         if (args.steering == 'none') or layer_idx == -1:
             row['steering_layer'] = -1
-            out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+            if (args.model_name == 'gemma-2-2b' or args.model_name == 'gemma-2-9b'):
+                encoded_example = tokenizer(example, return_tensors='pt').to(device)
+                out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=[], max_tokens_generated=args.max_generation_length, decode_directly=True)
+            else:
+                out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
         elif args.steering != 'none':
             intervention_dir = instr_dir.to(device)
             if args.apply_to_all_layers:
@@ -169,13 +173,14 @@ def run_experiment(args: DictConfig):
             #encoded_example = tokenizer.apply_chat_template(messages, return_tensors='pt').to(device)
             encoded_example = tokenizer(example, return_tensors='pt').to(device)
             out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length, decode_directly=True)
-            # if out 1 is a list, take the first element
-            if isinstance(out1, list):
-                out1 = out1[0]
+            
             row['steering_layer'] = int(layer_idx)
         else:
             raise ValueError(f"Unknown steering method: {args.steering}")
-        
+        # if out 1 is a list, take the first element
+        if isinstance(out1, list):
+            out1 = out1[0]
+            
         row['response'] = out1
 
         if 'no_instr' in args.data_path:
