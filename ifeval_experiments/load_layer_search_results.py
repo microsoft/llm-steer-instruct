@@ -20,18 +20,18 @@ from tqdm import tqdm
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='gemma-2-2b'
+model_name='gemma-2-9b'
 # model_name='gemma-2-9b-it'
-model_name = 'phi-3'
+# model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 8
+n_examples = 6
 seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
 # instr = 'no_instr_lowercase'
 # instr = 'no_instr'
 
-w_perplexity = '_with_perplexity'
+w_perplexity = ''
 
 file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr}.jsonl'
 with open(file, 'r') as f:

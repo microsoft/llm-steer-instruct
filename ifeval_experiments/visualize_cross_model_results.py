@@ -164,7 +164,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-setting = '<b>w/</b> Instr.'
+# setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])
@@ -275,7 +275,7 @@ fig.update_layout(width=300, height=250)
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
-store=True
+store=False
 
 if store:
     # save plot as pdf

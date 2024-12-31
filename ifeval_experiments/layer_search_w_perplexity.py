@@ -50,8 +50,6 @@ def compute_perplexity(text):
             print(f'Error: {e}')
             loss = torch.tensor(0.0)
 
-        print
-
     # Compute the perplexity
     perplexity = torch.exp(loss)
     return perplexity.item()
@@ -63,9 +61,9 @@ model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 model_name='gemma-2-2b'
 # model_name='gemma-2-9b-it'
-model_name = 'phi-3'
+# model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 8
+n_examples = 6
 seed = 42
 
 
