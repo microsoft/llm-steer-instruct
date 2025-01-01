@@ -45,7 +45,7 @@ model_name = 'gemma-2-9b'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_perplexity'
+search_method = 'validation_accuracy_w_perplexity_cross_model'
 seed=42
 n_examples = 6
 
@@ -68,13 +68,18 @@ if 'validation_accuracy' in search_method:
     else:
         w_perplexity = ''
 
+    if '_cross_model' in search_method:
+        cross_model = '_cross_model'
+    else:
+        cross_model = ''
+
     if 'no_instr' in search_method:
         instr_included = 'no_instr'
     else:
         instr_included = 'instr'
     print(f'INSTR: {instr_included}')
     folder = 'ifeval_experiments/layer_search_out'
-    file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr_included}.jsonl'
+    file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{cross_model}{w_perplexity}/out_{instr_included}.jsonl'
     with open(file, 'r') as f:
         results = [json.loads(line) for line in f]
 
@@ -286,7 +291,7 @@ elif 'validation_accuracy' in search_method:
     if 'quality_check' in search_method:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_quality_check_{instr_included}.h5', key='df', mode='w')
     elif 'perplexity' in search_method:
-        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_{instr_included}.h5', key='df', mode='w')
+        df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_perplexity{cross_model}_{instr_included}.h5', key='df', mode='w')
     else:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation_{instr_included}.h5', key='df', mode='w')
 elif search_method == 'cosine_similarity':

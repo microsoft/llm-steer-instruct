@@ -68,8 +68,9 @@ seed = 42
 
 
 model_names = ['phi-3', 'mistral-7b-instruct', 'gemma-2-2b-it', 'gemma-2-9b-it', ]
-model_names = ['gemma-2-2b', 'gemma-2-9b']
-settings = ['instr', 'no_instr', ]
+model_names = ['gemma-2-2b', ] # 'gemma-2-9b']
+#settings = ['instr', 'no_instr', ]
+settings = ['no_instr', ]
 n_examples_dict = {'phi-3' : 8, 'mistral-7b-instruct': 8, 'gemma-2-2b-it': 8, 'gemma-2-9b-it': 6, 'gemma-2-2b': 10, 'gemma-2-9b': 6}
 
 all_dfs = {}
@@ -80,7 +81,7 @@ for model_name in model_names:
         n_examples = n_examples_dict[model_name]
         print(f'Processing {model_name} | {setting} | {n_examples} examples | seed {seed}')
 
-        path = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}'
+        path = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}_cross_model'
         file = f'{path}/out_{setting}.jsonl'
         with open(file, 'r') as f:
             results = [json.loads(line) for line in f]

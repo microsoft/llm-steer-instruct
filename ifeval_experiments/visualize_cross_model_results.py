@@ -166,7 +166,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-# setting = '<b>w/</b> Instr.'
+setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])
