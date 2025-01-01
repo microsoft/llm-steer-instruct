@@ -45,7 +45,7 @@ model_name = 'gemma-2-9b'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_perplexity_no_instr'
+search_method = 'validation_accuracy_w_perplexity'
 seed=42
 n_examples = 6
 
