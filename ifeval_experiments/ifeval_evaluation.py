@@ -102,11 +102,13 @@ def run_experiment(args: DictConfig):
 
     if args.steering != 'none':
         # load the pre-computed IVs 
-        if 'gemma' in args.model_name and 'it' not in args.model_name and args.cross_model_steering:
-            print(f'Using {args.model_name} Instruction-tuned Vectors')
-            folder = f'{args.project_dir}/representations/{args.model_name}-it/{args.representations_folder}'
-        else:
-            folder = f'{args.project_dir}/representations/{args.model_name}/{args.representations_folder}'
+        # if args.cross_model_steering:
+        #     if not ('gemma' in args.model_name and 'it' not in args.model_name):
+        #         raise Exception('Can\'t use cross model steering with this model')
+        #     print(f'Using {args.model_name} Instruction-tuned Vectors')
+        #     folder = f'{args.project_dir}/representations/{args.model_name}-it/{args.representations_folder}'
+        # else:
+        folder = f'{args.project_dir}/representations/{args.model_name}/{args.representations_folder}'
         if args.source_layer_idx == -1:
             instr_included = 'no_instr' if 'no_instr' in args.data_path else 'instr' 
             # use best layer
