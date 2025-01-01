@@ -136,12 +136,12 @@ for model_name in model_names:
 
         return pd.DataFrame(new_rows)
 
-    #results_df = truncate_responses(results_df)
+    results_df = truncate_responses(results_df)
     results_df_steering = truncate_responses(results_df_steering)
-    #results_df_steering_cross = truncate_responses(results_df_steering_cross)
-    #results_df_standard = truncate_responses(results_df_standard)
-    #results_df_instr_plus_steering = truncate_responses(results_df_instr_plus_steering)
-    #results_df_instr_plus_steering_cross = truncate_responses(results_df_instr_plus_steering_cross)
+    results_df_steering_cross = truncate_responses(results_df_steering_cross)
+    results_df_standard = truncate_responses(results_df_standard)
+    results_df_instr_plus_steering = truncate_responses(results_df_instr_plus_steering)
+    results_df_instr_plus_steering_cross = truncate_responses(results_df_instr_plus_steering_cross)
 
 
     # print overall accuracy
@@ -166,7 +166,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-setting = '<b>w/</b> Instr.'
+# setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])
