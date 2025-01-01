@@ -110,7 +110,10 @@ def run_experiment(args: DictConfig):
         if args.source_layer_idx == -1:
             instr_included = 'no_instr' if 'no_instr' in args.data_path else 'instr' 
             # use best layer
-            file = f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_{instr_included}.h5'
+            if args.cross_model_steering:
+                file = f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_cross_model_{instr_included}.h5'
+            else:
+                file = f'{folder}/pre_computed_ivs_best_layer_validation_perplexity_{instr_included}.h5'
         else:
             file = f'{folder}/pre_computed_ivs_layer_{args.source_layer_idx}.h5'
         pre_computed_ivs = pd.read_hdf(file, key='df')
