@@ -68,9 +68,8 @@ seed = 42
 
 
 model_names = ['phi-3', 'mistral-7b-instruct', 'gemma-2-2b-it', 'gemma-2-9b-it', ]
-model_names = ['gemma-2-2b', ] # 'gemma-2-9b']
-#settings = ['instr', 'no_instr', ]
-settings = ['no_instr', ]
+model_names = ['gemma-2-2b', 'gemma-2-9b']
+settings = ['instr', 'no_instr', ]
 n_examples_dict = {'phi-3' : 8, 'mistral-7b-instruct': 8, 'gemma-2-2b-it': 8, 'gemma-2-9b-it': 6, 'gemma-2-2b': 10, 'gemma-2-9b': 6}
 
 all_dfs = {}
