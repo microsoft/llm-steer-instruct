@@ -39,15 +39,15 @@ len(all_instructions)
 
 # %%
 model_name = 'gemma-2-9b-it'
-model_name = 'gemma-2-9b'
+model_name = 'gemma-2-2b'
 # model_name = 'phi-3'
 # model_name = 'mistral-7b-instruct'
 dry_run = False
 device = 'cpu'
 specific_layer = None
-search_method = 'validation_accuracy_w_perplexity_cross_model'
+search_method = 'validation_accuracy_w_perplexity_cross_model_no_instr'
 seed=42
-n_examples = 6
+n_examples = 10
 
 nonparametric_only = True
 
@@ -184,7 +184,12 @@ if 'validation_accuracy' in search_method:
 
 for instr in tqdm(all_instructions):
     # check if the file exists
-    folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
+    if model_name == 'gemma-2b' and 'cross_model' in search_method:
+        folder = f'./ifeval_experiments/representations/gemma-2b-it/single_instr_all_base_x_all_instr'
+    elif model_name == 'gemma-99b' and 'cross_model' in search_method:
+        folder = f'./ifeval_experiments/representations/gemma-9b-it/single_instr_all_base_x_all_instr'
+    else:
+        folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
 
     file =f'{folder}/{"".join(instr).replace(":", "_")}.h5'
     if not os.path.exists(file):
