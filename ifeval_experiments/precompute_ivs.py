@@ -184,14 +184,17 @@ if 'validation_accuracy' in search_method:
 
 for instr in tqdm(all_instructions):
     # check if the file exists
-    if model_name == 'gemma-2b' and 'cross_model' in search_method:
-        folder = f'./ifeval_experiments/representations/gemma-2b-it/single_instr_all_base_x_all_instr'
-    elif model_name == 'gemma-9b' and 'cross_model' in search_method:
-        folder = f'./ifeval_experiments/representations/gemma-9b-it/single_instr_all_base_x_all_instr'
+    if model_name == 'gemma-2-2b' and 'cross_model' in search_method:
+        print('Using representations from gemma-2-2b-it')
+        rep_folder = f'./ifeval_experiments/representations/gemma-2b-it/single_instr_all_base_x_all_instr'
+    elif model_name == 'gemma-2-9b' and 'cross_model' in search_method:
+        print('Using representations from gemma-2-9b-it')
+        rep_folder = f'./ifeval_experiments/representations/gemma-9b-it/single_instr_all_base_x_all_instr'
     else:
-        folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
+        print(f'Using representations from {model_name}')
+        rep_folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
 
-    file =f'{folder}/{"".join(instr).replace(":", "_")}.h5'
+    file =f'{rep_folder}/{"".join(instr).replace(":", "_")}.h5'
     if not os.path.exists(file):
         print(f'File {file} does not exist')
         continue
@@ -290,6 +293,7 @@ df = pd.DataFrame(rows)
 
 # %%
 # store the df in folder + '/pre_computed_ivs_best_layer.h5'
+folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
 if specific_layer is not None:
     df.to_hdf(f'{folder}/pre_computed_ivs_layer_{specific_layer}.h5', key='df', mode='w')
 elif 'validation_accuracy' in search_method:
