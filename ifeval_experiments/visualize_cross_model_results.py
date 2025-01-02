@@ -20,7 +20,7 @@ from eval.evaluation_main import test_instruction_following_loose
 import plotly
 # %%
 overall_accuracies = {}
-model_names = ['gemma-2-2b', 'gemma-2-9b']
+model_names = ['gemma-2-2b',] #'gemma-2-9b']
 for model_name in model_names:
     single_instr = 'single_instr/all_base_x_all_instr'
     mode = 'no_instr'
@@ -42,7 +42,7 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_steering = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_perplexity_cross_model_old'
+    mode = 'adjust_rs_-1_perplexity_cross_model'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
