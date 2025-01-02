@@ -20,16 +20,16 @@ from tqdm import tqdm
 folder = 'ifeval_experiments/layer_search_out'
 model_name = 'mistral-7b-instruct'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='gemma-2-2b'
+model_name='gemma-2-9b'
 # model_name='gemma-2-9b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 10
+n_examples = 6
 seed = 42
 instr = 'instr_detectable_format:multiple_sections'
 instr = 'instr'
 # instr = 'no_instr_lowercase'
-instr = 'no_instr'
+# instr = 'no_instr'
 
 w_perplexity = '_cross_model_with_perplexity'
 
@@ -66,7 +66,7 @@ for instr in all_instructions:
     instr_df = results_df[results_df.single_instruction_id == instr]
     optimal_layer = optimal_layers[instr]
     accuracy_values.append(instr_df[instr_df.layer == optimal_layer].follow_all_instructions.mean())
-# %%
+
 sum(accuracy_values) / len(accuracy_values)
 # %%
 # plot distribution of optimal layers
