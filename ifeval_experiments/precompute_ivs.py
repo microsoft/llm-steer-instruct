@@ -186,10 +186,10 @@ for instr in tqdm(all_instructions):
     # check if the file exists
     if model_name == 'gemma-2-2b' and 'cross_model' in search_method:
         print('Using representations from gemma-2-2b-it')
-        rep_folder = f'./ifeval_experiments/representations/gemma-2b-it/single_instr_all_base_x_all_instr'
+        rep_folder = f'./ifeval_experiments/representations/gemma-2-2b-it/single_instr_all_base_x_all_instr'
     elif model_name == 'gemma-2-9b' and 'cross_model' in search_method:
         print('Using representations from gemma-2-9b-it')
-        rep_folder = f'./ifeval_experiments/representations/gemma-9b-it/single_instr_all_base_x_all_instr'
+        rep_folder = f'./ifeval_experiments/representations/gemma-2-9b-it/single_instr_all_base_x_all_instr'
     else:
         print(f'Using representations from {model_name}')
         rep_folder = f'./ifeval_experiments/representations/{model_name}/single_instr_all_base_x_all_instr'
