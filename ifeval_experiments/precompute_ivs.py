@@ -120,7 +120,7 @@ if 'validation_accuracy' in search_method:
                 broken_outputs.append(0)
 
             # fix problem with capital word frequency
-            if r.single_instruction_id == 'change_case:capital_word_frequency' and r.layer == -1:
+            if r.single_instruction_id == 'change_case:capital_word_frequency':
                 if 'less than' in r.prompt or 'at most' in r.prompt:
                     relation = 'less than'
                 elif 'more than' in r.prompt or 'at least' in r.prompt:
@@ -157,12 +157,21 @@ if 'validation_accuracy' in search_method:
             # add boolean column that is true when perplexity is low
             instr_df['low_perplexity'] = instr_df.perplexity < 2.5
 
-            # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
-            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
             if model_name == 'gemma-2-9b' or model_name == 'gemma-2-2b':
-                baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
+                # baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
+
+                # get uids of low perplexity outputs for layer -1
+                low_perplexity_uids = instr_df[instr_df.layer == -1][instr_df.low_perplexity].uid
+
+                # set low_perplexity to 0 for outputs with low_perplexity_uids
+                instr_df.loc[instr_df.uid.isin(low_perplexity_uids), 'low_perplexity'] = False
+                instr_df.loc[instr_df.uid.isin(low_perplexity_uids), 'follow_all_instructions'] = False 
+                baseline_low_perplexity = 0
             else:
                 baseline_low_perplexity = 0
+
+            # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with large_perplexity > 0
+            df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
 
             # get accuracy for layer -1
             accuracy_layer_minus_1 = df_group_by_layer.loc[-1, 'follow_all_instructions']
