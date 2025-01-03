@@ -80,7 +80,7 @@ for model_name in model_names:
         n_examples = n_examples_dict[model_name]
         print(f'Processing {model_name} | {setting} | {n_examples} examples | seed {seed}')
 
-        path = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}_cross_model'
+        path = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}'
         file = f'{path}/out_{setting}.jsonl'
         with open(file, 'r') as f:
             results = [json.loads(line) for line in f]
@@ -138,7 +138,7 @@ for model_name in model_names:
                 broken_outputs.append(0)
 
             # fix problem with capital word frequency
-            if r.single_instruction_id == 'change_case:capital_word_frequency' and r.layer == -1:
+            if r.single_instruction_id == 'change_case:capital_word_frequency':
                 if 'less than' in r.prompt or 'at most' in r.prompt:
                     relation = 'less than'
                 elif 'more than' in r.prompt or 'at least' in r.prompt:
@@ -155,6 +155,12 @@ for model_name in model_names:
                 # update follow_all_instructions
                 results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
 
+            # if r.single_instruction_id == 'detectable_format:multiple_sections':
+            #     prompt_to_response = {}
+            #     prompt_to_response[r['prompt']] = r['response']
+            #     output = test_instruction_following_loose(r, prompt_to_response, improved_multiple_section_checker=True)
+            #     results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
+            
             # compute perplexity
             perplexities.append(compute_perplexity(response))
             p_bar.update(1)
