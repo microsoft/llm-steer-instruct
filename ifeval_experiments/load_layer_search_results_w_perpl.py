@@ -18,19 +18,19 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'gemma-2-2b-it'
+model_name = 'gemma-2-2b'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 # model_name='mistral-7b-instruct'
 # model_name='gemma-2-2b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 8
+n_examples = 10
 seed = 42
 instr_present = 'instr'
 # instr_present = 'no_instr_lowercase'
 # instr_present = 'no_instr'
 
-w_perplexity = '_with_perplexity'
+w_perplexity = '_cross_model_with_perplexity'
 
 file = f'{folder}/{model_name}/n_examples{n_examples}_seed{seed}{w_perplexity}/out_{instr_present}.jsonl'
 with open(file, 'r') as f:
@@ -57,10 +57,10 @@ for instr in all_instructions:
     optimal_layers[instr] = optimal_layer[0]
 
     # set follow_all_instructions to in df_group_by_layer when broken_output is > 0
-    df_group_by_layer.loc[df_group_by_layer.broken_output > 0, 'follow_all_instructions'] = 0
-    max_accuracy = df_group_by_layer.follow_all_instructions.max()
-    optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
-    new_optimal_layers[instr] = optimal_layer[0]
+    # df_group_by_layer.loc[df_group_by_layer.broken_output > 0, 'follow_all_instructions'] = 0
+    # max_accuracy = df_group_by_layer.follow_all_instructions.max()
+    # optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
+    # new_optimal_layers[instr] = optimal_layer[0]
 
     # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with low_perplexity > 0
     df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
@@ -76,6 +76,33 @@ for instr in all_instructions:
 
     # restore accuracy for layer -1
     df_group_by_layer.loc[-1, 'follow_all_instructions'] = accuracy_layer_minus_1
+
+    max_accuracy = df_group_by_layer.follow_all_instructions.max()
+    optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
+    new_optimal_layers[instr] = optimal_layer[0]
+
+
+    # get uids of low perplexity outputs for layer -1
+    low_perplexity_uids = instr_df[instr_df.layer == -1][instr_df.low_perplexity].uid
+
+    # set low_perplexity to 0 for outputs with low_perplexity_uids
+    instr_df.loc[instr_df.uid.isin(low_perplexity_uids), 'low_perplexity'] = False
+    instr_df.loc[instr_df.uid.isin(low_perplexity_uids), 'follow_all_instructions'] = False
+
+    # set follow_all_instructions to 0 in df_group_by_layer when there exists an entry with low_perplexity > 0
+    df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
+    
+    # get baseline low_perplexity as the df_group_by_layer.low_perplexity for layer -1
+    # baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
+    baseline_low_perplexity = 0
+
+    # get accuracy for layer -1
+    # accuracy_layer_minus_1 = df_group_by_layer.loc[-1, 'follow_all_instructions']
+
+    df_group_by_layer.loc[df_group_by_layer.low_perplexity > baseline_low_perplexity, 'follow_all_instructions'] = 0
+
+    # restore accuracy for layer -1
+    # df_group_by_layer.loc[-1, 'follow_all_instructions'] = accuracy_layer_minus_1
 
     max_accuracy = df_group_by_layer.follow_all_instructions.max()
     optimal_layer = df_group_by_layer[df_group_by_layer.follow_all_instructions == max_accuracy].index
