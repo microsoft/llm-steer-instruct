@@ -43,15 +43,15 @@ model_name = 'gemma-2-9b'
 # model_name = 'phi-3'
 # model_name = 'mistral-7b-instruct'
 
-model_names = ['gemma-2-9b', 'gemma-2-9b-it', 'gemma-2-2b', 'gemma-2-2b-it']
+model_names = ['gemma-2-9b', 'gemma-2-2b', ]
 dry_run = False
 device = 'cpu'
 specific_layer = None
-include_instr_strings = ['no_instr', '']
-cross_model_strings = ['cross_model', '']
+include_instr_strings = ['_no_instr', '']
+cross_model_strings = ['_cross_model', '']
 search_method = 'validation_accuracy_w_perplexity_cross_model_no_instr'
 seed=42
-n_examples = {'gemma-2-9b' : 6 , 'gemma-2-9b-it' : 6, 'gemma-2-2b' : 10, 'gemma-2-2b-it' : 8}
+n_examples_dict = {'gemma-2-9b' : 6 , 'gemma-2-9b-it' : 6, 'gemma-2-2b' : 10, 'gemma-2-2b-it' : 8}
 
 nonparametric_only = True
 
@@ -60,6 +60,9 @@ for model_name in model_names:
         for cross_model_string in cross_model_strings:
 
             search_method = f'validation_accuracy_w_perplexity_{cross_model_string}{include_instr_string}'
+
+            n_examples = n_examples_dict[model_name]
+            print(n_examples)
                     
 
             if nonparametric_only:
@@ -79,7 +82,7 @@ for model_name in model_names:
                 else:
                     w_perplexity = ''
 
-                if '_cross_model' in search_method:
+                if 'cross_model' in search_method:
                     cross_model = '_cross_model'
                 else:
                     cross_model = ''
