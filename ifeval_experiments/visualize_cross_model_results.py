@@ -35,14 +35,14 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_perplexity'
+    mode = 'adjust_rs_-1_perplexity_3jan'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_steering = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_perplexity_cross_model'
+    mode = 'adjust_rs_-1_perplexity_cross_model_3jan'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -56,14 +56,14 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_standard = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_perplexity'
+    mode = 'instr_plus_adjust_rs_-1_perplexity_3jan'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_instr_plus_steering = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_perplexity_cross_model'
+    mode = 'instr_plus_adjust_rs_-1_perplexity_cross_model_3jan'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
