@@ -18,13 +18,13 @@ import torch
 from tqdm import tqdm
 # %%
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'gemma-2-2b'
+model_name = 'gemma-2-9b'
 # model_name = 'Qwen/Qwen2-1.5B-Instruct'
 # model_name='mistral-7b-instruct'
 # model_name='gemma-2-2b-it'
 # model_name = 'phi-3'
 # model_name = 'Llama-2-7b-chat'
-n_examples = 10
+n_examples = 6
 seed = 42
 instr_present = 'instr'
 # instr_present = 'no_instr_lowercase'
