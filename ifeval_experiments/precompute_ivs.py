@@ -171,13 +171,13 @@ for model_name in model_names:
                         # add boolean column that is true when perplexity is low
                         instr_df['low_perplexity'] = instr_df.perplexity < 2.5
 
+                        df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
+
                         if model_name == 'gemma-2-9b' or model_name == 'gemma-2-2b':
                             baseline_low_perplexity = df_group_by_layer.loc[-1, 'low_perplexity']
 
                         else:
                             baseline_low_perplexity = 0
-
-                        df_group_by_layer = instr_df[['layer', 'follow_all_instructions', 'low_perplexity']].groupby('layer').mean()
 
                         # get accuracy for layer -1
                         accuracy_layer_minus_1 = df_group_by_layer.loc[-1, 'follow_all_instructions']
