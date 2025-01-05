@@ -20,7 +20,7 @@ from eval.evaluation_main import test_instruction_following_loose
 import plotly
 # %%
 overall_accuracies = {}
-model_names = ['gemma-2-2b', 'gemma-2-9b']
+model_names = ['gemma-2-2b', ] #'gemma-2-9b']
 for model_name in model_names:
     single_instr = 'single_instr/all_base_x_all_instr'
     mode = 'no_instr'
