@@ -14,7 +14,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from eval.evaluation_main import test_instruction_following_loose
-from collections import Counter
 import re
 import torch
 from tqdm import tqdm
