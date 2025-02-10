@@ -20,7 +20,7 @@ from eval.evaluation_main import test_instruction_following_loose
 import plotly
 # %%
 overall_accuracies = {}
-model_names = ['gemma-2-2b', ] #'gemma-2-9b']
+model_names = ['gemma-2-2b', 'gemma-2-9b']
 for model_name in model_names:
     single_instr = 'single_instr/all_base_x_all_instr'
     mode = 'no_instr'
@@ -35,14 +35,21 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_perplexity_3jan'
+    path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/out.jsonl'
+    with open(path_to_results) as f:
+        results = f.readlines()
+        results = [json.loads(r) for r in results]
+    results_df_w_kwargs = pd.DataFrame(results)
+
+
+    mode = 'adjust_rs_-1_perplexity'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_steering = pd.DataFrame(results)
 
-    mode = 'adjust_rs_-1_perplexity_cross_model_3jan'
+    mode = 'adjust_rs_-1_perplexity_cross_model'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -56,14 +63,14 @@ for model_name in model_names:
         results = [json.loads(r) for r in results]
     results_df_standard = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_perplexity_3jan'
+    mode = 'instr_plus_adjust_rs_-1_perplexity'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
         results = [json.loads(r) for r in results]
     results_df_instr_plus_steering = pd.DataFrame(results)
 
-    mode = 'instr_plus_adjust_rs_-1_perplexity_cross_model_3jan'
+    mode = 'instr_plus_adjust_rs_-1_perplexity_cross_model'
     path_to_results = f'./ifeval_experiments/out/{model_name}/{single_instr}/{mode}/{subset}eval_results_{eval_type}.jsonl'
     with open(path_to_results) as f:
         results = f.readlines()
@@ -109,13 +116,14 @@ for model_name in model_names:
         results_df_instr_plus_steering = results_df_instr_plus_steering[results_df_instr_plus_steering.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
         results_df_instr_plus_steering.reset_index(drop=True, inplace=True)
         
-    # print the max length of the responses
-    print(f'Max length of responses: {max([len(r.split()) for r in results_df.response])}')
-    print(f'Max length of responses steering: {max([len(r.split()) for r in results_df_steering.response])}')
-    print(f'Max length of responses steering cross: {max([len(r.split()) for r in results_df_steering_cross.response])}')
-    print(f'Max length of responses standard: {max([len(r.split()) for r in results_df_standard.response])}')
-    print(f'Max length of responses instr_plus_steering cross: {max([len(r.split()) for r in results_df_instr_plus_steering_cross.response])}')
-    print(f'Max length of responses instr_plus_steering: {max([len(r.split()) for r in results_df_instr_plus_steering.response])}')
+    # print overall accuracy
+    print('Before truncating responses')
+    print(f'Overall accuracy: {results_df.follow_all_instructions.mean()}')
+    print(f'Overall accuracy steering: {results_df_steering.follow_all_instructions.mean()}')
+    print(f'Overall accuracy steering cross: {results_df_steering_cross.follow_all_instructions.mean()}')
+    print(f'Overall accuracy standard: {results_df_standard.follow_all_instructions.mean()}')
+    print(f'Overall accuracy instr_plus_steering cross: {results_df_instr_plus_steering_cross.follow_all_instructions.mean()}')
+    print(f'Overall accuracy instr_plus_steering: {results_df_instr_plus_steering.follow_all_instructions.mean()}')
 
     # correct if accuracy scores by truncating the responses at the first occurence of 'Q:'
     def truncate_responses(df):
@@ -123,15 +131,24 @@ for model_name in model_names:
         for i, row in df.iterrows():
             if 'Q:' in row['response']:
                 row['response'] = row['response'].split('Q:')[0]
-                print('TRUNCATED RESPONSE')
+                # print(f'TRUNCATED RESPONSE: {row["response"]}')
 
+            # get row from results_df_w_kwargs with the same prompt
+            row_w_kwargs = results_df_w_kwargs[results_df_w_kwargs.prompt == row.prompt].iloc[0]
 
             # compute accuracy
             prompt_to_response = {}
             prompt_to_response[row['prompt']] = row['response']
-            output = test_instruction_following_loose(row, prompt_to_response)
+            output = test_instruction_following_loose(row_w_kwargs, prompt_to_response)
             row['old_follow_all_instructions'] = row['follow_all_instructions']
             row['follow_all_instructions'] = output.follow_all_instructions
+            if row['follow_all_instructions'] != row['old_follow_all_instructions']:
+                #  print(f'DIFFERENT ACCURACY for instruction {row.instruction_id_list[0]}')
+                 if row.instruction_id_list[0] == 'change_case:capital_word_frequency':
+                    print(f'PROMPT: {row.prompt}')
+                    print(f'RESPONSE: {row.response}')
+                    print(f'OLD ACCURACY: {row.old_follow_all_instructions}')
+                    print(f'NEW ACCURACY: {row.follow_all_instructions}')
             new_rows.append(row)
 
         return pd.DataFrame(new_rows)
@@ -142,6 +159,11 @@ for model_name in model_names:
     results_df_standard = truncate_responses(results_df_standard)
     results_df_instr_plus_steering = truncate_responses(results_df_instr_plus_steering)
     results_df_instr_plus_steering_cross = truncate_responses(results_df_instr_plus_steering_cross)
+
+
+    # set follow_all_instructions to 0 for gemma -2-9b for results_df_steering when the instruction is 'detectable_format:mulitple_sections'
+    # if model_name == 'gemma-2-9b':
+    #     results_df_steering.loc[results_df_steering.instruction_id_list.apply(lambda x: x[0] == 'detectable_format:multiple_sections'), 'follow_all_instructions'] = False
 
 
     # print overall accuracy
@@ -166,7 +188,7 @@ for model_name in model_names:
 
 # %%
 setting = '<b>w/o</b> Instr.'
-# setting = '<b>w/</b> Instr.'
+setting = '<b>w/</b> Instr.'
 
 # Create a DataFrame for overall accuracy
 df_overall_2b = pd.DataFrame(overall_accuracies['gemma-2-2b'])
@@ -277,7 +299,7 @@ fig.update_layout(width=300, height=250)
 # remove padding
 fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
-store=False
+store=True
 
 if store:
     # save plot as pdf
@@ -320,28 +342,29 @@ instr_count = {instr: 0 for instr in all_instruct}
 
 
 for i, row in results_df.iterrows():
-    for instr, corr in zip(row.instruction_id_list, row.follow_instruction_list):
-        category = instr.split(':')[0]
-        category_count[category] += 1
-        category_corr[category] += corr
-        corr_steering = results_df_steering.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
-        corr_steering_cross = results_df_steering_cross.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
-        corr_standard = results_df_standard.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
-        corr_instr_plus_steering = results_df_instr_plus_steering.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
-        corr_instr_plus_steering_cross = results_df_instr_plus_steering_cross.iloc[i].follow_instruction_list[row.instruction_id_list.index(instr)]
-        category_corr_steering[category] += corr_steering
-        category_corr_steering_cross[category] += corr_steering_cross
-        category_corr_standard[category] += corr_standard
-        category_corr_instr_plus_steering[category] += corr_instr_plus_steering
-        category_corr_instr_plus_steering_cross[category] += corr_instr_plus_steering_cross
+    instr = row.instruction_id_list[0]
+    corr = row.follow_all_instructions
+    category = instr.split(':')[0]
+    category_count[category] += 1
+    category_corr[category] += corr
+    corr_steering = results_df_steering.iloc[i].follow_all_instructions
+    corr_steering_cross = results_df_steering_cross.iloc[i].follow_all_instructions
+    corr_standard = results_df_standard.iloc[i].follow_all_instructions
+    corr_instr_plus_steering = results_df_instr_plus_steering.iloc[i].follow_all_instructions
+    corr_instr_plus_steering_cross = results_df_instr_plus_steering_cross.iloc[i].follow_all_instructions
+    category_corr_steering[category] += corr_steering
+    category_corr_steering_cross[category] += corr_steering_cross
+    category_corr_standard[category] += corr_standard
+    category_corr_instr_plus_steering[category] += corr_instr_plus_steering
+    category_corr_instr_plus_steering_cross[category] += corr_instr_plus_steering_cross
 
-        instr_count[instr] += 1
-        instr_corr[instr] += corr
-        instr_corr_steering[instr] += corr_steering
-        instr_corr_steering_cross[instr] += corr_steering_cross
-        instr_corr_standard[instr] += corr_standard
-        instr_corr_instr_plus_steering[instr] += corr_instr_plus_steering
-        instr_corr_instr_plus_steering_cross[instr] += corr_instr_plus_steering_cross
+    instr_count[instr] += 1
+    instr_corr[instr] += corr
+    instr_corr_steering[instr] += corr_steering
+    instr_corr_steering_cross[instr] += corr_steering_cross
+    instr_corr_standard[instr] += corr_standard
+    instr_corr_instr_plus_steering[instr] += corr_instr_plus_steering
+    instr_corr_instr_plus_steering_cross[instr] += corr_instr_plus_steering_cross
 
 
 category_acc = {cat: category_corr[cat] / category_count[cat] for cat in all_categories}
