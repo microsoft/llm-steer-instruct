@@ -1,30 +1,26 @@
 # %%
 import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+os.chdir(project_dir)
+
 import sys
-if 'Users' in os.getcwd():
-    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/ifeval_experiments')
-    print('We\'re on the local machine')
+sys.path.append(script_dir)
+sys.path.append(project_dir)
+
 import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
 from eval.evaluation_main import test_instruction_following_loose
 from collections import Counter
 import re
 import torch
 from tqdm import tqdm
 
-
 # %%
 # =============================================================================
 # check for broken outputs
 # =============================================================================
-
 
 device = 'mps'
 perplexity_model = AutoModelForCausalLM.from_pretrained('openai-community/gpt2')
@@ -57,15 +53,8 @@ def compute_perplexity(text):
 # %%
 
 folder = 'ifeval_experiments/layer_search_out'
-model_name = 'mistral-7b-instruct'
-# model_name = 'Qwen/Qwen2-1.5B-Instruct'
-model_name='gemma-2-2b'
-# model_name='gemma-2-9b-it'
-# model_name = 'phi-3'
-# model_name = 'Llama-2-7b-chat'
 n_examples = 6
 seed = 42
-
 
 model_names = ['phi-3', 'mistral-7b-instruct', 'gemma-2-2b-it', 'gemma-2-9b-it', ]
 model_names = ['gemma-2-2b', 'gemma-2-9b']
@@ -94,48 +83,23 @@ for model_name in model_names:
     for setting in settings:
         results_df = all_dfs[f'{model_name}_{setting}']
         print(f'{model_name} | {setting}')
-            
 
-        with open('./hf_token.txt') as f:
-            hf_token = f.read()
         if model_name == 'phi-3':
             model_name_hf = 'microsoft/Phi-3-mini-4k-instruct'
         if 'gemma' in model_name:
             model_name_hf = f'google/{model_name}'
         elif model_name == 'mistral-7b-instruct':
             model_name_hf = 'mistralai/Mistral-7B-Instruct-v0.1'
-        tokenizer = AutoTokenizer.from_pretrained(model_name_hf, token=hf_token)
+        tokenizer = AutoTokenizer.from_pretrained(model_name_hf)
 
-
-
-        broken_outputs = []
         accuracy_with_quality_check = []
         perplexities = []
 
         p_bar = tqdm(total=len(results_df))
         for i, r in results_df.iterrows():
             # compute accuracy
-
             response  = r['response']
             tokens = tokenizer.tokenize(response)
-            counter = Counter(tokens)
-            #remove '▁the' '▁' from the counter
-            if '▁the' in counter:
-                del counter['▁the']
-            if '▁' in counter:
-                del counter['▁']
-            # take the number of occurrences of the most common token
-            most_common = counter.most_common(1)[0][1]
-            # get most common token
-            if most_common > 50:
-                broken_outputs.append(1)
-            else:
-                # if r.single_instruction_id == 'detectable_format:multiple_sections' and r.layer == 8:
-                #     print(f'layer: {r.layer}')    
-                #     print(f'Broken output: {response}')
-                #     # print most common token
-                #     print(counter.most_common(1))
-                broken_outputs.append(0)
 
             # fix problem with capital word frequency
             if r.single_instruction_id == 'change_case:capital_word_frequency':
@@ -151,23 +115,14 @@ for model_name in model_names:
                 prompt_to_response = {}
                 prompt_to_response[r['prompt']] = r['response']
                 output = test_instruction_following_loose(r, prompt_to_response)
-                # print(f'=============\nchanging follow_all_instructions from {r.follow_all_instructions} to {output.follow_all_instructions}\nfor output:{r.response}\nkargs: {r.kwargs}')
                 # update follow_all_instructions
                 results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
 
-            # if r.single_instruction_id == 'detectable_format:multiple_sections':
-            #     prompt_to_response = {}
-            #     prompt_to_response[r['prompt']] = r['response']
-            #     output = test_instruction_following_loose(r, prompt_to_response, improved_multiple_section_checker=True)
-            #     results_df.loc[i, 'follow_all_instructions'] = output.follow_all_instructions
-            
             # compute perplexity
             perplexities.append(compute_perplexity(response))
             p_bar.update(1)
 
-
         results_df['perplexity'] = perplexities
-        results_df['broken_output'] = broken_outputs
 
         # store the new results_df as a jsonl file
         new_dir = f'{all_paths[f"{model_name}_{setting}"]}_with_perplexity/'
