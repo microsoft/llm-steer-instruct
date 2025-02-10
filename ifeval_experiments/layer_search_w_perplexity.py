@@ -12,7 +12,6 @@ import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import pandas as pd
 from eval.evaluation_main import test_instruction_following_loose
-from collections import Counter
 import re
 import torch
 from tqdm import tqdm
