@@ -20,7 +20,7 @@ from datasets import load_dataset
 import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
+from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -58,7 +58,7 @@ def generate_with_hooks(
 
     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
 
-def direction_ablation_hook(
+def activation_addition_hook(
     activation,
     hook,
     direction,
@@ -237,7 +237,7 @@ def run_experiment(args: DictConfig):
         example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
         if (args.steering == 'none') and (args.length_steering == 'none'):
             print('No steering')
-            out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+            out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
         else:
             fwd_hooks = []
             if args.steering != 'none':
@@ -247,13 +247,13 @@ def run_experiment(args: DictConfig):
                     print(f'Running inference without steering for instruction: {row['instruction_id_list_for_eval'][0]}')
                 else:
                     if args.steering == 'add_vector':
-                        hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=args.steering_weight)
+                        hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=args.steering_weight)
                     elif args.steering == 'adjust_rs':
                         hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
                     fwd_hooks.append((tlutils.get_act_name('resid_post', layer_idx), hook_fn))
 
             if args.length_steering != 'none':
-                length_hook_fn = functools.partial(direction_ablation_hook, direction=length_instr_dir, weight=args.length_steering_weight)
+                length_hook_fn = functools.partial(activation_addition_hook, direction=length_instr_dir, weight=args.length_steering_weight)
                 fwd_hooks.append((tlutils.get_act_name('resid_post', args.length_source_layer_idx), length_hook_fn))
 
             #encoded_example = tokenizer.apply_chat_template(messages, return_tensors='pt').to(device)

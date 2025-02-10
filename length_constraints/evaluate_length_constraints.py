@@ -18,7 +18,7 @@ import pandas as pd
 import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference, generate_with_hooks, direction_ablation_hook, direction_projection_hook
+from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
 import json
 import plotly.express as px
 import plotly.graph_objects as go
@@ -214,12 +214,12 @@ def run_experiment(args: DictConfig):
                     example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
                     
                 if args.steering == 'none':
-                    out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+                    out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
                 elif args.steering != 'none':
                     intervention_dir = instr_dir.to(device)
 
                     if 'add_vector' in args.steering:
-                        hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=steering_weight)
+                        hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=steering_weight)
                         row['steering_weight'] = steering_weight
                     elif 'adjust_rs' in args.steering:
                         hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
@@ -227,7 +227,7 @@ def run_experiment(args: DictConfig):
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn)]
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
-                    out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length, decode_directly=True)
+                    out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length, return_decoded=True)
                     # if out 1 is a list, take the first element
                     if isinstance(out1, list):
                         out1 = out1[0]

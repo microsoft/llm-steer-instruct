@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference, generate_with_hooks, direction_ablation_hook, direction_projection_hook
+from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
 import functools
 from transformer_lens import utils as tlutils
 # %%
@@ -200,7 +200,7 @@ instr_dir = last_token_mean_diff[layer_idx] / last_token_mean_diff[layer_idx].no
 intervention_dir = instr_dir.to(device)
 intervention_layers = list(range(layer_idx, layer_idx+1)) # only one layer
 
-hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=100)
+hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=100)
 #hook_fn = functools.partial(direction_projection_hook,direction=intervention_dir, value_along_direction=avg_proj)
 fwd_hooks = [(tlutils.get_act_name(act_name, l), hook_fn) for l in intervention_layers for act_name in ['resid_post']]
 

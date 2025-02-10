@@ -21,7 +21,7 @@ from datasets import load_dataset
 import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
+from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -56,7 +56,7 @@ def generate_with_hooks(
 
     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
 
-def direction_ablation_hook(
+def activation_addition_hook(
     activation,
     hook,
     direction,
@@ -167,14 +167,14 @@ def run_experiment(args: DictConfig):
         messages = [{"role": "user", "content": example}]
         example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
         if (args.steering == 'none'):
-            out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+            out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
         elif args.steering != 'none':
             fwd_hooks = []
             for i, instr_dir in enumerate(instr_dirs):
                 if layer_indices[i] == -1:
                     continue
                 if args.steering == 'add_vector':
-                    fwd_hooks.append((tlutils.get_act_name('resid_post', layer_indices[i]), functools.partial(direction_ablation_hook, direction=instr_dir, weight=args.steering_weight)))
+                    fwd_hooks.append((tlutils.get_act_name('resid_post', layer_indices[i]), functools.partial(activation_addition_hook, direction=instr_dir, weight=args.steering_weight)))
                 elif args.steering == 'adjust_rs':
                     fwd_hooks.append((tlutils.get_act_name('resid_post', layer_indices[i]), functools.partial(direction_projection_hook, direction=instr_dir, value_along_direction=avg_projs[i])))
 

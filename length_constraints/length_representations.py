@@ -19,7 +19,7 @@ from datasets import load_dataset
 import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference, adjust_vectors
+from utils.generation_utils import generate, adjust_vectors
 import json
 import plotly.express as px
 import plotly.graph_objects as go
@@ -309,7 +309,7 @@ from utils.generation_utils import generate_with_hooks
 
 #     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
 
-def direction_ablation_hook(
+def activation_addition_hook(
     activation,
     hook,
     direction,
@@ -343,7 +343,7 @@ intervention_layers = list(range(layer_idx, layer_idx+1)) # only one layer
 
 weight = 0
 
-hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=weight)
+hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=weight)
 #hook_fn = functools.partial(direction_projection_hook,direction=intervention_dir, value_along_direction=avg_proj)
 fwd_hooks = [(tlutils.get_act_name(act_name, l), hook_fn) for l in intervention_layers for act_name in ['resid_post']]
 
@@ -363,7 +363,7 @@ input='Q: Is Pikachu one of the Avengers? Think out loud, then answer.\nA:'
 messages = [{"role": "user", "content": input}]
 # input = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors='pt')
 input = tokenizer(input, return_tensors='pt')['input_ids'].to(device)
-output_int = generate_with_hooks(model, input, fwd_hooks=fwd_hooks, max_tokens_generated=32, verbose=True, decode_directly=True)
+output_int = generate_with_hooks(model, input, fwd_hooks=fwd_hooks, max_tokens_generated=32, verbose=True, return_decoded=True)
 print(output_int[0])
 print(len(tokenizer(output_int[0])['input_ids']))
 # %%

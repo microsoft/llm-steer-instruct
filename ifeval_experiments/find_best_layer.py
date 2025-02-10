@@ -13,13 +13,13 @@ import torch
 import pandas as pd
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
+from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 import functools
 from transformer_lens import utils as tlutils
-from utils.generation_utils import generate_with_hooks, direction_projection_hook, direction_ablation_hook
+from utils.generation_utils import generate_with_hooks, direction_projection_hook, activation_addition_hook
 from eval.evaluation_main import test_instruction_following_loose
 
 config_path = os.path.join(project_dir, 'config')
@@ -169,20 +169,20 @@ def find_best_layer(args: DictConfig):
                     # no steering
                     if (args.model_name == 'gemma-2-2b' or args.model_name == 'gemma-2-9b'):
                         encoded_example = tokenizer(example, return_tensors='pt').to(device)
-                        out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=[], max_tokens_generated=max_generation_length, decode_directly=True)
+                        out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=[], max_tokens_generated=max_generation_length, return_decoded=True)
                     else:
-                        out1 = if_inference(model, tokenizer, example, device, max_new_tokens=max_generation_length)
+                        out1 = generate(model, tokenizer, example, device, max_new_tokens=max_generation_length)
                 else:
                     intervention_dir = instr_dir.to(device)
 
                     if args.steering == 'add_vector':
-                        hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=args.steering_weight)
+                        hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=args.steering_weight)
                     elif args.steering == 'adjust_rs':
                         hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', layer_idx), hook_fn)]
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
-                    out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=max_generation_length, decode_directly=True)
+                    out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=max_generation_length, return_decoded=True)
                 
                 # if out 1 is a list, take the first element
                 if isinstance(out1, list):

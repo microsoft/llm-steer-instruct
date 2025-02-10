@@ -20,7 +20,7 @@ from datasets import load_dataset
 import re
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
+from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -55,7 +55,7 @@ def generate_with_hooks(
 
     return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
 
-def direction_ablation_hook(
+def activation_addition_hook(
     activation,
     hook,
     direction,
@@ -206,12 +206,12 @@ def run_experiment(args: DictConfig):
                 example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
                 if layer_idx == -1:
                     print('Not steering')
-                    out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+                    out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
                 else:
                     intervention_dir = pre_computed_ivs[r['word']].to(device)
 
                     if args.steering == 'add_vector':
-                        hook_fn = functools.partial(direction_ablation_hook,direction=intervention_dir, weight=steering_weight)
+                        hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=steering_weight)
                     elif args.steering == 'adjust_rs':
                         raise ValueError('Not implemented yet')
                         # hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)

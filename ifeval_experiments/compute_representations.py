@@ -12,7 +12,7 @@ import torch
 import pandas as pd
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
+from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -92,12 +92,12 @@ def compute_representations(args: DictConfig):
                 messages_no_instr = [{"role": "user", "content": row['prompt_no_instr']}]
                 example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
 
-            out1 = if_inference(model, tokenizer, example, args.device, max_new_tokens=args.max_generation_length)
+            out1 = generate(model, tokenizer, example, args.device, max_new_tokens=args.max_generation_length)
             last_token_rs = extract_representation(model, tokenizer, example, args.device, args.num_final_tokens)
             row['output'] = out1
             row['last_token_rs'] = last_token_rs
 
-            out2 = if_inference(model, tokenizer, example_no_instr, args.device, max_new_tokens=args.max_generation_length)
+            out2 = generate(model, tokenizer, example_no_instr, args.device, max_new_tokens=args.max_generation_length)
             last_token_rs = extract_representation(model, tokenizer, example_no_instr, args.device, args.num_final_tokens)
             row['output_no_instr'] = out2
             row['last_token_rs_no_instr'] = last_token_rs
