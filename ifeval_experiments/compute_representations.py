@@ -1,10 +1,12 @@
 # %%
 import os
-if 'ifeval_experiments' in os.getcwd():
-    os.chdir('..')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+os.chdir(project_dir)
 
 import sys
-sys.path.append(os.getcwd())
+sys.path.append(script_dir)
+sys.path.append(project_dir)
 
 import torch
 import pandas as pd
@@ -15,6 +17,7 @@ import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
+config_path = os.path.join(project_dir, 'config')
 
 def extract_representation(model, tokenizer, problem, device, num_final_tokens=8):
     """
@@ -32,7 +35,7 @@ def extract_representation(model, tokenizer, problem, device, num_final_tokens=8
     return final_token_rs
 
 
-@hydra.main(config_path='../config', config_name='compute_representations')
+@hydra.main(config_path=config_path, config_name='compute_representations')
 def compute_representations(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
@@ -58,15 +61,13 @@ def compute_representations(args: DictConfig):
 
     # load tokenizer and model
     model_name = args.model_name
-    with open(args.path_to_hf_token) as f:
-        hf_token = f.read()
-    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, hf_token=hf_token, cache_dir=args.transformers_cache_dir)
+    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir)
     model.to(args.device)
 
     p_bar = tqdm.tqdm(total=len(joined_df))
 
     for instruction_type in all_instructions:
-        instr_data_df = joined_df[[[instruction_type] == l for l in joined_df['instruction_id_list'] ]]
+        instr_data_df = joined_df[[[instruction_type] == l for l in joined_df['instruction_id_list']]]
         instr_data_df.reset_index(inplace=True, drop=True)
 
         if args.use_data_subset:

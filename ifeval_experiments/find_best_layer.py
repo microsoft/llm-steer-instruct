@@ -1,10 +1,12 @@
 # %%
 import os
-if 'ifeval_experiments' in os.getcwd():
-    os.chdir('..')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+os.chdir(project_dir)
+
 import sys
-sys.path.append(os.getcwd())
-sys.path.append('./ifeval_experiments')
+sys.path.append(script_dir)
+sys.path.append(project_dir)
 
 import numpy as np
 import torch
@@ -20,12 +22,12 @@ from transformer_lens import utils as tlutils
 from utils.generation_utils import generate_with_hooks, direction_projection_hook, direction_ablation_hook
 from eval.evaluation_main import test_instruction_following_loose
 
+config_path = os.path.join(project_dir, 'config')
 
-@hydra.main(config_path='../config', config_name='find_best_layer')
-def run_experiment(args: DictConfig):
+@hydra.main(config_path=config_path, config_name='find_best_layer')
+def find_best_layer(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    # Some environment variables
     device = args.device
     print(f"Using device: {device}")
 
@@ -44,14 +46,11 @@ def run_experiment(args: DictConfig):
         data_df = data_df[data_df.instruction_id_list.apply(lambda x: args.specific_instruction in x[0])]
 
     # load tokenizer and model
-    with open(args.path_to_hf_token) as f:
-        hf_token = f.read()
-
     if args.steering != 'none':
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_token=hf_token, hf_model=hf_model)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_model=hf_model)
     model.to(device)
 
     if args.dry_run:
@@ -61,13 +60,14 @@ def run_experiment(args: DictConfig):
 
     all_instructions = list(set([ item for l in data_df.instruction_id_list_for_eval for item in l]))
 
-    print(f'Running on: {all_instructions}')
-
+    # define layer to perform search over
     n_layers = model.cfg.n_layers
     if 'gemma-2-9b' in args.model_name:
         layer_range = range(n_layers // 5, n_layers, 3)
     else:
         layer_range = range(n_layers // 5, n_layers, 2)
+    
+    # -1 represents "no steering"
     layer_range = [-1] + list(layer_range)
 
     num_all_examples = 0
@@ -81,10 +81,7 @@ def run_experiment(args: DictConfig):
     total = num_all_examples * len(layer_range)
     p_bar = tqdm.tqdm(total=total)
 
-    # RowObject = namedtuple('inp', data_df.iloc[0].keys())
-
     for instruction_type in all_instructions:
-        # we are only considering one instruction type
         instr_data_df = data_df[[[instruction_type] == l for l in data_df['instruction_id_list_for_eval'] ]]
         instr_data_df.reset_index(inplace=True, drop=True)
         instr_data_df = instr_data_df.sample(n=min(args.n_examples_per_instruction, len(instr_data_df)), random_state=args.seed)
@@ -94,7 +91,6 @@ def run_experiment(args: DictConfig):
         instr_data_df['instruction_id_list'] = instr_data_df['instruction_id_list_og']
         instr_data_df['prompt'] = instr_data_df['model_output']
 
-
         if args.dry_run:
             instr_data_df = instr_data_df.head(1)
 
@@ -102,12 +98,12 @@ def run_experiment(args: DictConfig):
             # load the stored representations
             if args.model_name == 'gemma-2-2b' and args.cross_model_steering:
                 print('Loading representations from gemma-2-2b INSTRUCT')
-                folder = f'{args.project_dir}/representations/gemma-2-2b-it/{args.representations_folder}'
+                folder = f'{project_dir}/representations/gemma-2-2b-it/{args.representations_folder}'
             elif args.model_name == 'gemma-2-9b' and args.cross_model_steering:
                 print('Loading representations from gemma-2-9b INSTRUCT')
-                folder = f'{args.project_dir}/representations/gemma-2-9b-it/{args.representations_folder}'
+                folder = f'{project_dir}/representations/gemma-2-9b-it/{args.representations_folder}'
             else:
-                folder = f'{args.project_dir}/representations/{args.model_name}/{args.representations_folder}'
+                folder = f'{project_dir}/representations/{args.model_name}/{args.representations_folder}'
             file = f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5'
             # check if the file exists
             if (not os.path.exists(file)):
@@ -123,7 +119,7 @@ def run_experiment(args: DictConfig):
                 # compute the instrution vector
                 repr_diffs = hs_instr - hs_no_instr
                 mean_repr_diffs = repr_diffs.mean(dim=0)
-                # check where mean_repr_diffs has three dimensions
+                # check whether mean_repr_diffs has three dimensions
                 if len(mean_repr_diffs.shape) == 3:
                     last_token_mean_diff = mean_repr_diffs[:, -1, :]
                 else:
@@ -170,7 +166,7 @@ def run_experiment(args: DictConfig):
                     max_generation_length = args.max_generation_length
 
                 if layer_idx == -1:
-                    print('Not steering')
+                    # no steering
                     if (args.model_name == 'gemma-2-2b' or args.model_name == 'gemma-2-9b'):
                         encoded_example = tokenizer(example, return_tensors='pt').to(device)
                         out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=[], max_tokens_generated=max_generation_length, decode_directly=True)
@@ -185,10 +181,10 @@ def run_experiment(args: DictConfig):
                         hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', layer_idx), hook_fn)]
-                    #encoded_example = tokenizer.apply_chat_template(messages, return_tensors='pt').to(device)
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
                     out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=max_generation_length, decode_directly=True)
-                    # if out 1 is a list, take the first element
+                
+                # if out 1 is a list, take the first element
                 if isinstance(out1, list):
                     out1 = out1[0]
                                                 
@@ -197,11 +193,7 @@ def run_experiment(args: DictConfig):
                 # compute accuracy
                 prompt_to_response = {}
                 prompt_to_response[row['model_output']] = row['response']
-                # row['prompt'] = example
-                # row["instruction_id_list_for_eval"] = [instruction_type]
-                # row["instruction_id_list"] = row["instruction_id_list_og"]
-                # r = RowObject(*row.values())
-                output = test_instruction_following_loose(r, prompt_to_response, improved_multiple_section_checker=True)
+                output = test_instruction_following_loose(r, prompt_to_response)
                 row['follow_all_instructions'] = output.follow_all_instructions
                 row['layer'] = layer_idx
 
@@ -237,52 +229,6 @@ def run_experiment(args: DictConfig):
             f.write(json.dumps(line) + '\n')
 
 # %%
-# args = OmegaConf.load('./ifeval_experiments/config/conf.yaml')
-# args['model_name'] = 'phi-3'
-# run_experiment(args)
-# %%
 if __name__ == '__main__':
-    run_experiment()
-    exit(0)
-# %%
-
-# compute accuracy 
-import sys
-sys.path.append('./ifeval_experiments')
-from ifeval_experiments.eval.evaluation_main import test_instruction_following_loose
-
-# load out data
-import json
-import pandas as pd
-import numpy as np
-import tqdm
-
-out_path = './ifeval_experiments/out/phi-3/single_instr/all_base_x_all_instr/instr_plus_adjust_rs_20/out.jsonl'
-with open(out_path) as f:
-    out_data = f.readlines()
-    out_data = [json.loads(d) for d in out_data]
-
-out_df = pd.DataFrame(out_data)
-
-# load input data
-data_path = './data/input_data.jsonl'
-
-with open(data_path) as f:
-    data = f.readlines()
-    data = [json.loads(d) for d in data]
-
-data_df = pd.DataFrame(data)
-
-# %%
-eval_outputs = []
-for i, r in tqdm.tqdm(out_df.iterrows()):
-    prompt_to_response = {}
-    prompt_to_response[r.prompt] = r.response
-    output = test_instruction_following_loose(r, prompt_to_response)
-    eval_outputs.append(output)
-
-follow_all_instructions = [o.follow_all_instructions for o in eval_outputs]
-accuracy = sum(follow_all_instructions) / len(eval_outputs)
-# %%
-accuracy
+    find_best_layer()
 # %%
