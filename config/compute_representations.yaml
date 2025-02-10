@@ -1,7 +1,5 @@
 device: 'cuda'
 data_path: './data/all_base_x_all_instructions_filtered.jsonl'
-data_path: './data/all_base_x_all_instructions_filtered.jsonl'
-#data_no_instr_path: '../data/input_data_no_instr.jsonl'
 data_no_instr_path: null
 dry_run: False
 output_path: 'out/'
@@ -10,6 +8,7 @@ transformers_cache_dir: null
 
 model_name: 'gpt2'
 max_generation_length: 512
+num_final_tokens: 1
 use_data_subset: False
 data_subset_ratio: 0.7
 
