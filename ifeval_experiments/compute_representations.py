@@ -12,27 +12,12 @@ import torch
 import pandas as pd
 import tqdm
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import generate
+from utils.generation_utils import generate, extract_representation
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
 config_path = os.path.join(project_dir, 'config')
-
-def extract_representation(model, tokenizer, problem, device, num_final_tokens=8):
-    """
-    extract the representation of the final token in the direct inference prompt
-    """
-    eval_prompt = problem
-
-    model_input = tokenizer(eval_prompt, return_tensors="pt").to(device)
-    with torch.no_grad():
-        logits, cache = model.run_with_cache(model_input['input_ids'])
-        del logits
-        final_token_rs = torch.stack([cache['resid_post', layer_idx][:, -num_final_tokens:, :].squeeze() for layer_idx in range(model.cfg.n_layers)]).cpu().numpy()
-        del cache
-    
-    return final_token_rs
 
 
 @hydra.main(config_path=config_path, config_name='compute_representations')

@@ -119,3 +119,19 @@ def compute_perplexity(text, device='cuda', perplexity_model=None, perplexity_to
     # Compute the perplexity
     perplexity = torch.exp(loss)
     return perplexity.item()
+
+
+def extract_representation(model, tokenizer, problem, device, num_final_tokens=8):
+    """
+    extract the representation of the final token in the direct inference prompt
+    """
+    eval_prompt = problem
+
+    model_input = tokenizer(eval_prompt, return_tensors="pt").to(device)
+    with torch.no_grad():
+        logits, cache = model.run_with_cache(model_input['input_ids'])
+        del logits
+        final_token_rs = torch.stack([cache['resid_post', layer_idx][:, -num_final_tokens:, :].squeeze() for layer_idx in range(model.cfg.n_layers)]).cpu().numpy()
+        del cache
+    
+    return final_token_rs

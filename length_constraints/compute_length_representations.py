@@ -1,66 +1,38 @@
 # %%
 import os
 import sys
-if 'Users' in os.getcwd():
-    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/keywords')
-    print('We\'re on the local machine')
-elif 'cluster' in os.getcwd():
-    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
-    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
-    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/keywords')
-    print('We\'re on a sandbox machine')
-
-import numpy as np
-import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-import re
 import tqdm
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import generate, adjust_vectors
 import json
-import plotly.express as px
-import plotly.graph_objects as go
-import functools
-from transformer_lens import utils as tlutils
-import nltk
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 import hydra
+import numpy as np
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+sys.path.append(script_dir)
+sys.path.append(project_dir)
 
-def extract_representation(model, tokenizer, problem, device, num_final_tokens=8):
-    """
-    extract the representation of the final token in the direct inference prompt
-    """
-    eval_prompt = problem
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import generate, extract_representation
 
-    model_input = tokenizer(eval_prompt, return_tensors="pt").to(device)
-    with torch.no_grad():
-        logits, cache = model.run_with_cache(model_input['input_ids'])
-        del logits
-        final_token_rs = torch.stack([cache['resid_post', layer_idx][:, -num_final_tokens:, :].squeeze() for layer_idx in range(model.cfg.n_layers)]).cpu().numpy()
-        del cache
-    
-    return final_token_rs
-
+config_path = os.path.join(project_dir, 'config')
 
 # %%
-@hydra.main(config_path='../config', config_name='compute_length_representations')
+@hydra.main(config_path=config_path, config_name='compute_length_representations')
 def compute_representations(args: DictConfig):
         
     # load the data
-    with open('data/ifeval_wo_instructions.jsonl') as f:
+    with open(f'{project_dir}/{args.data_path}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
     data_no_instr_df = pd.DataFrame(data)
     data_no_instr_df = data_no_instr_df.drop(columns=['prompt', 'instruction_id_list', 'prompt_hash'])
+    
     # rename model_output to prompt_no_instr
     data_no_instr_df = data_no_instr_df.rename(columns={'model_output': 'prompt_no_instr'})
-    # %%
+
     new_rows = []
     if args.constraint_type == 'sentences':
         phrasings_single = [' Answer using 1 sentence.', ' Respond with one sentence.', ' Provide an answer in one sentence.', ' Give your answer in a single sentence.']
@@ -98,18 +70,11 @@ def compute_representations(args: DictConfig):
 
     data_df = pd.DataFrame(new_rows)
 
-
-    # %%
     # load gpt2 tokenizer and model
     model_name = args.model_name
-    with open('hf_token.txt') as f:
-        hf_token = f.read()
-    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir, hf_token=hf_token)
-    #model = AutoModelForCausalLM.from_pretrained(model_name)
-    #tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir)
     model.to(args.device)
 
-    # %%
     rows = []
 
     if args.constraint_type == 'sentences':
@@ -148,11 +113,9 @@ def compute_representations(args: DictConfig):
         rows.append(row)
         p_bar.update(1)
 
-    # %%
     df = pd.DataFrame(rows)
 
-
-    folder = f'length_constraints/representations/{model_name}'
+    folder = f'{script_dir}/representations/{model_name}'
     os.makedirs(folder, exist_ok=True)
     # store the df
     if args.constraint_type == 'sentences':
@@ -162,10 +125,7 @@ def compute_representations(args: DictConfig):
     
     print(f'Storing {out_file}')
     df.to_hdf(out_file, key='df', mode='w')
-    # %%
 
 
-# %%
 if __name__ == '__main__':
     compute_representations()
-# %%
