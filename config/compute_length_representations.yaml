@@ -1,5 +1,5 @@
 device: 'cuda'
-data_path: '../data/ifeval_wo_instructions.jsonl'
+data_path: './data/ifeval_wo_instructions.jsonl'
 dry_run: False
 transformers_cache_dir: null
 
