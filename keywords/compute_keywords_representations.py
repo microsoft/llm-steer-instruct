@@ -38,24 +38,24 @@ def compute_representations(args: DictConfig):
     phrasings_exclude = [' Do not include the word {}.', ' Make sure not to include the word "{}".', ' Do not use the word {}.', ' Do not say "{}".', ' Please exclude the word "{}".', ' The output should not contain the word "{}".']
     phrasings_include = [' Make sure to include the word "{}".', ' Please include the word "{}".', ' The output should contain the word "{}".', ' The output must contain the word "{}".', ' The output should say the word "{}".']
 
-    if args.keywords_set == 'ifeval_exclude':
+    if args.keyword_set == 'ifeval_exclude':
         # load ifeval keywords
         with open(f'{project_dir}/data/keywords/ifeval_keywords_exclude.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
-    elif args.keywords_set == 'ifeval_include':
+    elif args.keyword_set == 'ifeval_include':
         # load ifeval keywords
         with open(f'{project_dir}/data/keywords/ifeval_keywords_include.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
-    elif args.keywords_set == 'validation': 
+    elif args.keyword_set == 'validation': 
         with open(f'{project_dir}/data/keywords/inclusion_validation.jsonl') as f:
             data = f.readlines()
             data = [json.loads(d) for d in data]
             df = pd.DataFrame(data)
             word_list = list(set([w for l in df['likely_words'] for w in l]))
     else:
-        raise ValueError(f'Unknown keywords_set: {args.keywords_set}')
+        raise ValueError(f'Unknown keyword_set: {args.keyword_set}')
 
     # exclude the examples that have "keyword" in the instruction_id_list
     data_no_instr_df = data_no_instr_df[~data_no_instr_df['instruction_id_list'].apply(lambda x: any(['keyword' in instr for instr in x]))]

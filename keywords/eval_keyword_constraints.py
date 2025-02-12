@@ -29,7 +29,18 @@ def run_experiment(args: DictConfig):
     device = args.device
 
     # load the data
-    with open(f'{args.data_path}') as f:
+    if args.specific_instruction == 'forbidden' or args.specific_instruction == 'forbidden_w_forbidden_rep':
+        data_file = 'ifeval_single_keyword_exclude.jsonl'
+    elif args.specific_instruction == 'existence':
+        data_file = 'ifeval_single_keyword_include.jsonl'
+    elif args.specific_instruction == 'existence_validation':
+        data_file = 'inclusion_validation.jsonl'
+    elif args.specific_instruction == 'forbidden_validation' or args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
+        data_file = 'exclusion_validation.jsonl'
+    else:
+        raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
+
+    with open(f'{project_dir}/data/keywords/{data_file}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
@@ -77,8 +88,7 @@ def run_experiment(args: DictConfig):
             file = f'{args.project_dir}/representations/{args.model_name}/include_validation_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
             file = f'{args.project_dir}/representations/{args.model_name}/exclude_validation_{args.n_examples}examples_hs.h5'
-        else:
-            raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
+
         results_df = pd.read_hdf(file)
 
         pre_computed_ivs = {}

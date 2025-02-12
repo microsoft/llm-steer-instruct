@@ -1,5 +1,4 @@
 device: 'cuda'
-data_path: 'data/input_data_single_instr.jsonl'
 dry_run: False
 output_path: 'out'
 transformers_cache_dir: null

@@ -7,8 +7,8 @@ model_name: 'phi-3'
 max_new_tokens: 2
 num_final_tokens: 1
 constraint_type: 'include'
-keywords_set: 'ifeval_include'
-n_examples: 10
+keyword_set: 'ifeval_include'
+n_examples: 1
 
 defaults:
   - _self_
