@@ -40,6 +40,7 @@ def run_experiment(args: DictConfig):
         hf_model = False
     else:
         hf_model = True
+
     model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_model=hf_model)
     model.to(device)
 
@@ -52,6 +53,7 @@ def run_experiment(args: DictConfig):
     
     if args.dry_run:
         data_df = data_df.head(2)
+
     total = len(data_df)
 
     if args.steering != 'none':
@@ -174,8 +176,8 @@ def run_experiment(args: DictConfig):
     # write out_lines as jsonl
     folder = f'{project_dir}/{args.output_path}/{args.model_name}'
 
-    if args.specific_instruction:
-        folder += f'/{args.specific_instruction}'
+    folder += f'/{args.specific_instruction}'
+
     if not args.include_instructions and args.steering == 'none':
         folder += '/no_instr'
     elif  not args.include_instructions and args.steering != 'none':
@@ -188,6 +190,7 @@ def run_experiment(args: DictConfig):
             folder += f'_{args.steering_weight}'
     else:
         folder += '/standard'
+
     os.makedirs(folder, exist_ok=True)
     
     # dump args in the folder
