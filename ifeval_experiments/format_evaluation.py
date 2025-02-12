@@ -16,8 +16,7 @@ sys.path.append(script_dir)
 sys.path.append(project_dir)
 
 from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import generate
-from utils.generation_utils import generate_with_hooks, activation_addition_hook, direction_projection_hook
+from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
 
 config_path = os.path.join(project_dir, 'config')
 

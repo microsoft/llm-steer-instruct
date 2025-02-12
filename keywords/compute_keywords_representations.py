@@ -40,39 +40,20 @@ def compute_representations(args: DictConfig):
 
     if args.keywords_set == 'ifeval_exclude':
         # load ifeval keywords
-        with open('data/ifeval_keywords_exclude.txt') as f:
+        with open(f'{project_dir}/data/ifeval_keywords_exclude.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
-    elif args.keywords_set == 'casing_plus_words':
-        with open('data/ifeval_multiple_instr_casing_exclude.jsonl') as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
-            df = pd.DataFrame(data)
-            word_list = [w for l in df['kwargs'].apply(lambda x: x[1]['forbidden_words']) for w in l]
-    elif args.keywords_set == 'validation_exclude':
-        with open('data/keyword_validation.jsonl') as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
-            df = pd.DataFrame(data)
-            word_list = [w for l in df['likely_words'] for w in l]
-    elif args.keywords_set == 'validation_include':
-        with open('data/keyword_test_inclusion_likely.jsonl') as f:
+    elif args.keywords_set == 'ifeval_include':
+        # load ifeval keywords
+        with open(f'{project_dir}/data/ifeval_keywords_include.txt') as f:
+            word_list = f.readlines()
+            word_list = [w.strip() for w in word_list]
+    elif args.keywords_set == 'validation': 
+        with open(f'{project_dir}/data/inclusion_validation.jsonl') as f:
             data = f.readlines()
             data = [json.loads(d) for d in data]
             df = pd.DataFrame(data)
             word_list = list(set([w for l in df['likely_words'] for w in l]))
-    elif args.keywords_set == 'ifeval_include':
-        # load ifeval keywords
-        with open('data/ifeval_keywords_include.txt') as f:
-            word_list = f.readlines()
-            word_list = [w.strip() for w in word_list]
-    elif args.keywords_set == 'test_include':
-        # load ifeval keywords
-        with open('data/keyword_test.jsonl') as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
-            df = pd.DataFrame(data)
-            word_list = [w for l in df['unlikely_words'] for w in l]
     else:
         raise ValueError(f'Unknown keywords_set: {args.keywords_set}')
 

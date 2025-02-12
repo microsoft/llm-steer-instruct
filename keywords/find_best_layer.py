@@ -1,91 +1,35 @@
 # %%
 import os
 import sys
-if 'Users' in os.getcwd():
-    os.chdir('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/')
-    sys.path.append('/Users/alestolfo/workspace/llm-steer-instruct/keywords')
-    print('We\'re on the local machine')
-elif 'cluster' in os.getcwd():
-    os.chdir('/cluster/project/sachan/alessandro/llm-steer-instruct')
-    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct')
-    sys.path.append('/cluster/project/sachan/alessandro/llm-steer-instruct/keywords')
-    print('We\'re on a sandbox machine')
-
-import numpy as np
 import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-import re
 import tqdm
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import generate
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 import functools
 from transformer_lens import utils as tlutils
-from utils.generation_utils import adjust_vectors
-from collections import namedtuple
 import random
 import re
 
-def generate_with_hooks(
-    model,
-    toks,
-    max_tokens_generated: int = 64,
-    fwd_hooks = [],
-):
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+sys.path.append(script_dir)
+sys.path.append(project_dir)
 
-    all_toks = torch.zeros((toks.shape[0], toks.shape[1] + max_tokens_generated), dtype=torch.long, device=toks.device)
-    all_toks[:, :toks.shape[1]] = toks
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import generate_with_hooks, activation_addition_hook, generate
 
-    with torch.no_grad():
-        for i in range(max_tokens_generated):
-            with model.hooks(fwd_hooks=fwd_hooks):
-                logits = model(all_toks[:, :-max_tokens_generated + i])
-                next_tokens = logits[:, -1, :].argmax(dim=-1) # greedy sampling (temperature=0)
-                if next_tokens[0] == model.tokenizer.eos_token_id or next_tokens[0] == 32007:
-                    break
-                all_toks[:,-max_tokens_generated+i] = next_tokens
+config_path = os.path.join(project_dir, 'config')
 
-    # truncate the tensor to remove padding
-    all_toks = all_toks[:, :toks.shape[1] + i]
-
-    return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
-
-def activation_addition_hook(
-    activation,
-    hook,
-    direction,
-    weight=1.0,
-):
-    return activation + (direction * weight)
-
-def direction_projection_hook(
-    activation,
-    hook,
-    direction,
-    value_along_direction,
-):
-    adjusted_activations = adjust_vectors(activation.squeeze(), direction, value_along_direction)
-    return adjusted_activations.unsqueeze(0)
-
-
-@hydra.main(config_path='../config', config_name='find_best_layer_keywords')
+@hydra.main(config_path=config_path, config_name='find_best_layer_keywords')
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
-
-    # os.chdir(args.project_dir)
 
     random.seed(args.seed)
 
     # Some environment variables
     device = args.device
-    print(f"Using device: {device}")
-
-    transformer_cache_dir = args.transformers_cache_dir
 
     # load the data
     with open(args.data_path) as f:
@@ -113,14 +57,8 @@ def run_experiment(args: DictConfig):
         data_df = data_df.head(2)
 
     # load tokenizer and model
-    with open(args.path_to_hf_token) as f:
-        hf_token = f.read()
-
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=False)
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformer_cache_dir, hf_model=False)
     model.to(device)
-
-    if args.dry_run:
-        data_df = data_df.head(5)
 
     out_lines = []
 
@@ -138,8 +76,6 @@ def run_experiment(args: DictConfig):
             keywords.extend(data_df.loc[i]['unlikely_words'])
         elif 'exclude' in args.constraint:
             keywords.extend(data_df.loc[i]['likely_words'])
-        
-    print(f'Keywords: {keywords}')
 
     # load the pre-computed IVs 
     if args.constraint == 'include':
@@ -152,7 +88,6 @@ def run_experiment(args: DictConfig):
         raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
     
     results_df = pd.read_hdf(file)
-    print(f'words in results_df: {results_df.word.unique()}')
 
     for layer_idx in layer_range:
 
@@ -205,19 +140,16 @@ def run_experiment(args: DictConfig):
                 messages = [{"role": "user", "content": example}]
                 example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
                 if layer_idx == -1:
-                    print('Not steering')
                     out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
                 else:
                     intervention_dir = pre_computed_ivs[r['word']].to(device)
 
                     if args.steering == 'add_vector':
                         hook_fn = functools.partial(activation_addition_hook,direction=intervention_dir, weight=steering_weight)
-                    elif args.steering == 'adjust_rs':
-                        raise ValueError('Not implemented yet')
-                        # hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
+                    else:
+                        raise ValueError(f'Keyword steering only supports add_vector, got {args.steering}')
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', layer_idx), hook_fn)]
-                    #encoded_example = tokenizer.apply_chat_template(messages, return_tensors='pt').to(device)
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
                     out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length)
                     # if out 1 is a list, take the first element
@@ -242,9 +174,8 @@ def run_experiment(args: DictConfig):
             if layer_idx == -1:
                 break
 
-
     # write out_lines as jsonl
-    folder = f'{args.project_dir}/{args.output_path}/{args.model_name}/{args.constraint}'
+    folder = f'{project_dir}/{args.output_path}/{args.model_name}/{args.constraint}'
     folder += f'/n_examples{args.n_examples}_seed{args.seed}'
 
     os.makedirs(folder, exist_ok=True)
@@ -262,53 +193,6 @@ def run_experiment(args: DictConfig):
         for line in out_lines:
             f.write(json.dumps(line) + '\n')
 
-# %%
-# args = OmegaConf.load('./ifeval_experiments/config/conf.yaml')
-# args['model_name'] = 'phi-3'
-# run_experiment(args)
-# %%
+
 if __name__ == '__main__':
     run_experiment()
-    exit(0)
-# %%
-
-# compute accuracy 
-import sys
-sys.path.append('./ifeval_experiments')
-from ifeval_experiments.eval.evaluation_main import test_instruction_following_loose
-
-# load out data
-import json
-import pandas as pd
-import numpy as np
-import tqdm
-
-out_path = './ifeval_experiments/out/phi-3/single_instr/all_base_x_all_instr/instr_plus_adjust_rs_20/out.jsonl'
-with open(out_path) as f:
-    out_data = f.readlines()
-    out_data = [json.loads(d) for d in out_data]
-
-out_df = pd.DataFrame(out_data)
-
-# load input data
-data_path = './data/input_data.jsonl'
-
-with open(data_path) as f:
-    data = f.readlines()
-    data = [json.loads(d) for d in data]
-
-data_df = pd.DataFrame(data)
-
-# %%
-eval_outputs = []
-for i, r in tqdm.tqdm(out_df.iterrows()):
-    prompt_to_response = {}
-    prompt_to_response[r.prompt] = r.response
-    output = test_instruction_following_loose(r, prompt_to_response)
-    eval_outputs.append(output)
-
-follow_all_instructions = [o.follow_all_instructions for o in eval_outputs]
-accuracy = sum(follow_all_instructions) / len(eval_outputs)
-# %%
-accuracy
-# %%
