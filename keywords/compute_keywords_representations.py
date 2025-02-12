@@ -16,7 +16,7 @@ sys.path.append(project_dir)
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import generate, extract_representation
 
-config_path = os.path.join(project_dir, 'config')
+config_path = os.path.join(project_dir, 'config/keywords')
 
 
 # %%
@@ -40,16 +40,16 @@ def compute_representations(args: DictConfig):
 
     if args.keywords_set == 'ifeval_exclude':
         # load ifeval keywords
-        with open(f'{project_dir}/data/ifeval_keywords_exclude.txt') as f:
+        with open(f'{project_dir}/data/keywords/ifeval_keywords_exclude.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
     elif args.keywords_set == 'ifeval_include':
         # load ifeval keywords
-        with open(f'{project_dir}/data/ifeval_keywords_include.txt') as f:
+        with open(f'{project_dir}/data/keywords/ifeval_keywords_include.txt') as f:
             word_list = f.readlines()
             word_list = [w.strip() for w in word_list]
     elif args.keywords_set == 'validation': 
-        with open(f'{project_dir}/data/inclusion_validation.jsonl') as f:
+        with open(f'{project_dir}/data/keywords/inclusion_validation.jsonl') as f:
             data = f.readlines()
             data = [json.loads(d) for d in data]
             df = pd.DataFrame(data)

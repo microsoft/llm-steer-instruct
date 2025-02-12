@@ -19,7 +19,7 @@ from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
 from eval.evaluation_main import test_instruction_following_strict
 
-config_path = os.path.join(project_dir, 'config')
+config_path = os.path.join(project_dir, 'config/keywords')
 
 
 @hydra.main(config_path=config_path, config_name='keyword_evaluation')
