@@ -27,7 +27,7 @@ import hydra
 import functools
 from transformer_lens import utils as tlutils
 from utils.generation_utils import adjust_vectors
-from eval.evaluation_main import test_instruction_following_strict, test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_strict, test_instruction_following_loose
 
 
 

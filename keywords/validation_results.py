@@ -19,7 +19,7 @@ from utils.generation_utils import compute_perplexity
 # =============================================================================
 
 model_name = 'phi-3'
-folder = f'{script_dir}/out/{model_name}/forbidden_validation/'
+folder = f'{script_dir}/out/{model_name}/existence_validation/'
 file_name = 'out.jsonl'
 subfolders = os.listdir(folder)
 result_dict = {}
@@ -32,8 +32,8 @@ for subfolder in subfolders:
         layer = -1
         weight = -1
     else:
-        layer = subfolder.split('_')[2]
-        weight = subfolder.split('_')[5]
+        layer = subfolder.split('_')[4]
+        weight = subfolder.split('_')[-1]
 
     print(os.listdir(folder + subfolder))
 
@@ -102,3 +102,5 @@ for key, value in list(result_dict.items()):
     new_path = paths_dict[key].replace('.jsonl', '_perplexity.jsonl')
     print(f'Saving the file at {new_path}')
     value.to_json(new_path, orient='records', lines=True)
+
+# %%

@@ -11,7 +11,7 @@ sys.path.append(project_dir)
 import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import pandas as pd
-from eval.evaluation_main import test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_loose
 import re
 import torch
 from tqdm import tqdm

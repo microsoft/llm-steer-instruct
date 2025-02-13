@@ -17,7 +17,7 @@ sys.path.append(project_dir)
 
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
-from eval.evaluation_main import test_instruction_following_strict
+from ifeval_scripts.evaluation_main import test_instruction_following_strict
 
 config_path = os.path.join(project_dir, 'config/keywords')
 
@@ -79,15 +79,15 @@ def run_experiment(args: DictConfig):
             
         # load the pre-computed IVs 
         if args.specific_instruction == 'forbidden':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'forbidden_w_forbidden_rep':
-            file = f'{args.project_dir}/representations/{args.model_name}/exclude_ifeval_exclude_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/exclude_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence_validation' or args.specific_instruction == 'forbidden_validation':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_validation_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/include_validation_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
-            file = f'{args.project_dir}/representations/{args.model_name}/exclude_validation_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/exclude_validation_{args.n_examples}examples_hs.h5'
 
         results_df = pd.read_hdf(file)
 
@@ -184,7 +184,7 @@ def run_experiment(args: DictConfig):
         p_bar.update(1)
 
     # write out_lines as jsonl
-    folder = f'{project_dir}/{args.output_path}/{args.model_name}'
+    folder = f'{script_dir}/{args.output_path}/{args.model_name}'
 
     folder += f'/{args.specific_instruction}'
 

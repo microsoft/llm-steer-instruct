@@ -112,11 +112,10 @@ def compute_representations(args: DictConfig):
 
     df = pd.DataFrame(rows)
 
+    # store the df
     folder = f'{script_dir}/representations/{model_name}'
     os.makedirs(folder, exist_ok=True)
-    # store the df
     out_file = f'{folder}/{args.constraint_type}_{args.keyword_set}_{args.n_examples}examples_hs.h5'
-    
     print(f'Storing {out_file}')
     df.to_hdf(out_file, key='df', mode='w')
 

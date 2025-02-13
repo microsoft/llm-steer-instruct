@@ -29,7 +29,7 @@ import functools
 from transformer_lens import utils as tlutils
 from utils.generation_utils import adjust_vectors
 from time import time
-from eval.evaluation_main import test_instruction_following_loose, test_instruction_following_strict
+from ifeval_scripts.evaluation_main import test_instruction_following_loose, test_instruction_following_strict
 
 
 def generate_with_hooks(

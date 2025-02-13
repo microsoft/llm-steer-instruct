@@ -29,7 +29,7 @@ from transformer_lens import utils as tlutils
 from utils.generation_utils import adjust_vectors
 from time import time
 import random
-from eval.evaluation_main import test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_loose
 from collections import namedtuple
 import nltk
 

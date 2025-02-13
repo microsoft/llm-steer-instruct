@@ -65,7 +65,7 @@ def generate_with_hooks(
     max_tokens_generated: int = 64,
     fwd_hooks = [],
     verbose: bool = False,
-    return_decoded=False
+    return_decoded=True
 ):
 
     all_toks = torch.zeros((toks.shape[0], toks.shape[1] + max_tokens_generated), dtype=torch.long, device=toks.device)

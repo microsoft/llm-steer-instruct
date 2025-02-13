@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """Registry of all instructions."""
-from eval import instructions
+from ifeval_scripts import instructions
 
 _KEYWORD = "keywords:"
 

@@ -20,7 +20,7 @@ import hydra
 import functools
 from transformer_lens import utils as tlutils
 from utils.generation_utils import generate_with_hooks, direction_projection_hook, activation_addition_hook
-from eval.evaluation_main import test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_loose
 
 config_path = os.path.join(project_dir, 'config')
 
