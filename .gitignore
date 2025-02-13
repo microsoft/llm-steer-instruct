@@ -6,8 +6,11 @@ packages-microsoft*
 format/representations/
 length/representations/
 keywords/representations/
+<<<<<<< HEAD
 format/representations/
 length/representations/
+=======
+>>>>>>> c3434d3 (kw)
 .vscode/
 stored_hs
 .DS_Store
