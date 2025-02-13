@@ -10,10 +10,7 @@ import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
-from eval.evaluation_main import test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_loose
 import re
 import torch
 from tqdm import tqdm

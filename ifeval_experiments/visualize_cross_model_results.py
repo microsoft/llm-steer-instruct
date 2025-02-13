@@ -16,7 +16,7 @@ import pandas as pd
 import json
 import plotly.express as px
 import plotly.graph_objects as go
-from eval.evaluation_main import test_instruction_following_loose
+from ifeval_scripts.evaluation_main import test_instruction_following_loose
 import plotly
 # %%
 overall_accuracies = {}
