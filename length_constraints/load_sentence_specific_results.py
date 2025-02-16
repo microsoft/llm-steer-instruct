@@ -1,4 +1,6 @@
 # %%
+import os
+import sys
 import pandas as pd
 import json
 import plotly.graph_objects as go
@@ -7,11 +9,16 @@ import plotly
 import plotly.figure_factory as ff
 from statsmodels.stats.contingency_tables import mcnemar
 
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+sys.path.append(project_dir)
+
 # %%
 constraint_type= 'at_most'
 n_sent_max = 5
-n_examples = 40
-output_path = f'./out'
+n_examples = 200
+output_path = f'{script_dir}/out'
 model_name = 'phi-3'
 source_layer_idx = 12
 

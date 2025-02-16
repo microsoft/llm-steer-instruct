@@ -1,4 +1,6 @@
 # %%
+import os
+import sys
 import json
 import pandas as pd
 import plotly.express as px
@@ -6,9 +8,14 @@ import nltk
 import plotly
 import plotly.figure_factory as ff
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+sys.path.append(project_dir)
+
+
 # %%
 # load  data
-output_path = './out'
+output_path = f'{script_dir}/out'
 model_name = 'phi-3'
 n_sent_max = 2
 n_examples = 50

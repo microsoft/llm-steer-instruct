@@ -19,7 +19,6 @@ from utils.generation_utils import generate, extract_representation
 config_path = os.path.join(project_dir, 'config/keywords')
 
 
-# %%
 @hydra.main(config_path=config_path, config_name='compute_keyword_representations')
 def compute_representations(args: DictConfig):
         

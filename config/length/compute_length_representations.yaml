@@ -1,12 +1,10 @@
 device: 'cuda'
-data_path: './data/ifeval_wo_instructions.jsonl'
-dry_run: False
 transformers_cache_dir: null
 
 model_name: 'phi-3'
 max_new_tokens: 2
 num_final_tokens: 1
-constraint_type: 'sentences'
+constraint_type: 'high-level'
 n_sent_max: 10
 n_examples: 50
 

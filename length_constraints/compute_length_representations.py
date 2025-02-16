@@ -16,14 +16,14 @@ sys.path.append(project_dir)
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import generate, extract_representation
 
-config_path = os.path.join(project_dir, 'config')
+config_path = os.path.join(project_dir, 'config/length')
 
 # %%
 @hydra.main(config_path=config_path, config_name='compute_length_representations')
 def compute_representations(args: DictConfig):
         
     # load the data
-    with open(f'{project_dir}/{args.data_path}') as f:
+    with open(f'{project_dir}/data/ifeval_wo_instructions.jsonl') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
@@ -55,8 +55,8 @@ def compute_representations(args: DictConfig):
         phrasings_exatra_short = [' Be extremely concise.', ' Be extremely brief.', ' Keep it extremely short.', ' Keep it extremely concise.', ' The answer should be extremely concise.', ' The answer should be extremely brief.', ' The answer should be extremely short.']
         phrasings_short = [' Be concise.', ' Be brief.', ' Keep it short.', ' Keep it concise.', ' The answer should be concise.', ' The answer should be brief.', ' The answer should be short.']
         phrasings_medium = [' Don\'t be too concise or too verbose.', ' The answer should be neither too short nor too long.', ' The answer should be neither too concise nor too verbose.', ' The length of the answer should be moderate.']
-        phrasings_verbose = [' Be verbose.', ' Provide a long answer.', ' The answer should be verbose.', ' The answer should be long.', ' The answer should be long.']
-        phrasings_extra_verbose = [' Be extremely verbose.', ' Provide an extremely long answer.', ' The answer should be extremely verbose.', ' The answer should be extremely long.', ' The answer should be extremely long.']
+        phrasings_verbose = [' Be verbose.', ' Provide a long answer.', ' The answer should be verbose.', ' The answer should be long.']
+        phrasings_extra_verbose = [' Be extremely verbose.', ' Provide an extremely long answer.', ' The answer should be extremely verbose.', ' The answer should be extremely long.']
         phrasings = [phrasings_exatra_short, phrasings_short, phrasings_medium, phrasings_verbose, phrasings_extra_verbose]
 
         for i, r in data_no_instr_df.iterrows():
@@ -66,7 +66,6 @@ def compute_representations(args: DictConfig):
                 row['prompt_with_constraint'] = row['prompt_no_instr'] + instr
                 row['length_constraint'] = j
                 new_rows.append(row)
-
 
     data_df = pd.DataFrame(new_rows)
 

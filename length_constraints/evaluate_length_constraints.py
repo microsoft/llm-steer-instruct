@@ -15,23 +15,22 @@ import hydra
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.join(script_dir, '..')
-sys.path.append(script_dir)
 sys.path.append(project_dir)
 
 from utils.model_utils import load_model_from_tl_name
 from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
 
-config_path = os.path.join(project_dir, 'config')
+config_path = os.path.join(project_dir, 'config/length')
 
 
-@hydra.main(config_path='../config', config_name='length_evaluation')
+@hydra.main(config_path=config_path, config_name='length_evaluation')
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
     device = args.device
 
     # load the data
-    with open(f'{project_dir}/{args.data_path}') as f:
+    with open(f'{project_dir}/{args.base_queries_path}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
@@ -87,9 +86,9 @@ def run_experiment(args: DictConfig):
     # load the stored representations
     if args.model_name == 'gemma-2-9b':
         print('Loading representations from gemma-2-9b-it')
-        file = f'{project_dir}/{args.representations_folder}/gemma-2-9b-it/{args.length_rep_file}'
+        file = f'{script_dir}/{args.representations_folder}/gemma-2-9b-it/{args.length_rep_file}'
     else:
-        file = f'{project_dir}/{args.representations_folder}/{args.model_name}/{args.length_rep_file}'
+        file = f'{script_dir}/{args.representations_folder}/{args.model_name}/{args.length_rep_file}'
     results_df = pd.read_hdf(file, key='df')
     
     # sort results_df by length_constraint
@@ -105,10 +104,11 @@ def run_experiment(args: DictConfig):
     for i in range(5):
         # filter results_df to only include the relevant length_constraint
         filtered_results_df = results_df[results_df['length_constraint'] == i]
+
         hs_instr = filtered_results_df['last_token_rs'].values
-        hs_instr = torch.tensor([example_array[:, :] for example_array in list(hs_instr)])
+        hs_instr = torch.tensor(list(hs_instr))
         hs_no_instr = filtered_results_df['last_token_rs_no_instr'].values
-        hs_no_instr = torch.tensor([example_array[:, :] for example_array in list(hs_no_instr)])
+        hs_no_instr = torch.tensor(list(hs_no_instr))
         repr_diffs = hs_instr - hs_no_instr
 
         length_specific_rep = repr_diffs[:, args.source_layer_idx, -1].mean(dim=0)
@@ -174,6 +174,8 @@ def run_experiment(args: DictConfig):
                     elif 'adjust_rs' in args.steering:
                         hook_fn = functools.partial(direction_projection_hook, direction=intervention_dir, value_along_direction=avg_proj)
                         row['steering_weight'] = avg_proj.item()
+                    else:
+                        raise ValueError(f"Unknown steering method: {args.steering}")
 
                     fwd_hooks = [(tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn)]
                     encoded_example = tokenizer(example, return_tensors='pt').to(device)
@@ -191,20 +193,19 @@ def run_experiment(args: DictConfig):
                 p_bar.update(1)
 
     # write out_lines as jsonl
-    folder = f'{project_dir}/{args.output_path}/{args.model_name}/1-{args.n_sent_max}sentences_{args.n_examples}examples/'
+    folder = f'{script_dir}/{args.output_path}/{args.model_name}/1-{args.n_sent_max}sentences_{args.n_examples}examples/'
     if args.steering != 'none' and not args.include_instructions:
         folder += f'/{args.steering}_{args.source_layer_idx}'
     elif args.steering != 'none' and args.include_instructions:
         folder += f'/{args.constraint_type}_instr_plus_{args.steering}_{args.source_layer_idx}'
-
-    if args.steering == 'none' and args.include_instructions:
+    elif args.steering == 'none' and args.include_instructions:
         folder += f'/no_steering_{args.constraint_type}'
     elif args.steering == 'none' and not args.include_instructions:
         folder += '/no_steering_no_instruction'
+        
     os.makedirs(folder, exist_ok=True)
     out_path = f'{folder}/out'
-    out_path += ('_test' if args.dry_run else '')
-    out_path +=  '.jsonl'
+    out_path += ('_test.jsonl' if args.dry_run else '.jsonl')
 
     # dump the args in the folder
     with open(f'{folder}/args.yaml', 'w') as f:
@@ -217,7 +218,6 @@ def run_experiment(args: DictConfig):
         for line in out_lines:
             f.write(json.dumps(line) + '\n')
 
-# %%
+
 if __name__ == '__main__':
     run_experiment()
-# %%
