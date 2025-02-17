@@ -1,0 +1,15 @@
+device: mps
+dry_run: true
+data_path: data/format/ifeval_single_instr_format.jsonl
+output_path: out
+transformers_cache_dir: null
+model_name: phi-3
+hf_model: true
+max_generation_length: 16
+include_instructions: true
+cross_model_steering: false
+steering: adjust_rs
+source_layer_idx: -1
+steering_weight: 1.0
+representations_folder: single_instr_all_base_x_all_instr
+use_perplexity: false

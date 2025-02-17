@@ -52,7 +52,8 @@ def run_experiment(args: DictConfig):
             # use best layer
             cross_model_flag = '_cross_model' if args.cross_model_steering else ''
             use_perplexity_flag = '_with_perplexity' if args.use_perplexity else ''
-            file_path = f'{folder}/pre_computed_ivs_best_layer_validation{use_perplexity_flag}{cross_model_flag}_{args.include_instructions}.h5'
+            include_instr_flag = '_instr' if args.include_instructions else '_no_instr'
+            file_path = f'{folder}/pre_computed_ivs_best_layer_validation{use_perplexity_flag}{cross_model_flag}{include_instr_flag}.h5'
         else:
             file_path = f'{folder}/pre_computed_ivs_layer_{args.source_layer_idx}.h5'
         pre_computed_ivs = pd.read_hdf(file_path, key='df')
@@ -124,7 +125,7 @@ def run_experiment(args: DictConfig):
         # compute accuracy
         prompt_to_response = {}
         prompt_to_response[row['prompt']] = row['response']
-        output = test_instruction_following_loose(row, prompt_to_response)
+        output = test_instruction_following_loose(r, prompt_to_response)
         row['follow_all_instructions'] = output.follow_all_instructions
 
         out_lines.append(row)
@@ -157,7 +158,7 @@ def run_experiment(args: DictConfig):
 
     os.makedirs(out_folder, exist_ok=True)
 
-    file_name = 'out.jsonl' if args.dry_run else 'test.jsonl'
+    file_name = 'out.jsonl' if not args.dry_run else 'test.jsonl'
     out_file = os.path.join(out_folder, file_name)
 
     # dump args in the folder
