@@ -14,34 +14,34 @@ sys.path.append(project_dir)
 # %%
 folder = f'{script_dir}/out'
 model_name = 'phi-3'
-constrain_type = 'existence'
+constraint_type = 'existence'
 steering= 'add_vector'
 layer = 24
 weight = 120
 n_examples = 20
 
-file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
+file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
 with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
 df_steering = pd.DataFrame(results)
 
 steering = 'no_instr'
-file = f'{folder}/{model_name}/{constrain_type}/{steering}/out.jsonl'
+file = f'{folder}/{model_name}/{constraint_type}/{steering}/out.jsonl'
 with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
 df_no_steering = pd.DataFrame(results)
 
 steering = 'standard'
-file = f'{folder}/{model_name}/{constrain_type}/{steering}/out.jsonl'
+file = f'{folder}/{model_name}/{constraint_type}/{steering}/out.jsonl'
 with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
 df_standard = pd.DataFrame(results)
 
 steering = 'instr_plus_add_vector'
-file = f'{folder}/{model_name}/{constrain_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
+file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
 with open(file, 'r') as f:
     results = [json.loads(line) for line in f]
 
