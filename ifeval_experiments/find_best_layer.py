@@ -142,7 +142,7 @@ def find_best_layer(args: DictConfig):
             # Run the model on each input
             for i, r in instr_data_df.iterrows():
                 if args.include_instructions:
-                    example = r['model_output'] # prompt w/ instruction
+                    example = r['prompt'] # prompt w/ instruction
                 else:
                     example = r['prompt_without_instruction'] # prompt w/o instruction
 
@@ -191,11 +191,6 @@ def find_best_layer(args: DictConfig):
                 output = test_instruction_following_loose(r, prompt_to_response)
                 row['follow_all_instructions'] = output.follow_all_instructions
                 row['layer'] = layer_idx
-
-                if 'no_instr' in args.data_path:
-                    row['prompt_no_instr'] = row['prompt']
-                    row['prompt'] = row['original_prompt']
-                    row.pop('original_prompt')
                 
                 out_lines.append(row)
                 p_bar.update(1)

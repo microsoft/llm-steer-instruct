@@ -1,19 +1,23 @@
 device: 'cuda'
-data_path: './data/input_data_single_instr.jsonl'
 dry_run: False
-output_path: 'out/'
+
+data_path: 'data/format/ifeval_single_instr_format.jsonl'
+output_path: 'out'
 transformers_cache_dir: null
 
 model_name: 'phi-3'
+hf_model: True # if True and steering is 'none', use huggingface model for faster generation
+
 max_generation_length: 2048
-hf_model: True
-cross_model_steering: False
+include_instructions: False
 
-steering: 'none'
-source_layer_idx: 20
-steering_weight: 1.0
-representations_folder: 'single_instr_all_base_x_all_instr'
+cross_model_steering: False # if True and model is gemma-2-2b or gemma-2-9b, use steering vectors from the instruction-tuned counterparts
 
+steering: 'none' # 'none', 'adjust_rs', 'add_vector'
+source_layer_idx: -1 # -1 to the best layer found in the layer search, otherwise use the specified layer
+steering_weight: 1.0 # if steering is add_vector, the parameter is the weight of the steering vector
+representations_folder: 'all' # 'all' or 'subset_{subset_ratio}' depending on whether the representations were computed for all examples or a subset of them
+use_perplexity: True # whether the layer search was performed taking perplexity into account
 
 
 defaults:

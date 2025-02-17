@@ -73,3 +73,23 @@ with open(new_path, 'w') as f:
     for i, r in new_df.iterrows():
         f.write(json.dumps(r.to_dict()) + '\n')
 # %%
+path = '/Users/alestolfo/workspace/llm-steer-instruct/data/format/input_data_single_instr.jsonl'
+
+with open(path, 'r') as f:
+    data = [json.loads(line) for line in f]
+
+df = pd.DataFrame(data)
+print(f'Length of original dataframe: {len(df)}')
+# %%
+# filter for format only 
+
+# filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
+filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
+df = df[df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
+
+print(f'Length of filtered dataframe: {len(df)}')
+# %%
+# write out the new dataframe
+new_path = '/Users/alestolfo/workspace/llm-steer-instruct/data/format/ifeval_single_instr_format.jsonl'
+df.to_json(new_path, orient='records', lines=True)
+# %%
