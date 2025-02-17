@@ -1,65 +1,63 @@
 # %%
 import os
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_dir = os.path.join(script_dir, '..')
-os.chdir(project_dir)
-
 import sys
-sys.path.append(script_dir)
-sys.path.append(project_dir)
-
-import torch
 import pandas as pd
 import tqdm
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import generate, extract_representation
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
-config_path = os.path.join(project_dir, 'config')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+os.chdir(project_dir)
+sys.path.append(project_dir)
+
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import generate, extract_representation
+
+config_path = os.path.join(project_dir, 'config/format')
 
 
 @hydra.main(config_path=config_path, config_name='compute_representations')
 def compute_representations(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    with open(args.data_path) as f:
+    with open(f'{project_dir}/{args.data_path}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
-    joined_df = pd.DataFrame(data)
+    data_df = pd.DataFrame(data)
     # drop the column prompt
-    joined_df = joined_df.drop(columns=['prompt'])
+    data_df = data_df.drop(columns=['prompt'])
     # rename model_output to prompt
-    joined_df = joined_df.rename(columns={'model_output': 'prompt'})
+    data_df = data_df.rename(columns={'model_output': 'prompt'})
     # rename prompt_without_instruction to prompt_no_instr
-    joined_df = joined_df.rename(columns={'prompt_without_instruction': 'prompt_no_instr'})
+    data_df = data_df.rename(columns={'prompt_without_instruction': 'prompt_no_instr'})
 
-    joined_df['instruction_id_list'] = joined_df['single_instruction_id'].apply(lambda x: [x])
+    data_df['instruction_id_list'] = data_df['single_instruction_id'].apply(lambda x: [x])
 
-    all_instructions = joined_df.single_instruction_id.unique()
+    all_instructions = data_df.single_instruction_id.unique()
 
     # filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
     filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
-    joined_df = joined_df[joined_df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
+    data_df = data_df[data_df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
 
     # load tokenizer and model
     model_name = args.model_name
     model, tokenizer = load_model_from_tl_name(model_name, device=args.device, cache_dir=args.transformers_cache_dir)
     model.to(args.device)
 
-    p_bar = tqdm.tqdm(total=len(joined_df))
+    p_bar = tqdm.tqdm(total=len(data_df))
 
     for instruction_type in all_instructions:
-        instr_data_df = joined_df[[[instruction_type] == l for l in joined_df['instruction_id_list']]]
+        instr_data_df = data_df[[[instruction_type] == l for l in data_df['instruction_id_list']]]
         instr_data_df.reset_index(inplace=True, drop=True)
 
         if args.use_data_subset:
             instr_data_df = instr_data_df.iloc[:int(len(instr_data_df)*args.data_subset_ratio)]
 
         if args.dry_run:
-            instr_data_df = instr_data_df.head(2)
+            instr_data_df = instr_data_df.head(5)
 
         rows = []
 
@@ -92,18 +90,16 @@ def compute_representations(args: DictConfig):
 
         df = pd.DataFrame(rows)
 
-        if args.dry_run:
-            break
+        if not args.dry_run:
+            folder = f'{script_dir}/representations/{model_name}'
+            if args.use_data_subset:
+                folder += f'/subset_{args.data_subset_ratio}'
+            else:
+                folder += '/all'
+            os.makedirs(folder, exist_ok=True)
 
-        folder = f'./ifeval_experiments/representations/{model_name}/single_instr'
-        if args.use_data_subset:
-            folder += f'_subset_{args.data_subset_ratio}'
-        if 'all_base_x_all_instructions' in args.data_path:
-            folder += '_all_base_x_all_instr'
-        os.makedirs(folder, exist_ok=True)
-
-        # store the df
-        df.to_hdf(f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5', key='df', mode='w')
+            # store the df
+            df.to_hdf(f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5', key='df', mode='w')
 
 # %%
 if __name__ == '__main__':

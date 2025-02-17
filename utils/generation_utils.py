@@ -114,8 +114,6 @@ def compute_perplexity(text, device='cuda', perplexity_model=None, perplexity_to
             print(f'Error: {e}')
             loss = torch.tensor(0.0)
 
-        print
-
     # Compute the perplexity
     perplexity = torch.exp(loss)
     return perplexity.item()

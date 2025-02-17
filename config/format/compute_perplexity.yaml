@@ -1,0 +1,19 @@
+device: 'cpu'
+transformers_cache_dir: null
+layer_search_folder: 'layer_search_out'
+
+model_name: 'phi-3'
+
+include_instructions: True # whether the layer search included instructions
+seed: 42 # the seed used in the layer search
+n_examples: 8 # the number of examples used in the layer search
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

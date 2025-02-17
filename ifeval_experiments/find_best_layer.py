@@ -22,17 +22,17 @@ from transformer_lens import utils as tlutils
 from utils.generation_utils import generate_with_hooks, direction_projection_hook, activation_addition_hook
 from ifeval_scripts.evaluation_main import test_instruction_following_loose
 
-config_path = os.path.join(project_dir, 'config')
+config_path = os.path.join(project_dir, 'config/format')
+
 
 @hydra.main(config_path=config_path, config_name='find_best_layer')
 def find_best_layer(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
     device = args.device
-    print(f"Using device: {device}")
 
     # load the data
-    with open(args.data_path) as f:
+    with open(f'{project_dir}/{args.data_path}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
@@ -41,9 +41,6 @@ def find_best_layer(args: DictConfig):
     # filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
     filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
     data_df = data_df[data_df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
-
-    if args.specific_instruction:
-        data_df = data_df[data_df.instruction_id_list.apply(lambda x: args.specific_instruction in x[0])]
 
     # load tokenizer and model
     if args.steering != 'none':
@@ -67,7 +64,7 @@ def find_best_layer(args: DictConfig):
     else:
         layer_range = range(n_layers // 5, n_layers, 2)
     
-    # -1 represents "no steering"
+    # -1 indicates "no steering"
     layer_range = [-1] + list(layer_range)
 
     num_all_examples = 0
@@ -98,23 +95,23 @@ def find_best_layer(args: DictConfig):
             # load the stored representations
             if args.model_name == 'gemma-2-2b' and args.cross_model_steering:
                 print('Loading representations from gemma-2-2b INSTRUCT')
-                folder = f'{project_dir}/representations/gemma-2-2b-it/{args.representations_folder}'
+                folder = f'{script_dir}/representations/gemma-2-2b-it/{args.representations_folder}'
             elif args.model_name == 'gemma-2-9b' and args.cross_model_steering:
                 print('Loading representations from gemma-2-9b INSTRUCT')
-                folder = f'{project_dir}/representations/gemma-2-9b-it/{args.representations_folder}'
+                folder = f'{script_dir}/representations/gemma-2-9b-it/{args.representations_folder}'
             else:
-                folder = f'{project_dir}/representations/{args.model_name}/{args.representations_folder}'
+                folder = f'{script_dir}/representations/{args.model_name}/{args.representations_folder}'
             file = f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5'
+            
             # check if the file exists
             if (not os.path.exists(file)):
                 raise ValueError(f"File {file} does not exist")
             else:
                 results_df = pd.read_hdf(file, key='df')
 
-                hs_instr = results_df['last_token_rs'].values
-                hs_instr = torch.tensor(np.array([example_array[:, :] for example_array in list(hs_instr)]))
-                hs_no_instr = results_df['last_token_rs_no_instr'].values
-                hs_no_instr = torch.tensor(np.array([example_array[:, :] for example_array in list(hs_no_instr)]))
+                # Convert to tensors
+                hs_instr = torch.tensor(results_df['last_token_rs'].tolist())
+                hs_no_instr = torch.tensor(results_df['last_token_rs_no_instr'].tolist())
 
                 # compute the instrution vector
                 repr_diffs = hs_instr - hs_no_instr
@@ -141,13 +138,10 @@ def find_best_layer(args: DictConfig):
 
                     # get average projection along the instruction direction for each layer
                     avg_proj = proj.mean()
-                    print(f'Average projection along the {instruction_type} direction for layer {layer_idx}: {avg_proj}')
-
-            print(f'Running on {len(instr_data_df)} examples for instruction {instruction_type} and layer {layer_idx}')
 
             # Run the model on each input
             for i, r in instr_data_df.iterrows():
-                if args.include_instruction:
+                if args.include_instructions:
                     example = r['model_output'] # prompt w/ instruction
                 else:
                     example = r['prompt_without_instruction'] # prompt w/o instruction
@@ -161,6 +155,7 @@ def find_best_layer(args: DictConfig):
                     example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
 
                 if ('json' in instruction_type) or ('multiple_sections' in instruction_type):
+                        # for these instructions we don't want to truncate the output too early as they will fails the instruction following check
                         max_generation_length = 1024
                 else:
                     max_generation_length = args.max_generation_length
@@ -205,24 +200,25 @@ def find_best_layer(args: DictConfig):
                 out_lines.append(row)
                 p_bar.update(1)
 
-
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}'
+    folder = f'{script_dir}/{args.output_path}/{args.model_name}'
     folder += f'/n_examples{args.n_examples_per_instruction}_seed{args.seed}'
     folder += '_cross_model' if args.cross_model_steering else ''
 
     os.makedirs(folder, exist_ok=True)
     out_path = f'{folder}/out'
-    if args.include_instruction:
+    if args.include_instructions:
         out_path += '_instr'
     else:
         out_path += '_no_instr'
-    if args.specific_instruction:
-        out_path += f'_{args.specific_instruction}'
-    out_path += ('_test' if args.dry_run else '')
-    out_path +=  '.jsonl'
+    out_path += ('_test.jsonl' if args.dry_run else '.jsonl')
 
     print(f'Writing to {out_path}')
+
+    # dump args to json
+    args_file_name = 'args_instr.json' if args.include_instructions else 'args_no_instr.json'
+    with open(f'{folder}/{args_file_name}', 'w') as f:
+        f.write(OmegaConf.to_yaml(args))
 
     with open(out_path, 'w') as f:
         for line in out_lines:

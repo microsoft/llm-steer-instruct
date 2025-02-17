@@ -101,10 +101,10 @@ def run_experiment(args: DictConfig):
             if len(filtered_df) == 0:
                 raise ValueError(f'No results found for word {word}')
 
-            hs_instr = filtered_df['last_token_rs'].values
-            hs_instr = torch.tensor(list(hs_instr))
-            hs_no_instr = filtered_df['last_token_rs_no_instr'].values
-            hs_no_instr = torch.tensor(list(hs_no_instr))
+            hs_instr = filtered_df['last_token_rs'].to_list()
+            hs_instr = torch.tensor(hs_instr)
+            hs_no_instr = filtered_df['last_token_rs_no_instr'].to_list()
+            hs_no_instr = torch.tensor(hs_no_instr)
 
             # check if hs has 4 dimensions
             if len(hs_instr.shape) == 3:
