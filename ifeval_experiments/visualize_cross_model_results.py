@@ -131,10 +131,7 @@ for model_name in model_names:
         for i, row in df.iterrows():
             if 'Q:' in row['response']:
                 row['response'] = row['response'].split('Q:')[0]
-<<<<<<< HEAD
-=======
                 # print(f'TRUNCATED RESPONSE: {row["response"]}')
->>>>>>> 0ada498 (cm res)
 
             # get row from results_df_w_kwargs with the same prompt
             row_w_kwargs = results_df_w_kwargs[results_df_w_kwargs.prompt == row.prompt].iloc[0]

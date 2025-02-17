@@ -1,78 +1,46 @@
 # %%
 import os
-if 'ifeval_experiments' in os.getcwd():
-    os.chdir('..')
-
 import sys
-sys.path.append(os.getcwd())
-
-import torch
 import pandas as pd
 import tqdm
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+os.chdir(project_dir)
+sys.path.append(project_dir)
 
-def extract_representation(model, tokenizer, problem, device, num_final_tokens=8):
-    """
-    extract the representation of the final token in the direct inference prompt
-    """
-    eval_prompt = problem
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import generate, extract_representation
 
-    model_input = tokenizer(eval_prompt, return_tensors="pt").to(device)
-    with torch.no_grad():
-        logits, cache = model.run_with_cache(model_input['input_ids'])
-        del logits
-        final_token_rs = torch.stack([cache['resid_post', layer_idx][:, -num_final_tokens:, :].squeeze() for layer_idx in range(model.cfg.n_layers)]).cpu().numpy()
-        del cache
-    
-    return final_token_rs
+config_path = os.path.join(project_dir, 'config/format')
 
 
 @hydra.main(config_path='../config', config_name='compute_representations')
 def compute_representations(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    if 'all_base_x_all_instructions' in args.data_path:
-        with open(args.data_path) as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
+    with open(f'{project_dir}/{args.data_path}') as f:
+        data = f.readlines()
+        data = [json.loads(d) for d in data]
 
-        joined_df = pd.DataFrame(data)
-        # drop the column prompt
-        joined_df = joined_df.drop(columns=['prompt'])
-        # rename model_output to prompt
-        joined_df = joined_df.rename(columns={'model_output': 'prompt'})
-        # rename prompt_without_instruction to prompt_no_instr
-        joined_df = joined_df.rename(columns={'prompt_without_instruction': 'prompt_no_instr'})
+    data_df = pd.DataFrame(data)
+    # drop the column prompt
+    data_df = data_df.drop(columns=['prompt'])
+    # rename model_output to prompt
+    data_df = data_df.rename(columns={'model_output': 'prompt'})
+    # rename prompt_without_instruction to prompt_no_instr
+    data_df = data_df.rename(columns={'prompt_without_instruction': 'prompt_no_instr'})
 
-        joined_df['instruction_id_list'] = joined_df['single_instruction_id'].apply(lambda x: [x])
+    data_df['instruction_id_list'] = data_df['single_instruction_id'].apply(lambda x: [x])
 
-        all_instructions = joined_df.single_instruction_id.unique()
+    all_instructions = data_df.single_instruction_id.unique()
 
-    else:
-        with open(args.data_path) as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
-
-        data_df = pd.DataFrame(data)
-
-        with open(args.data_no_instr_path) as f:
-            data = f.readlines()
-            data = [json.loads(d) for d in data]
-
-        data_no_instr_df = pd.DataFrame(data)
-        data_no_instr_df = data_no_instr_df.drop(columns=['instruction_id_list', 'prompt_hash'])
-
-        # join the dataframes using column "key"
-        data_df = data_df.set_index('key')
-        data_no_instr_df = data_no_instr_df.set_index('key')
-        joined_df = data_df.join(data_no_instr_df, lsuffix='', rsuffix='_no_instr')
-
-        all_instructions = list(set([ item for l in data_df.instruction_id_list for item in l]))
+    # filter out instructions that are not detectable_format, language, change_case, punctuation, or startend
+    filters = ['detectable_format', 'language', 'change_case', 'punctuation', 'startend']
+    data_df = data_df[data_df.instruction_id_list.apply(lambda x: any([f in x[0] for f in filters]))]
 
     # load tokenizer and model
     model_name = args.model_name
@@ -82,21 +50,17 @@ def compute_representations(args: DictConfig):
 
     model.to(args.device)
 
-    if 'all_base_x_all_instructions' in args.data_path:
-        p_bar = tqdm.tqdm(total=len(joined_df))
-    else:
-        # compute number of entries in the dataframe with len(instruction_id_list) == 1
-        p_bar = tqdm.tqdm(total=len(joined_df[joined_df['instruction_id_list'].apply(lambda x: len(x) == 1)]))
+    p_bar = tqdm.tqdm(total=len(data_df))
 
     for instruction_type in all_instructions:
-        instr_data_df = joined_df[[[instruction_type] == l for l in joined_df['instruction_id_list'] ]]
+        instr_data_df = data_df[[[instruction_type] == l for l in data_df['instruction_id_list']]]
         instr_data_df.reset_index(inplace=True, drop=True)
 
         if args.use_data_subset:
             instr_data_df = instr_data_df.iloc[:int(len(instr_data_df)*args.data_subset_ratio)]
 
         if args.dry_run:
-            instr_data_df = instr_data_df.head(2)
+            instr_data_df = instr_data_df.head(5)
 
         num_final_tokens = 1
         rows = []
@@ -140,20 +104,16 @@ def compute_representations(args: DictConfig):
 
         df = pd.DataFrame(rows)
 
-        if args.dry_run:
-            break
+        if not args.dry_run:
+            folder = f'{script_dir}/representations/{model_name}'
+            if args.use_data_subset:
+                folder += f'/subset_{args.data_subset_ratio}'
+            else:
+                folder += '/all'
+            os.makedirs(folder, exist_ok=True)
 
-        folder = f'./representations/{model_name}/single_instr'
-        if args.use_data_subset:
-            folder += f'_subset_{args.data_subset_ratio}'
-        if 'all_base_x_all_instructions' in args.data_path:
-            folder += '_all_base_x_all_instr'
-        os.makedirs(folder, exist_ok=True)
-        # store the df
-        try:
+            # store the df
             df.to_hdf(f'{folder}/{"".join(instruction_type).replace(":", "_")}.h5', key='df', mode='w')
-        except:
-            print(f'Error storing {"".join(instruction_type).replace(":", "_")}.h5')
 
 # %%
 if __name__ == '__main__':
