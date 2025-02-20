@@ -105,10 +105,8 @@ def run_experiment(args: DictConfig):
         # filter results_df to only include the relevant length_constraint
         filtered_results_df = results_df[results_df['length_constraint'] == i]
 
-        hs_instr = filtered_results_df['last_token_rs'].values
-        hs_instr = torch.tensor(list(hs_instr))
-        hs_no_instr = filtered_results_df['last_token_rs_no_instr'].values
-        hs_no_instr = torch.tensor(list(hs_no_instr))
+        hs_instr = torch.tensor(filtered_results_df['last_token_rs'].tolist())
+        hs_no_instr = torch.tensor(filtered_results_df['last_token_rs_no_instr'].tolist())
         repr_diffs = hs_instr - hs_no_instr
 
         length_specific_rep = repr_diffs[:, args.source_layer_idx, -1].mean(dim=0)
