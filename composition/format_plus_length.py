@@ -209,8 +209,8 @@ def run_experiment(args: DictConfig):
         folder += '_no_length_steering'
     
     os.makedirs(folder, exist_ok=True)
-    out_path = f'{folder}/out'
-    out_path += ('_test.jsonl' if args.dry_run else '.jsonl')
+    out_path = f'{folder}/'
+    out_path += ('test.jsonl' if args.dry_run else 'out.jsonl')
 
     # dump args in the folder
     with open(f'{folder}/args.json', 'w') as f:

@@ -2,7 +2,7 @@ device: 'cuda'
 dry_run: False
 
 data_path: 'data/format/ifeval_single_instr_format.jsonl'
-output_path: 'format_plus_length'
+output_path: 'format_plus_length_out'
 seed: 42
 transformers_cache_dir: null
 
