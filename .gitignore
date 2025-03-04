@@ -3,9 +3,14 @@ hf_token.txt
 __pycache__/
 *.pyc
 packages-microsoft*
-ifeval_experiments/representations/
-length_constraints/representations/
+format/representations/
+length/representations/
 keywords/representations/
+<<<<<<< HEAD
+format/representations/
+length/representations/
+=======
+>>>>>>> c3434d3 (kw)
 .vscode/
 stored_hs
 .DS_Store

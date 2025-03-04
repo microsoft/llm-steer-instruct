@@ -1,0 +1,28 @@
+device: 'cpu'
+transformers_cache_dir: null
+
+model_name: 'phi-3'
+
+use_perplexity: True # whether to take perplexity into account when selecting the best layer
+preplexity_threshold: 2.5
+
+cross_model_steering: False
+
+include_instructions: True
+
+seed: 42 # the seed used in the layer search
+n_examples: 8 # the number of examples used in the layer search
+
+specific_layer: null # if not none, just compute vectors for this layer and disregard the validation results
+
+representations_folder: 'all_base_x_all_instructions'
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

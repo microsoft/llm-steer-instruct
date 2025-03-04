@@ -1,0 +1,29 @@
+device: 'cuda'
+data_path: 'data/format/all_base_x_all_instructions_filtered.jsonl'
+output_path: 'layer_search_out'
+dry_run: False
+
+model_name: 'phi-3'
+max_generation_length: 768
+n_examples_per_instruction: 10
+
+include_instructions: True
+cross_model_steering: False
+
+transformers_cache_dir: null
+
+seed: 42
+steering: 'adjust_rs'
+steering_weight: 1.0
+representations_folder: 'all'
+
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
