@@ -1,0 +1,39 @@
+device: 'cuda'
+dry_run: False
+
+data_path: 'data/format/ifeval_single_instr_format.jsonl'
+output_path: 'format_plus_length_out'
+seed: 42
+transformers_cache_dir: null
+
+model_name: 'phi-3'
+max_generation_length: 2048
+
+# Format parameters
+include_instructions: True
+steering: 'none'
+source_layer_idx: -1 # -1 to the best layer found in the layer search, otherwise use the specified layer
+steering_weight: 1.0 # if steering is add_vector, the parameter is the weight of the steering vector
+representations_folder: 'all' # 'all' or 'subset_{subset_ratio}' depending on whether the representations were computed for all examples or a subset of them
+use_perplexity: True # whether the layer search was performed taking perplexity into account
+
+# Length parameters
+include_length_instr: True
+n_sent_max: 5
+length_steering: 'conciseness' # conciseness or verbosity
+length_steering_weight: 20
+length_source_layer_idx: 12
+constraint_type: at_most # at_most or at_least
+length_representations_folder: 'length_constraints/representations'
+length_rep_file: high_level_50examples_hs.h5
+
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

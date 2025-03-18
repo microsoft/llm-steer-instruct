@@ -1,0 +1,17 @@
+device: mps
+dry_run: true
+base_queries_path: data/ifeval_wo_instructions.jsonl
+output_path: out
+transformers_cache_dir: null
+model_name: phi-3
+max_generation_length: 16
+include_instructions: false
+n_sent_max: 5
+constraint_type: at_most
+n_examples: 50
+steering_weights:
+- 50
+steering: add_vector_verbosity
+source_layer_idx: 12
+representations_folder: representations
+length_rep_file: high_level_2examples_hs.h5

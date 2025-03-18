@@ -1,0 +1,22 @@
+device: cuda
+project_dir: .//length_constraints
+data_path: ./input_data_single_instr.jsonl
+dry_run: false
+output_path: out/
+path_to_hf_token: ./hf_token.txt
+transformers_cache_dir: /cluster/scratch/stolfoa/transformers_cache
+model_name: phi-3
+max_generation_length: 1024
+include_instructions: true
+n_sent_max: 5
+length_constraint_rep_min: 0
+length_constraint_rep_max: 1
+constraint_type: at_most
+n_examples: 100
+steering_weights:
+- 20
+length_rep_file: high_level_50examples_hs.h5
+steering: add_vector_conciseness
+source_layer_idx: 12
+apply_to_all_layers: false
+representations_folder: ./representations

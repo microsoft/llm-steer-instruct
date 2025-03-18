@@ -1,0 +1,13 @@
+device: mps
+dry_run: true
+output_path: out
+transformers_cache_dir: null
+model_name: phi-3
+max_generation_length: 16
+specific_instruction: existence_validation
+include_instructions: true
+steering: add_vector
+source_layer_idx: 24
+steering_weight: 150
+n_examples: 2
+representations_folder: representations

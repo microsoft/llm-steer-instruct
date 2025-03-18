@@ -1,0 +1,30 @@
+device: 'cuda'
+dry_run: False
+base_queries_path: 'data/ifeval_wo_instructions.jsonl'
+output_path: 'out'
+transformers_cache_dir: null
+
+model_name: 'phi-3'
+max_generation_length: 1024
+
+include_instructions: False
+n_sent_max: 5
+constraint_type: at_most
+n_examples: 50
+steering_weights: [1]
+
+steering: 'none' # 'none', 'add_vector_length_specific', 'add_vector_conciseness', 'add_vector_verbosity'
+source_layer_idx: 12
+representations_folder: 'representations'
+length_rep_file: high_level_50examples_hs.h5
+
+
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

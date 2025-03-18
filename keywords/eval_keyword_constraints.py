@@ -1,122 +1,71 @@
 # %%
 import os
-if 'Users' in os.getcwd():
-    os.chdir('C:\\Users\\t-astolfo\\workspace\\t-astolfo')
-    print('We\'re on a Windows machine')
-elif 'home' in os.getcwd():
-    os.chdir('/home/t-astolfo/t-astolfo')
-    print('We\'re on a sandbox machine')
-
 import sys
-sys.path.append('/home/t-astolfo/t-astolfo')
-sys.path.append('/home/t-astolfo/t-astolfo/ifeval_experiments')
-
-import numpy as np
 import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-import re
 import tqdm
-from utils.model_utils import load_model_from_tl_name
-from utils.generation_utils import if_inference
 import json
 from omegaconf import DictConfig, OmegaConf
 import hydra
 import functools
 from transformer_lens import utils as tlutils
-from utils.generation_utils import adjust_vectors
-from eval.evaluation_main import test_instruction_following_strict
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(script_dir, '..')
+sys.path.append(script_dir)
+sys.path.append(project_dir)
+
+from utils.model_utils import load_model_from_tl_name
+from utils.generation_utils import generate, generate_with_hooks, activation_addition_hook, direction_projection_hook
+from ifeval_scripts.evaluation_main import test_instruction_following_strict
+
+config_path = os.path.join(project_dir, 'config/keywords')
 
 
-
-def generate_with_hooks(
-    model,
-    toks,
-    max_tokens_generated: int = 64,
-    fwd_hooks = [],
-):
-
-    all_toks = torch.zeros((toks.shape[0], toks.shape[1] + max_tokens_generated), dtype=torch.long, device=toks.device)
-    all_toks[:, :toks.shape[1]] = toks
-
-    with torch.no_grad():
-        for i in range(max_tokens_generated):
-            with model.hooks(fwd_hooks=fwd_hooks):
-                logits = model(all_toks[:, :-max_tokens_generated + i])
-                next_tokens = logits[:, -1, :].argmax(dim=-1) # greedy sampling (temperature=0)
-                if next_tokens[0] == model.tokenizer.eos_token_id or next_tokens[0] == 32007:
-                    break
-                all_toks[:,-max_tokens_generated+i] = next_tokens
-
-    # truncate the tensor to remove padding
-    all_toks = all_toks[:, :toks.shape[1] + i]
-
-    return model.tokenizer.batch_decode(all_toks[:, toks.shape[1]:], skip_special_tokens=True)
-
-def direction_ablation_hook(
-    activation,
-    hook,
-    direction,
-    weight=1.0,
-):
-    return activation + (direction * weight)
-
-def direction_projection_hook(
-    activation,
-    hook,
-    direction,
-    value_along_direction,
-):
-    adjusted_activations = adjust_vectors(activation.squeeze(), direction, value_along_direction)
-    return adjusted_activations.unsqueeze(0)
-
-@hydra.main(config_path='../config', config_name='eval_keyword_constraints')
+@hydra.main(config_path=config_path, config_name='keyword_evaluation')
 def run_experiment(args: DictConfig):
     print(OmegaConf.to_yaml(args))
 
-    os.chdir(args.project_dir)
-
-    # Some environment variables
     device = args.device
-    print(f"Using device: {device}")
-
-    transformer_cache_dir = None
-
-    if 'no_instr' in args.data_path:
-        raise ValueError('To run without instructions, set the include_instructions argument to False')
 
     # load the data
-    with open(args.data_path) as f:
+    if args.specific_instruction == 'forbidden' or args.specific_instruction == 'forbidden_w_forbidden_rep':
+        data_file = 'ifeval_single_keyword_exclude.jsonl'
+    elif args.specific_instruction == 'existence':
+        data_file = 'ifeval_single_keyword_include.jsonl'
+    elif args.specific_instruction == 'existence_validation':
+        data_file = 'inclusion_validation.jsonl'
+    elif args.specific_instruction == 'forbidden_validation' or args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
+        data_file = 'exclusion_validation.jsonl'
+    else:
+        raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
+
+    with open(f'{project_dir}/data/keywords/{data_file}') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
 
     data_df = pd.DataFrame(data)
 
     # load tokenizer and model
-    with open(args.path_to_hf_token) as f:
-        hf_token = f.read()
-
     if args.steering != 'none':
         hf_model = False
     else:
         hf_model = True
-    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=transformer_cache_dir, hf_token=hf_token, hf_model=hf_model)
+
+    model, tokenizer = load_model_from_tl_name(args.model_name, device=device, cache_dir=args.transformers_cache_dir, hf_model=hf_model)
     model.to(device)
 
-    out_lines = []
+    all_instructions = list(set([ item for l in data_df.instruction_id_list for item in l]))
 
-    all_instructions = list(set([ item for l in data_df.instruction_id_list_for_eval for item in l]))
-
-    all_instructions = [instr for instr in all_instructions if args.specific_instruction in instr]
-    data_df = data_df[data_df['instruction_id_list_for_eval'].apply(lambda x: any(y in all_instructions for y in x))]
-    print(f'Using only the following instructions: {all_instructions}')
+    if 'validation' not in args.specific_instruction:
+        all_instructions = [instr for instr in all_instructions if args.specific_instruction in instr]
+        data_df = data_df[data_df['instruction_id_list'].apply(lambda x: any(y in all_instructions for y in x))]
+        print(f'Using only the following instructions: {all_instructions}')
     
     if args.dry_run:
-        data_df = data_df.sample(2)
-    total = len(data_df)
+        data_df = data_df.head(2)
 
-    print(f'Running on {total} examples')
+    total = len(data_df)
 
     if args.steering != 'none':
         # gather keywords needed for steering
@@ -128,21 +77,23 @@ def run_experiment(args: DictConfig):
                 'keywords' in data_df.loc[i].kwargs[0]
                 keywords.extend(data_df.loc[i].kwargs[0]['keywords'])
             
-        print(f'Keywords: {keywords}')
-
-
         # load the pre-computed IVs 
         if args.specific_instruction == 'forbidden':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
+            file = f'{script_dir}/representations/{args.model_name}/include_ifeval_exclude_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'forbidden_w_forbidden_rep':
+            file = f'{script_dir}/representations/{args.model_name}/exclude_ifeval_exclude_{args.n_examples}examples_hs.h5'
         elif args.specific_instruction == 'existence':
-            file = f'{args.project_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
-        else:
-            raise ValueError(f'Unknown specific_instruction: {args.specific_instruction}')
+            file = f'{script_dir}/representations/{args.model_name}/include_ifeval_include_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'existence_validation' or args.specific_instruction == 'forbidden_validation':
+            file = f'{script_dir}/representations/{args.model_name}/include_validation_{args.n_examples}examples_hs.h5'
+        elif args.specific_instruction == 'forbidden_validation_w_forbidden_rep':
+            file = f'{script_dir}/representations/{args.model_name}/exclude_validation_{args.n_examples}examples_hs.h5'
+
         results_df = pd.read_hdf(file)
 
         pre_computed_ivs = {}
+        avg_projections = {}
 
-        print(f'words in results_df: {results_df.word.unique()}')
         for word in tqdm.tqdm(keywords, desc='Computing IVs'):
 
             filtered_df = results_df[results_df.word == word]
@@ -150,10 +101,10 @@ def run_experiment(args: DictConfig):
             if len(filtered_df) == 0:
                 raise ValueError(f'No results found for word {word}')
 
-            hs_instr = filtered_df['last_token_rs'].values
-            hs_instr = torch.tensor([example_array[:, :] for example_array in list(hs_instr)])
-            hs_no_instr = filtered_df['last_token_rs_no_instr'].values
-            hs_no_instr = torch.tensor([example_array[:, :] for example_array in list(hs_no_instr)])
+            hs_instr = filtered_df['last_token_rs'].to_list()
+            hs_instr = torch.tensor(hs_instr)
+            hs_no_instr = filtered_df['last_token_rs_no_instr'].to_list()
+            hs_no_instr = torch.tensor(hs_no_instr)
 
             # check if hs has 4 dimensions
             if len(hs_instr.shape) == 3:
@@ -168,11 +119,18 @@ def run_experiment(args: DictConfig):
 
             pre_computed_ivs[word] = instr_dir
 
+            # compute projection for inputs with instruction
+            proj = hs_instr[:, args.source_layer_idx] @ instr_dir
+            mean_proj = proj.mean()
+
+            avg_projections[word] = mean_proj
+
     if not args.include_instructions:
         data_df['model_input'] = data_df['prompt_without_instruction']
     else:
         data_df['model_input'] = data_df['prompt']
 
+    out_lines = []
     p_bar = tqdm.tqdm(total=total)
 
     # Run the model on each input
@@ -180,12 +138,11 @@ def run_experiment(args: DictConfig):
         row = dict(r)
         example = row['model_input']
 
-
-        # apply the chat templated
+        # format the prompt
         messages = [{"role": "user", "content": example}]
         example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-        if (args.steering == 'none'):
-            out1 = if_inference(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
+        if args.steering == 'none':
+            out1 = generate(model, tokenizer, example, device, max_new_tokens=args.max_generation_length)
         elif args.steering != 'none':
             # gather words
             if 'forbidden_words' in r.kwargs[0]:
@@ -193,20 +150,19 @@ def run_experiment(args: DictConfig):
             elif 'keywords' in r.kwargs[0]:
                 keywords = r.kwargs[0]['keywords']
             else:
-                raise ValueError('Not implemented yet')
+                raise ValueError('No keywords found in kwargs')
             
-            steering_weight = args.steering_weight / len(keywords)
+            assert len(keywords) == 1, f'Expected a single keyword, got {keywords}'
+            word = keywords[0]
 
             fwd_hooks = []
-            for word in keywords:
-                if args.steering == 'add_vector':
-                    hook_fn = functools.partial(direction_ablation_hook,direction=pre_computed_ivs[word].to(device), weight=steering_weight)
-                elif args.steering == 'adjust_rs':
-                    raise ValueError('Not implemented for keywords')
-                fwd_hooks.append((tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn))
-            
-            print(f'Words to steer for: {keywords}')
-            print(f'Generating with hooks: {len(fwd_hooks)}')
+            if args.steering == 'add_vector':
+                hook_fn = functools.partial(activation_addition_hook,direction=pre_computed_ivs[word].to(device), weight=args.steering_weight)
+            elif args.steering == 'adjust_rs':
+                # this works significantly worse than add_vector
+                hook_fn = functools.partial(direction_projection_hook, direction=pre_computed_ivs[word].to(device), value_along_direction=avg_projections[word])
+
+            fwd_hooks.append((tlutils.get_act_name('resid_post', args.source_layer_idx), hook_fn))
 
             encoded_example = tokenizer(example, return_tensors='pt').to(device)
             out1 = generate_with_hooks(model, encoded_example['input_ids'], fwd_hooks=fwd_hooks, max_tokens_generated=args.max_generation_length)
@@ -226,15 +182,12 @@ def run_experiment(args: DictConfig):
         
         out_lines.append(row)
         p_bar.update(1)
-    
-    # if 'single_instr' not in args.data_path:
-    #     break
 
     # write out_lines as jsonl
-    folder = f'{args.output_path}/{args.model_name}'
+    folder = f'{script_dir}/{args.output_path}/{args.model_name}'
 
-    if args.specific_instruction:
-        folder += f'/{args.specific_instruction}'
+    folder += f'/{args.specific_instruction}'
+
     if not args.include_instructions and args.steering == 'none':
         folder += '/no_instr'
     elif  not args.include_instructions and args.steering != 'none':
@@ -247,20 +200,22 @@ def run_experiment(args: DictConfig):
             folder += f'_{args.steering_weight}'
     else:
         folder += '/standard'
+
     os.makedirs(folder, exist_ok=True)
+    
+    # dump args in the folder
+    with open(f'{folder}/args.json', 'w') as f:
+        f.write(OmegaConf.to_yaml(args))
+
     out_path = f'{folder}/out'
-    out_path += ('_test' if args.dry_run else '')
-    out_path +=  '.jsonl'
+    out_path += ('_test.jsonl' if args.dry_run else '.jsonl')
+
+    print(f'Storing at: {out_path}')
 
     with open(out_path, 'w') as f:
         for line in out_lines:
             f.write(json.dumps(line) + '\n')
 
-# %%
-# args = OmegaConf.load('./ifeval_experiments/config/conf.yaml')
-# args['model_name'] = 'phi-3'
-# run_experiment(args)
-# %%
+
 if __name__ == '__main__':
     run_experiment()
-# %%
