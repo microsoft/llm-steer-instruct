@@ -4,9 +4,8 @@ __pycache__/
 *.pyc
 packages-microsoft*
 format/representations/
-length/representations/
+format/representations_old/
 keywords/representations/
-format/representations/
 length/representations/
 .vscode/
 stored_hs
@@ -16,3 +15,5 @@ stored_hs
 exploration/
 plots_for_paper/
 nuget.config
+*/layer_search_out_old
+find_best_layer_test.sh
