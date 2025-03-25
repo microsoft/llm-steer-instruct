@@ -1,5 +1,5 @@
 device: 'cuda'
-data_path: 'data/format/all_base_x_all_instructions_filtered.jsonl'
+data_path: 'data/format/ifeval_augmented_filtered.jsonl'
 output_path: 'layer_search_out'
 dry_run: False
 

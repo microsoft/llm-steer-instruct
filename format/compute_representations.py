@@ -27,12 +27,6 @@ def compute_representations(args: DictConfig):
         data = [json.loads(d) for d in data]
 
     data_df = pd.DataFrame(data)
-    # drop the column prompt
-    data_df = data_df.drop(columns=['prompt'])
-    # rename model_output to prompt
-    data_df = data_df.rename(columns={'model_output': 'prompt'})
-    # rename prompt_without_instruction to prompt_no_instr
-    data_df = data_df.rename(columns={'prompt_without_instruction': 'prompt_no_instr'})
 
     data_df['instruction_id_list'] = data_df['single_instruction_id'].apply(lambda x: [x])
 
@@ -68,11 +62,11 @@ def compute_representations(args: DictConfig):
             if 'gemma' in model_name and '-it' not in model_name:
                 print('Using no-IT Gemma: not using chat template')
                 example = f'Q: {row["prompt"]}\nA:'
-                example_no_instr = f'Q: {row["prompt_no_instr"]}\nA:'
+                example_no_instr = f'Q: {row["prompt_without_instruction"]}\nA:'
             else:
                 messages = [{"role": "user", "content": row['prompt']}]
                 example = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-                messages_no_instr = [{"role": "user", "content": row['prompt_no_instr']}]
+                messages_no_instr = [{"role": "user", "content": row['prompt_without_instruction']}]
                 example_no_instr = tokenizer.apply_chat_template(messages_no_instr, add_generation_prompt=True, tokenize=False)
 
             out1 = generate(model, tokenizer, example, args.device, max_new_tokens=args.max_generation_length)

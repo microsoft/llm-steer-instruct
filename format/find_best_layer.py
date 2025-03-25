@@ -85,8 +85,7 @@ def find_best_layer(args: DictConfig):
         if 'language' in instruction_type:
             instr_data_df = instr_data_df.head(1)
 
-        instr_data_df['instruction_id_list'] = instr_data_df['instruction_id_list_og']
-        instr_data_df['prompt'] = instr_data_df['model_output']
+        instr_data_df['instruction_id_list'] = instr_data_df['instruction_id_list_original']
 
         if args.dry_run:
             instr_data_df = instr_data_df.head(1)
@@ -187,7 +186,7 @@ def find_best_layer(args: DictConfig):
 
                 # compute accuracy
                 prompt_to_response = {}
-                prompt_to_response[row['model_output']] = row['response']
+                prompt_to_response[row['prompt']] = row['response']
                 output = test_instruction_following_loose(r, prompt_to_response)
                 row['follow_all_instructions'] = output.follow_all_instructions
                 row['layer'] = layer_idx
