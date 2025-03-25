@@ -1,82 +1,138 @@
 # Improving Instruction-Following in Language Models through Activation Steering
 
-This repository contains the code for the paper “Improving Instruction-Following in Language Models through Activation Steering,” under submission at ICLR 2025.
+This repository contains the code for the paper **“Improving Instruction-Following in Language Models through Activation Steering,”** presented at ICLR 2025.
 
-## Setup
+Links: [[arXiv]](https://arxiv.org/abs/2410.12877) [[OpenReview]](https://openreview.net/forum?id=wozhdnRCtw)
 
-1. Install the necessary dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
 
-2. Add your HuggingFace token to `./hf_token.txt` for accessing gated repositories (e.g., Gemma 2).
 
-3. We use Hydra for parameter configuration. All config files can be found in `config/`.
+## Method
 
----
+We apply activation steering to improve a language model’s instruction-following behavior. 
+Our method computes a steering vector as the difference in activations obtained on paired inputs (with and without a particular instruction). During inference, this steering vector is added to the model’s residual stream to guide the generation toward satisfying the desired constraint (e.g., format, length, keyword inclusion).
 
-## Format Instructions
+![Method Overview](assets/fig1.png)
 
-1. **Compute Representations**
-   - Script: `ifeval_experiments/compute_representations.py`
-   - Description: Runs the model on pairs of inputs (with and without instructions) and stores the hidden states of the last token for each layer.
-   - Config: `config/compute_representations.yaml`
+## Repository Structure
 
-2. **Find Best Layer for Steering**
-   - Script: `ifeval_experiments/find_best_layer.py`
-   - Description: Runs the model on validation data, performs steering at multiple layers, and stores the outputs.
-   - Config: `config/find_best_layer.yaml`
+The repository is organized around the three main experiments from the paper (format, length, and word-specific instructions), plus an additional “composition” folder for multi-instruction steering. For parameter configuration, we use [Hydra](https://hydra.cc), with config files for each experiment are stored in dedicated subdirectories under `config/`. We use the IFEval evaluation code from the [official repo](https://github.com/google-research/google-research/tree/master/instruction_following_eval).
 
-3. **Pre-compute Instruction Steering Vectors**
-   - Script: `ifeval_experiments/pre_compute_ivs.py`
-   - Description: Computes the instruction vectors at the optimal steering layer based on the representations and validation scores.
+Below is a simplified overview of the folder structure.
 
-4. **Evaluate Format Instructions**
-   - Script: `ifeval_experiments/ifeval_evaluation.py`
-   - Config: `config/conf.yaml`
-   - Description: Evaluates the model on a subset of IFEval (set `nonparametric_only=True` for format instructions). For cross-model experiments, set `model_name` to either `gemma-2-2b` or `gemma-2-9b` and enable the `cross-model` flag. Note: Cross-model experiments require representations from the instruction-tuned counterpart.
+```
+.
+├── config                 # contains all '.yaml' configs
+├── composition            # scripts for multi-instruction steering
+│   ├── format_plus_length.py
+│   └── load_results.py
+├── format                 # scripts for format instructions
+│   ├── compute_representations.py
+│   ├── find_best_layer.py
+│   ├── format_evaluation.py
+│   ├── precompute_ivs.py
+│   ├── load_results.py
+├── keywords               # scripts for word-specific instructions
+│   ├── compute_keywords_representations.py
+│   ├── compute_perplexity.py
+│   ├── eval_keyword_constraints.py
+│   └── load_results.py
+├── length                 # scripts for length instructions
+│   ├── compute_length_representations.py
+│   ├── evaluate_length_constraints.py
+│   ├── load_results.py
+│   └── visualize_different_steering_configs.py
+├── utils                  # helper functions
+├── ifeval_scripts         # official IFEval scripts
+├── requirements.txt
+└── ...
+```
 
----
 
-## Length Instructions
 
-1. **Compute Representations**
-   - Script: `length_constraints/compute_length_representations.py`
-   - Config: `config/compute_length_representations.yaml`
-   - Description: Computes representations for length constraints and stores them in `length_constraints/representations/`.
+## Installation
 
-2. **Evaluate Length Instructions**
-   - Script: `length_constraints/evaluate_length_constraints.py`
-   - Config: `config/conf_length.yaml`
-   - Description: Evaluates the model on length constraints, analogous to the format instructions evaluation.
+Install the required modules. 
+```bash
+pip install -r requirements.txt
+```
 
----
 
-## Word-Specific Instructions
+## File Description
 
-1. **Compute Keyword Representations**
-   - Script: `keywords/compute_keywords_representations.py`
-   - Config: `config/compute_keyword_representations.yaml`
-   - Description: Computes representations for keyword constraints using base queries from `data/ifeval_wo_instructions.py` and stores them in `keywords/representations/`.
+### Format Instructions
 
-2. **Evaluate Keyword Instructions**
-   - Script: `keywords/eval_keyword_constraints.py`
-   - Config: Specify `specific_constraint` as `existence` (for inclusion) or `forbidden` (for exclusion). To test on validation data, use `existence_validation` or `forbidden_validation`.
+1.	Compute Instruction Representations
+    -	Script: `format/compute_representations.py`
+    -	Config: `config/format/compute_representations.yaml`
+    -	Description: Runs the model on pairs of inputs (with and without instructions) and stores the hidden states of the last token for each layer.
+2.	Layer Search for Steering
+    - Script: `format/find_best_layer.py`
+    - Config: `config/format/find_best_layer.yaml`
+    - Description: Runs the model on validation data, performs steering at multiple layers, and stores the outputs.
+3.	Pre-compute Instruction Steering Vectors
+    - Script: `format/pre_compute_ivs.py`
+    - Description: Computes the instruction vectors at the optimal steering layer based on the representations and validation scores.
+4. Evaluate Format Instructions
+    - Script: `format/format_evaluation.py`
+    - Config: `config/format/evaluation.yaml`
+    - Description: Evaluates the model on a subset of the IFEval dataset. For cross-model experiments, set `model_name` to `gemma-2-2b` or `gemma-2-9b` and enable the `cross-model` flag. Cross-model experiments require representations from the instruction-tuned counterpart.
 
----
 
-## Multi-instruction Steering
+### Length Instructions
+1. Compute Representations
+    - Script: `length/compute_length_representations.py`
+    - Config: `config/length/compute_length_representations.yaml`
+    - Description: Computes representations for length constraints and stores them in length/representations/.
+2.	Evaluate Length Instructions
+    - Script: `length/evaluate_length_constraints.py`
+    - Config: `config/length/evaluation.yaml`
+    - Description: Evaluates the model on length constraints, analogous to the format instructions evaluation.
 
-1. **Evaluate Format + Length Instructions**
-   - Script: `composition/nonpar_plus_length.py`
-   - Config: `config/nonpar_plus_length.yaml`
-   - Description: Evaluates the model on format and length instructions simultaneously. Requires representations from both `length_constraints/compute_length_representations.py` and `ifeval_experiments/compute_representations.py`.
 
-2. **Evaluate Lowercase + Exclude Word Instructions**
-   - Script: `composition/casing_and_exclude_word.py`
-   - Config: Available in `config/`
-   - Description: Evaluates the model on the "lowercase" and "exclude-word" instructions. Requires representations from `keywords/compute_keywords_representations.py`.
+### Word-Specific Instructions
+1.	Compute Keyword Representations
+    - Script: `keywords/compute_keywords_representations.py`
+    - Config: `config/keywords/compute_keyword_representations.yaml`
+    - Description: Computes representations for keyword constraints using base queries from `data/ifeval_wo_instructions.jsonl`  and stores them in `keywords/representations/`.
+2.	Evaluate Keyword Instructions
+    - Script: `keywords/eval_keyword_constraints.py`
+    - Config: `config/keywords/evaluation.yaml`
+    - Description: Evaluates keyword inclusion or exclusion. Specify `specific_constraint` as `ifeval_include` (for inclusion) or `ifeval_exclude` (for exclusion). To evaluate on validation data, use `validation`.
 
----
 
-Please refer to the individual config files and script arguments for specific parameters to control the behavior of each experiment.
+### Multi-instruction Steering
+
+1. Evaluate Format + Length Instructions
+    - Script: `composition/format_plus_length.py`
+    - Config: `config/composition/evaluation.yaml`
+    - Description: Evaluates the model on format and length instructions simultaneously. Requires representations from both `length/compute_length_representations.py` and `format/compute_representations.py`.
+
+
+## Citation
+
+If you use this code in your research, please consider citing us:
+
+```
+@inproceedings{
+stolfo2025improving,
+title={Improving Instruction-Following in Language Models through Activation Steering},
+author={Alessandro Stolfo and Vidhisha Balachandran and Safoora Yousefi and Eric Horvitz and Besmira Nushi},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=wozhdnRCtw}
+}
+```
+
+
+## License
+
+This project is licensed under the MIT License. You are free to modify and adapt it for your own use.
+
+## Contact
+
+For questions or issues, please open an issue on this repository or reach out to [stolfoa@ethz.ch](mailto:stolfoa@ethz.ch) and [besmira.nushi@microsoft.com](mailto:besmira.nushi@microsoft.com).
+
+
+
+
+
