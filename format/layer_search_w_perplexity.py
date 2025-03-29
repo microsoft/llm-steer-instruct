@@ -20,7 +20,7 @@ config_path = os.path.join(project_dir, 'config/format')
 
 
 @hydra.main(config_path=config_path, config_name='compute_perplexity')
-def compute_perplexity(args: DictConfig):
+def compute_response_perplexity(args: DictConfig):
         
         folder = f'{script_dir}/{args.layer_search_folder}'
         
@@ -58,5 +58,5 @@ def compute_perplexity(args: DictConfig):
 
 
 if __name__ == '__main__':
-    compute_perplexity()
+    compute_response_perplexity()
 # %%

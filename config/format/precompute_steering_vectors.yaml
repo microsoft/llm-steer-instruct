@@ -15,7 +15,7 @@ n_examples: 8 # the number of examples used in the layer search
 
 specific_layer: null # if not none, just compute vectors for this layer and disregard the validation results
 
-representations_folder: 'all_base_x_all_instructions'
+representations_folder: 'all'
 
 defaults:
   - _self_

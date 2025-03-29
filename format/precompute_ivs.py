@@ -17,8 +17,7 @@ config_path = os.path.join(project_dir, 'config/format')
 
 @hydra.main(config_path=config_path, config_name='precompute_steering_vectors')
 def precompute_vectors(args: DictConfig):
-    # read in ./data/input_data.jsonl
-    with open(f'{project_dir}/data/format/input_data_single_instr.jsonl') as f:
+    with open(f'{project_dir}/data/format/ifeval_single_instr_format.jsonl') as f:
         data = f.readlines()
         data = [json.loads(d) for d in data]
     input_data_df = pd.DataFrame(data)
@@ -30,7 +29,7 @@ def precompute_vectors(args: DictConfig):
 
     w_perplexity = '_with_perplexity' if args.use_perplexity else ''
     cross_model = '_cross_model' if args.cross_model_steering else ''
-    instr_included = 'instr' if 'instr' in args.include_instructions else 'no_instr'
+    instr_included = 'instr' if args.include_instructions else 'no_instr'
 
     folder = f'{script_dir}/layer_search_out'
     file = f'{folder}/{args.model_name}/n_examples{args.n_examples}_seed{args.seed}{cross_model}{w_perplexity}/out_{instr_included}.jsonl'
@@ -87,7 +86,6 @@ def precompute_vectors(args: DictConfig):
             print('Using representations from gemma-2-9b-it')
             rep_folder = f'{script_dir}/representations/gemma-2-9b-it/{args.representations_folder}'
         else:
-            print(f'Using representations from {args.model_name}')
             rep_folder = f'{script_dir}/representations/{args.model_name}/{args.representations_folder}'
 
         file =f'{rep_folder}/{"".join(instr).replace(":", "_")}.h5'
@@ -151,5 +149,5 @@ def precompute_vectors(args: DictConfig):
     else:
         df.to_hdf(f'{folder}/pre_computed_ivs_best_layer_validation{w_perplexity}{cross_model}_{instr_included}.h5', key='df', mode='w')
             
-# %%
-
+if __name__ == '__main__':
+    precompute_vectors()

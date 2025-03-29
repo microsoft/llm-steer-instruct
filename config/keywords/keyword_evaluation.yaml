@@ -6,7 +6,7 @@ transformers_cache_dir: null
 model_name: 'phi-3'
 max_generation_length: 1024
 
-specific_instruction: 'forbidden'
+specific_instruction: 'existence'
 include_instructions: True
 
 steering: 'none'
