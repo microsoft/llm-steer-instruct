@@ -2,14 +2,14 @@
 
 This repository contains the code for the paper **“Improving Instruction-Following in Language Models through Activation Steering,”** presented at ICLR 2025.
 
-Links: [[arXiv]](https://arxiv.org/abs/2410.12877) [[OpenReview]](https://openreview.net/forum?id=wozhdnRCtw)
+Links to the paper: [[arXiv]](https://arxiv.org/abs/2410.12877) [[OpenReview]](https://openreview.net/forum?id=wozhdnRCtw)
 
 
 
 ## Method
 
 We apply activation steering to improve a language model’s instruction-following behavior. 
-Our method computes a steering vector as the difference in activations obtained on paired inputs (with and without a particular instruction). During inference, this steering vector is added to the model’s residual stream to guide the generation toward satisfying the desired constraint (e.g., format, length, keyword inclusion).
+Our method computes a steering vector as the difference in activations obtained on paired inputs — with and without a particular instruction. During inference, this steering vector is added to the model’s residual stream to guide the generation toward satisfying the desired constraint (e.g., specific format or length).
 
 ![Method Overview](assets/fig1.png)
 
@@ -17,7 +17,7 @@ Our method computes a steering vector as the difference in activations obtained 
 
 The repository is organized around the three main experiments from the paper (format, length, and word-specific instructions), plus an additional “composition” folder for multi-instruction steering. For parameter configuration, we use [Hydra](https://hydra.cc), with config files for each experiment are stored in dedicated subdirectories under `config/`. We use the IFEval evaluation code from the [official repo](https://github.com/google-research/google-research/tree/master/instruction_following_eval).
 
-Below is a simplified overview of the folder structure.
+Below is an overview of the folder structure.
 
 ```
 .
@@ -28,19 +28,19 @@ Below is a simplified overview of the folder structure.
 ├── format                 # scripts for format instructions
 │   ├── compute_representations.py
 │   ├── find_best_layer.py
-│   ├── format_evaluation.py
+│   ├── compute_response_perplexity.py
+│   ├── evaluate.py
 │   ├── precompute_ivs.py
 │   ├── load_results.py
 ├── keywords               # scripts for word-specific instructions
-│   ├── compute_keywords_representations.py
+│   ├── compute_representations.py
 │   ├── compute_perplexity.py
-│   ├── eval_keyword_constraints.py
+│   ├── evaluate.py
 │   └── load_results.py
 ├── length                 # scripts for length instructions
-│   ├── compute_length_representations.py
-│   ├── evaluate_length_constraints.py
-│   ├── load_results.py
-│   └── visualize_different_steering_configs.py
+│   ├── compute_representations.py
+│   ├── evaluate.py
+│   └── load_results.py
 ├── utils                  # helper functions
 ├── ifeval_scripts         # official IFEval scripts
 ├── requirements.txt
@@ -69,33 +69,39 @@ pip install -r requirements.txt
     - Script: `format/find_best_layer.py`
     - Config: `config/format/find_best_layer.yaml`
     - Description: Runs the model on validation data, performs steering at multiple layers, and stores the outputs.
-3.	Pre-compute Instruction Steering Vectors
+3. Compute Perplexity of Model Responses
+    - Script: `format/compute_response_perplexity.py`
+    - Description: Loads validation results, computes perplexity for each model response using GPT-2 as a quality proxy, and saves the updated results to new JSONL files.
+4.	Pre-compute Instruction Steering Vectors
     - Script: `format/pre_compute_ivs.py`
     - Description: Computes the instruction vectors at the optimal steering layer based on the representations and validation scores.
-4. Evaluate Format Instructions
-    - Script: `format/format_evaluation.py`
+5. Evaluate Format Instructions
+    - Script: `format/evaluate.py`
     - Config: `config/format/evaluation.yaml`
     - Description: Evaluates the model on a subset of the IFEval dataset. For cross-model experiments, set `model_name` to `gemma-2-2b` or `gemma-2-9b` and enable the `cross-model` flag. Cross-model experiments require representations from the instruction-tuned counterpart.
 
 
 ### Length Instructions
 1. Compute Representations
-    - Script: `length/compute_length_representations.py`
-    - Config: `config/length/compute_length_representations.yaml`
-    - Description: Computes representations for length constraints and stores them in length/representations/.
+    - Script: `length/compute_representations.py`
+    - Config: `config/length/compute_representations.yaml`
+    - Description: Computes representations for length constraints and stores them in `length/representations/`.
 2.	Evaluate Length Instructions
-    - Script: `length/evaluate_length_constraints.py`
+    - Script: `length/evaluate.py`
     - Config: `config/length/evaluation.yaml`
     - Description: Evaluates the model on length constraints, analogous to the format instructions evaluation.
 
 
 ### Word-Specific Instructions
 1.	Compute Keyword Representations
-    - Script: `keywords/compute_keywords_representations.py`
-    - Config: `config/keywords/compute_keyword_representations.yaml`
+    - Script: `keywords/compute_representations.py`
+    - Config: `config/keywords/compute_representations.yaml`
     - Description: Computes representations for keyword constraints using base queries from `data/ifeval_wo_instructions.jsonl`  and stores them in `keywords/representations/`.
-2.	Evaluate Keyword Instructions
-    - Script: `keywords/eval_keyword_constraints.py`
+2. Compute Perplexity of Model Responses
+    - Script: `keywords/compute_response_perplexity.py`
+    - Description: Loads validation results for keyword instructions, computes perplexity for each model response and saves the updated results to new JSONL files.
+3.	Evaluate Keyword Instructions
+    - Script: `keywords/evaluate.py`
     - Config: `config/keywords/evaluation.yaml`
     - Description: Evaluates keyword inclusion or exclusion. Specify `specific_constraint` as `ifeval_include` (for inclusion) or `ifeval_exclude` (for exclusion). To evaluate on validation data, use `validation`.
 
