@@ -16,9 +16,9 @@ folder = f'{script_dir}/out'
 model_name = 'phi-3'
 constraint_type = 'existence'
 steering= 'add_vector'
-layer = 24
-weight = 120
-n_examples = 20
+layer = 26
+weight = 40
+n_examples = 7
 
 file = f'{folder}/{model_name}/{constraint_type}/{steering}_{layer}_n_examples{n_examples}_{weight}/out.jsonl'
 with open(file, 'r') as f:

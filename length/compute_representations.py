@@ -19,7 +19,7 @@ from utils.generation_utils import generate, extract_representation
 config_path = os.path.join(project_dir, 'config/length')
 
 # %%
-@hydra.main(config_path=config_path, config_name='compute_length_representations')
+@hydra.main(config_path=config_path, config_name='compute_representations')
 def compute_representations(args: DictConfig):
         
     # load the data

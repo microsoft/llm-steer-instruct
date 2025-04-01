@@ -22,6 +22,7 @@ model_name = 'phi-3'
 folder = f'{script_dir}/out/{model_name}/existence_validation/'
 file_name = 'out.jsonl'
 subfolders = os.listdir(folder)
+print(f'subfolders: {subfolders}')
 result_dict = {}
 paths_dict = {}
 for subfolder in subfolders:
@@ -60,7 +61,7 @@ elif model_name == 'gemma-2-2b-it':
     model_name_hf = 'google/gemma-2-2b-it'
 tokenizer = AutoTokenizer.from_pretrained(model_name_hf)
 
-device = 'mps'
+device = 'cuda'
 perplexity_model = AutoModelForCausalLM.from_pretrained('openai-community/gpt2')
 perplexity_model.to(device)
 perplexity_tokenizer = AutoTokenizer.from_pretrained('openai-community/gpt2')
