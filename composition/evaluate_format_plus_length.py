@@ -75,13 +75,12 @@ def run_experiment(args: DictConfig):
 
     if args.steering != 'none':
         # load the pre-computed steering vectors
-        folder = f'{script_dir}/representations/{args.model_name}/{args.representations_folder}'
+        folder = f'{project_dir}/format/representations/{args.model_name}/{args.representations_folder}'
         if args.source_layer_idx == -1:
             # use best layer
-            cross_model_flag = '_cross_model' if args.cross_model_steering else ''
             use_perplexity_flag = '_with_perplexity' if args.use_perplexity else ''
             include_instr_flag = '_instr' if args.include_instructions else '_no_instr'
-            file_path = f'{folder}/pre_computed_ivs_best_layer_validation{use_perplexity_flag}{cross_model_flag}{include_instr_flag}.h5'
+            file_path = f'{folder}/pre_computed_ivs_best_layer_validation{use_perplexity_flag}{include_instr_flag}.h5'
         else:
             file_path = f'{folder}/pre_computed_ivs_layer_{args.source_layer_idx}.h5'
         pre_computed_ivs = pd.read_hdf(file_path, key='df')
@@ -135,7 +134,7 @@ def run_experiment(args: DictConfig):
             if instr in all_instr:
                 instr_dir = pre_computed_ivs[pre_computed_ivs['instruction'] == instr]['instr_dir'].values[0]
                 instr_dir = torch.tensor(instr_dir, device=device)
-                layer_idx = pre_computed_ivs[pre_computed_ivs['instruction'] == instr]['max_diff_layer_idx'].values[0]
+                layer_idx = pre_computed_ivs[pre_computed_ivs['instruction'] == instr]['selected_layer'].values[0]
                 avg_proj = pre_computed_ivs[pre_computed_ivs['instruction'] == instr]['avg_proj'].values[0]
             else:
                 instr_dir = torch.zeros(model.cfg.d_model)
@@ -203,7 +202,7 @@ def run_experiment(args: DictConfig):
             folder += f'_{args.steering_weight}'
     else:
         folder += '/no_steering'
-    if args.length_steering_weight > 0:
+    if args.length_steering != 'none':
         folder += f'_{args.length_steering}_L{args.length_source_layer_idx}_w{args.length_steering_weight}'
     else:
         folder += '_no_length_steering'

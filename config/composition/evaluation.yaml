@@ -24,7 +24,7 @@ length_steering: 'conciseness' # conciseness or verbosity
 length_steering_weight: 20
 length_source_layer_idx: 12
 constraint_type: at_most # at_most or at_least
-length_representations_folder: 'length_constraints/representations'
+length_representations_folder: 'length/representations'
 length_rep_file: high_level_50examples_hs.h5
 
 
