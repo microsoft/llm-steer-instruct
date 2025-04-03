@@ -22,9 +22,6 @@ Below is an overview of the folder structure.
 ```
 .
 ├── config                 # contains all '.yaml' configs
-├── composition            # scripts for multi-instruction steering
-│   ├── format_plus_length.py
-│   └── load_results.py
 ├── format                 # scripts for format instructions
 │   ├── compute_representations.py
 │   ├── find_best_layer.py
@@ -40,6 +37,9 @@ Below is an overview of the folder structure.
 ├── length                 # scripts for length instructions
 │   ├── compute_representations.py
 │   ├── evaluate.py
+│   └── load_results.py
+├── composition            # scripts for multi-instruction steering
+│   ├── evaluate_format_plus_length.py
 │   └── load_results.py
 ├── utils                  # helper functions
 ├── ifeval_scripts         # official IFEval scripts
@@ -109,7 +109,7 @@ pip install -r requirements.txt
 ### Multi-instruction Steering
 
 1. Evaluate Format + Length Instructions
-    - Script: `composition/format_plus_length.py`
+    - Script: `composition/evaluate_format_plus_length.py`
     - Config: `config/composition/evaluation.yaml`
     - Description: Evaluates the model on format and length instructions simultaneously. Requires representations from both `length/compute_length_representations.py` and `format/compute_representations.py`.
 
