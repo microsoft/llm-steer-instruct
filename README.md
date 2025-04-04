@@ -114,6 +114,11 @@ pip install -r requirements.txt
     - Description: Evaluates the model on format and length instructions simultaneously. Requires representations from both `length/compute_length_representations.py` and `format/compute_representations.py`.
 
 
+
+## Responsible AI Considerations
+[This transparency note](TODO) outlines our responsible AI considerations. Our method was tested using open-source models such as Phi 3.5, Gemma, and Mistral, evaluated on the IFEval dataset for instruction adherence and text quality, with GPT-4o assisting in quality scoring. Although promising, the method faces limitations, including potential reductions in text quality and incomplete guarantee of instruction adherence, especially in complex scenarios. Users are advised to carefully balance instruction following with text quality and integrate this approach with fine-tuning or responsible AI mitigations, like content filters, to minimize risks, including the potential generation of harmful content. The method, developed primarily for research purposes in English, requires further validation for broader commercial applications.
+
+
 ## Citation
 
 If you use this code in your research, please consider citing us:
@@ -128,7 +133,6 @@ year={2025},
 url={https://openreview.net/forum?id=wozhdnRCtw}
 }
 ```
-
 
 ## License
 

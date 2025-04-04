@@ -3,7 +3,7 @@
 This is not an officially supported Google product.
 
 This repository contains source code and data for
-[Instruction Following Evaluation for Large Language Models](arxiv.org/abs/2311.07911)
+[Instruction Following Evaluation for Large Language Models](https://arxiv.org/abs/2311.07911)
 
 ## Dependencies
 
