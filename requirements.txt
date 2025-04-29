@@ -10,4 +10,4 @@ plotly==5.22.0
 torch==2.4.1
 tqdm==4.66.4
 transformer_lens==2.15.0
-transformers==4.44.2
+transformers==4.50.0
