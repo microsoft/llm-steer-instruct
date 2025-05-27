@@ -109,7 +109,9 @@ def run_experiment(args: DictConfig):
         hs_no_instr = torch.tensor(filtered_results_df['last_token_rs_no_instr'].tolist())
         repr_diffs = hs_instr - hs_no_instr
 
-        length_specific_rep = repr_diffs[:, args.source_layer_idx, -1].mean(dim=0)
+        length_specific_rep = repr_diffs[:, args.source_layer_idx].mean(dim=0)
+        if len(length_specific_rep.shape) == 2:
+            length_specific_rep = length_specific_rep[:, -1]
         length_specific_representations[i] = length_specific_rep
 
     for length_constraint in range(0, args.n_sent_max):
